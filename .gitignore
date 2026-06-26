@@ -9,6 +9,16 @@ node_modules/
 dist/
 .DS_Store
 
+# next.js
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# testing
+/coverage
+
 # local agent tooling & scratch (not product source)
 .agents/
 .claude/
