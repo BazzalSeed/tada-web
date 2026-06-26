@@ -1,0 +1,16 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+
+# deps / build
+node_modules/
+.vercel/
+dist/
+.DS_Store
+
+# local agent tooling & scratch (not product source)
+.agents/
+.claude/
+.playwright-mcp/
+skills-lock.json

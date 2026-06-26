@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tada — Not to-do. Ta-da.</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23c8632e' d='M12 0c.6 5.7 3.3 8.4 9 9-5.7.6-8.4 3.3-9 9-.6-5.7-3.3-8.4-9-9 5.7-.6 8.4-3.3 9-9Z'/%3E%3C/svg%3E" />
+<meta name="description" content="Not a to-do app — a ta-da. Forward an email, snap a screenshot, or jot a line, and Tada turns it into a real task, then does the task for you." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&family=Caveat:wght@600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#f0ece3; --bg-soft:#ece7dc; --surface:#f8f5ee; --raised:#fffefb;
+    --ink:#1d1b17; --ink-soft:#5d574d; --ink-muted:#948d80;
+    --accent:#c8632e; --accent-deep:#9b481e; --accent-bright:#d4753a;
+    --accent-wash:rgba(200,99,46,0.10); --accent-dust:rgba(200,99,46,0.16);
+    --spark:#c8632e; --spark-soft:rgba(200,99,46,0.14);
+    --panel:#f3eee4; --panel-soft:#ece6d9;
+    --hair:rgba(29,27,23,0.10); --hair-strong:rgba(29,27,23,0.16);
+    --shadow:0 1px 2px rgba(29,27,23,.04), 0 12px 32px -12px rgba(29,27,23,.16);
+    --shadow-lg:0 2px 4px rgba(29,27,23,.05), 0 28px 60px -20px rgba(29,27,23,.26);
+    --display:'EB Garamond', Georgia, 'Times New Roman', serif;
+    --body:'Geist', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --mono:'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --script:'Caveat', 'Brush Script MT', cursive;
+    --r:14px; --r-lg:22px; --maxw:1140px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#1b1a18; --bg-soft:#161513; --surface:#23221f; --raised:#282724;
+      --ink:#f2ede3; --ink-soft:#b9b2a4; --ink-muted:#807a6e;
+      --accent:#d97a45; --accent-deep:#c8632e; --accent-bright:#e08a55;
+      --accent-wash:rgba(217,122,69,0.16); --accent-dust:rgba(217,122,69,0.24);
+      --spark:#d97a45; --spark-soft:rgba(217,122,69,0.18);
+      --panel:#201f1c; --panel-soft:#191816;
+      --hair:rgba(244,237,224,0.10); --hair-strong:rgba(244,237,224,0.16);
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -12px rgba(0,0,0,.55);
+      --shadow-lg:0 2px 4px rgba(0,0,0,.4), 0 28px 60px -20px rgba(0,0,0,.65);
+    }
+    .tag.p1{background:rgba(207,135,121,.16);color:#cf8779}
+    .tag.lab{background:rgba(244,237,224,.07);color:var(--ink-soft)}
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-weight:400;font-size:17px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  ::selection{background:var(--accent);color:#fff}
+  h1,h2,h3{font-family:var(--display);font-weight:500;letter-spacing:-.01em;line-height:1.08;margin:0}
+  p{margin:0}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+  .eyebrow{font-family:var(--mono);font-size:11.5px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--ink-muted);display:inline-flex;align-items:center;gap:9px}
+  .eyebrow .spk{width:11px;height:11px;color:var(--accent)}
+  .lede{font-size:19px;color:var(--ink-soft);line-height:1.62}
+  .spark{display:inline-block;color:var(--spark)}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--body);font-weight:500;font-size:15px;
+    padding:13px 22px;border-radius:999px;border:1px solid transparent;cursor:pointer;
+    transition:transform .18s ease, box-shadow .22s ease, background .22s ease, border-color .22s ease}
+  .btn-primary{background:var(--accent);color:#fff;box-shadow:0 1px 2px rgba(155,72,30,.3),0 10px 24px -10px rgba(200,99,46,.55)}
+  .btn-primary:hover{background:var(--accent-deep);transform:translateY(-1px);box-shadow:0 2px 4px rgba(155,72,30,.3),0 16px 30px -12px rgba(200,99,46,.65)}
+  .btn-ghost{background:transparent;color:var(--ink);border-color:var(--hair-strong)}
+  .btn-ghost:hover{background:var(--raised);border-color:var(--ink-muted);transform:translateY(-1px)}
+  .btn:focus-visible{outline:2px solid var(--accent-bright);outline-offset:3px}
+  .btn-sm{padding:9px 18px;font-size:14px}
+
+  /* nav */
+  header.nav{position:sticky;top:0;z-index:50;backdrop-filter:saturate(140%) blur(10px);
+    background:color-mix(in srgb,var(--bg) 82%,transparent);border-bottom:1px solid transparent;
+    transition:border-color .3s ease, transform .35s ease}
+  header.nav.scrolled{border-bottom-color:var(--hair)}
+  header.nav.nav-hidden{transform:translateY(-100%)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .word{font-family:var(--script);font-size:28px;font-weight:700;color:var(--ink);display:inline-flex;align-items:center;gap:2px;line-height:1}
+  .word .spark{font-size:13px;transform:translateY(-9px)}
+  .nav-cta{display:flex;align-items:center;gap:20px}
+  .nav-signin{font-family:var(--body);font-size:14px;font-weight:500;color:var(--ink-soft);transition:color .18s ease}
+  .nav-signin:hover{color:var(--accent)}
+
+  /* ===== HERO ===== */
+  .hero{position:relative;padding:54px 0 80px}
+  .hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(1000px 560px at 78% 0%, var(--accent-wash), transparent 62%)}
+  .hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:.82fr 1.18fr;gap:48px;align-items:center}
+  .hero-copy{max-width:480px}
+  .hero h1{font-size:clamp(33px,4.7vw,60px);margin:16px 0 0;line-height:1.05;white-space:nowrap}
+  .hero h1 em{font-style:italic;color:var(--accent);display:inline-block;position:relative;
+    animation:tadaIn .85s cubic-bezier(.34,1.56,.64,1) .45s both}
+  .hero h1 em::after{content:"✦";position:absolute;top:-.14em;right:-.5em;font-size:.32em;color:var(--spark);
+    animation:tadaSpark .8s ease 1.05s both, tadaTwinkle 4.2s ease 2s infinite}
+  @keyframes tadaIn{0%{opacity:0;transform:translateY(10px) scale(.84) rotate(-2.5deg)}100%{opacity:1;transform:none}}
+  @keyframes tadaSpark{0%{opacity:0;transform:scale(0) rotate(-50deg)}55%{opacity:1;transform:scale(1.35) rotate(12deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+  @keyframes tadaTwinkle{0%,90%,100%{transform:scale(1) rotate(0);opacity:.85}95%{transform:scale(1.4) rotate(15deg);opacity:1}}
+  .hero .lede{margin:20px 0 0;max-width:30em}
+  /* ---- hero switchboard: sources → wires → Tada → activity log ---- */
+  .swb{position:relative;z-index:1}
+  .swb-grid{position:relative;display:flex;align-items:center;justify-content:space-between;gap:30px;min-height:330px}
+  .swb-sources{flex:0 1 auto;position:relative;z-index:1;display:flex;flex-direction:column;gap:9px}
+  .swb-src{background:var(--surface);border:1px solid var(--hair);border-radius:11px;padding:10px 14px;display:flex;flex-direction:column;gap:3px;
+    transition:border-color .35s ease, background .35s ease, box-shadow .35s ease, transform .35s ease}
+  .swb-src-t{font-size:13.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .swb-src-t svg{width:14px;height:14px;color:var(--ink-muted);transition:color .35s ease}
+  .swb-src-m{font-family:var(--mono);font-size:10.5px;color:var(--ink-muted);margin-left:22px}
+  .swb-src--on{border-color:var(--accent);background:var(--accent-wash);box-shadow:0 8px 26px -12px var(--accent-dust);transform:translateX(-3px)}
+  .swb-src--on .swb-src-t svg{color:var(--accent)}
+  .swb-src--on .swb-src-m{color:var(--accent-deep)}
+
+  .swb-wires{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0}
+  .swb-wire{fill:none;stroke:var(--hair-strong);stroke-width:1;opacity:.7;transition:stroke .35s ease,opacity .35s ease,stroke-width .35s ease}
+  .swb-wire--on{stroke:var(--accent);opacity:1;stroke-width:1.5}
+  .swb-dot{fill:var(--hair-strong);opacity:0;transition:fill .3s ease}
+  .swb-dot--on{fill:var(--accent)}
+
+  .swb-hub{flex:1 1 auto;max-width:330px;position:relative;z-index:1;display:flex;flex-direction:column;gap:14px}
+  .swb-card{position:relative;z-index:1;background:var(--raised);border:1px solid var(--hair);border-radius:16px;padding:17px 21px;display:flex;flex-direction:column;gap:5px;
+    box-shadow:0 0 16px -2px var(--spark-soft), 0 0 50px -10px var(--accent-dust), var(--shadow-lg)}
+  .swb-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .swb-card-mark{font-family:var(--script);font-size:33px;font-weight:700;color:var(--accent);line-height:1;display:inline-flex;align-items:center;gap:2px}
+  .swb-card-mark .spark{font-size:13px;transform:translateY(-11px)}
+  .swb-card-sub{font-family:var(--mono);font-size:11px;color:var(--ink-muted);letter-spacing:.02em}
+  .swb-card-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:var(--accent);box-shadow:0 0 0 0 var(--accent-dust);animation:swb-pulse 1.9s ease-out infinite}
+  @keyframes swb-pulse{0%{box-shadow:0 0 0 0 var(--accent-dust)}70%{box-shadow:0 0 0 11px transparent}100%{box-shadow:0 0 0 0 transparent}}
+
+  /* per-source flow: In (shape of the source) → Task → Done (Tada did it) */
+  .swb-flow{position:relative;display:flex;flex-direction:column;gap:11px;min-height:188px}
+  .swb-step{opacity:0;transform:translateY(9px);transition:opacity .55s ease, transform .55s cubic-bezier(.2,.7,.3,1)}
+  .swb-flow.play .swb-step{opacity:1;transform:none}
+  .swb-flow.play .swb-step:nth-child(1){transition-delay:.04s}
+  .swb-flow.play .swb-step:nth-child(2){transition-delay:.42s}
+  .swb-flow.play .swb-step:nth-child(3){transition-delay:.86s}
+  .swb-step-k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:7px;margin-bottom:6px}
+  .swb-step-k svg{width:13px;height:13px}
+  .swb-in-t{font-family:var(--display);font-size:16.5px;line-height:1.4;color:var(--ink-soft);margin:0}
+  .swb-in-t b{color:var(--ink);font-weight:600;box-shadow:inset 0 -.5em 0 var(--accent-wash)}
+  .swb-arrow{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted)}
+  .swb-arrow svg{width:13px;height:13px;color:var(--accent)}
+  .swb-task{display:flex;flex-direction:column;gap:9px;padding:12px 15px;background:var(--raised);border:1px solid var(--hair);border-radius:13px;box-shadow:var(--shadow)}
+  .swb-task-t{display:flex;align-items:center;gap:11px;font-family:var(--display);font-size:17px;font-weight:600;color:var(--ink);line-height:1.15}
+  .swb-task-t .o{width:15px;height:15px;border-radius:50%;border:2px solid var(--accent);flex:0 0 auto}
+  .swb-chips{display:flex;flex-wrap:wrap;gap:7px;margin-left:26px}
+  .swb-chip{font-family:var(--mono);font-size:10.5px;padding:3px 9px;border-radius:999px}
+  .swb-chip.date{background:var(--accent-wash);color:var(--accent-deep)}
+  .swb-chip.lab{background:var(--bg-soft);color:var(--ink-soft)}
+  .swb-done{display:flex;align-items:center;gap:11px;font-size:14px;font-weight:500;color:var(--accent-deep)}
+  .swb-done .dc{flex:0 0 auto;width:23px;height:23px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center}
+  .swb-done .dc svg{width:13px;height:13px}
+  .swb-done .spark{margin-left:auto;color:var(--spark)}
+
+  @media(max-width:980px){
+    .hero-grid{grid-template-columns:1fr;gap:38px}
+    .hero h1{white-space:normal}
+    .swb-grid{max-width:600px;gap:24px}
+  }
+  @media(max-width:560px){
+    .hero{padding:34px 0 52px}
+    .swb-grid{flex-direction:column;align-items:stretch;gap:18px}
+    .swb-wires{display:none}
+    .swb-src-m{font-size:10px}
+    .swb-hub{max-width:none}
+  }
+
+  /* ===== section scaffolding ===== */
+  section.band{padding:92px 0}
+  .sec-head{max-width:32em}
+  .sec-head h2{font-size:clamp(30px,4vw,44px);margin-top:16px}
+  .sec-head .lede{margin-top:18px}
+
+  /* ===== flow in beats (scroll spine) ===== */
+  .beats{position:relative;margin-top:60px;padding-left:0}
+  .spine{position:absolute;left:19px;top:8px;bottom:8px;width:2px;background:var(--hair)}
+  .spine-fill{position:absolute;left:0;top:0;width:100%;background:var(--accent);transform-origin:top;transform:scaleY(var(--p,0));transition:transform .1s linear}
+  @media(prefers-reduced-motion:reduce){.spine-fill{transform:scaleY(1)}}
+  .beat{position:relative;display:grid;grid-template-columns:40px 1fr;gap:24px;padding:0 0 56px}
+  .beat:last-child{padding-bottom:0}
+  .beat .node-dot{width:40px;height:40px;border-radius:50%;background:var(--bg);border:2px solid var(--hair-strong);
+    display:grid;place-items:center;color:var(--ink-muted);transition:all .4s ease;z-index:1}
+  .beat .node-dot svg{width:18px;height:18px}
+  .beat.on .node-dot{border-color:var(--accent);background:var(--accent);color:#fff;box-shadow:0 0 0 6px var(--accent-wash)}
+  .beat-body{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center}
+  @media(max-width:760px){.beat-body{grid-template-columns:1fr;gap:18px}}
+  .beat-num{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--accent);text-transform:uppercase}
+  .beat h3{font-size:clamp(22px,2.6vw,28px);margin:8px 0 0}
+  .beat p{font-size:15.5px;color:var(--ink-soft);margin-top:10px;max-width:30em}
+  .beat-art{width:300px;max-width:100%}
+  @media(max-width:760px){.beat-art{width:100%;max-width:360px}}
+  .mini{background:var(--raised);border:1px solid var(--hair);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+  .mini-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);display:flex;align-items:center;gap:7px;margin-bottom:9px}
+  .mini-h svg{width:12px;height:12px;color:var(--accent)}
+  .mini-line{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:13px;color:var(--ink-soft);border-top:1px solid var(--hair)}
+  .mini-line:first-of-type{border-top:none}
+  .mini-line .mi{flex:0 0 24px;width:24px;height:24px;border-radius:7px;background:var(--accent-wash);color:var(--accent-deep);display:grid;place-items:center}
+  .mini-line .mi svg{width:13px;height:13px}
+  .mini-line b{color:var(--ink);font-weight:500}
+  .mini-field{font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:6px;background:var(--accent-wash);color:var(--accent-deep);margin-right:6px;display:inline-block;margin-top:4px}
+
+  /* ===== Todo vs Tada ===== */
+  .versus{display:grid;grid-template-columns:1fr 1fr;margin-top:48px;border:1px solid var(--hair-strong);border-radius:var(--r-lg);overflow:hidden}
+  .vh{padding:18px 26px;font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid var(--hair-strong)}
+  .vh.them{color:var(--ink-muted);background:var(--surface)}
+  .vh.us{color:var(--accent);background:var(--raised);border-left:1px solid var(--hair-strong);display:flex;align-items:center;gap:8px}
+  .vrow{display:contents}
+  .vcell{padding:18px 26px;border-bottom:1px solid var(--hair);font-size:15.5px;line-height:1.45}
+  .vcell.them{color:var(--ink-muted);background:var(--surface)}
+  .vcell.us{background:var(--raised);border-left:1px solid var(--hair-strong);color:var(--ink-soft)}
+  .vcell.us b{color:var(--ink);font-weight:600}
+  .vcell.us .hl{color:var(--accent);font-weight:600}
+  .versus .vcell:nth-last-child(-n+2){border-bottom:none}
+  @media(max-width:680px){.versus{grid-template-columns:1fr}.vh.us,.vcell.us{border-left:none}.vh.them{border-bottom:none}
+    .vcell.them{padding-bottom:6px}.vcell.us{padding-top:6px;border-bottom:1px solid var(--hair-strong)}}
+
+  /* ===== close + waitlist ===== */
+  .close{text-align:center;padding:108px 0 96px;position:relative}
+  .close::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(680px 360px at 50% 0%,var(--accent-wash),transparent 62%)}
+  .close .wrap{position:relative}
+  .close h2{font-size:clamp(36px,5.4vw,60px)}
+  .close h2 em{font-style:italic;color:var(--accent)}
+  .close .lede{margin:20px auto 0;max-width:30em}
+  .wl{display:flex;gap:10px;justify-content:center;margin:32px auto 0;max-width:440px;flex-wrap:wrap}
+  .wl input{flex:1;min-width:220px;font-family:var(--body);font-size:15px;color:var(--ink);background:var(--raised);
+    border:1px solid var(--hair-strong);border-radius:999px;padding:13px 20px;outline:none;transition:border-color .2s ease, box-shadow .2s ease}
+  .wl input::placeholder{color:var(--ink-muted)}
+  .wl input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
+  .wl .btn{white-space:nowrap}
+  .wl-note{font-family:var(--mono);font-size:12px;color:var(--ink-muted);margin-top:14px;letter-spacing:.02em}
+  .wl-done{display:none;align-items:center;justify-content:center;gap:10px;margin-top:30px;font-size:17px;color:var(--ink)}
+  .wl-done .dc{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center}
+  .wl-done .dc svg{width:15px;height:15px}
+  .waitlist-done .wl,.waitlist-done .wl-note{display:none}
+  .waitlist-done .wl-done{display:flex}
+
+  /* footer */
+  footer{border-top:1px solid var(--hair);padding:38px 0;background:var(--bg-soft)}
+  .foot{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .foot .word{font-size:25px}.foot .word .spark{font-size:12px}
+  .foot small{font-family:var(--mono);font-size:11.5px;color:var(--ink-muted);letter-spacing:.04em}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity .7s ease, transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}
+    .hero h1 em,.hero h1 em::after,.swb-card-dot{animation:none}
+    .swb-dot{display:none}
+    .swb-step{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="spk" viewBox="0 0 24 24"><path fill="currentColor" d="M12 0c.6 5.7 3.3 8.4 9 9-5.7.6-8.4 3.3-9 9-.6-5.7-3.3-8.4-9-9 5.7-.6 8.4-3.3 9-9Z"/></symbol></svg>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-in">
+    <a class="word" href="#top" aria-label="Tada home">Tada<svg class="spark" width="13" height="13"><use href="#spk"/></svg></a>
+    <div class="nav-cta">
+      <!-- Sign-in slot — enable at launch:
+      <a href="#" class="nav-signin">Sign in</a> -->
+      <a href="#waitlist" class="btn btn-primary btn-sm">Join the waitlist</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy reveal in">
+        <span class="eyebrow"><svg class="spk" width="11" height="11"><use href="#spk"/></svg>The to-do app that does it for you</span>
+        <h1>Not to-do. <em>Ta-da.</em></h1>
+        <p class="lede">Forward an email, snap a screenshot, or jot a quick line. Tada turns it into real tasks — then does them for you, on your command.</p>
+      </div>
+
+      <!-- switchboard: each capture source wires into Tada, which turns it into a task and finishes it -->
+      <div class="swb reveal in" aria-label="Email, screenshots and quick add flow into Tada. It turns each into a task and finishes it for you — booking a meeting, doing deep research, or setting a reminder." style="transition-delay:.08s">
+        <div class="swb-grid">
+          <svg class="swb-wires" aria-hidden="true"></svg>
+          <div class="swb-sources" aria-hidden="true"></div>
+          <div class="swb-hub">
+            <div class="swb-card">
+              <div class="swb-card-top">
+                <span class="swb-card-mark">Tada<svg class="spark" width="13" height="13"><use href="#spk"/></svg></span>
+                <span class="swb-card-dot" aria-hidden="true"></span>
+              </div>
+              <span class="swb-card-sub">your assistant · reads it, then does it</span>
+            </div>
+            <div class="swb-flow" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FLOW IN BEATS -->
+  <section class="band" id="how">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow"><svg class="spk" width="11" height="11"><use href="#spk"/></svg>How it works</span>
+        <h2>Three ways in. One that finishes the job.</h2>
+      </div>
+      <div class="beats" id="beats">
+        <div class="spine"><div class="spine-fill" id="spineFill"></div></div>
+
+        <div class="beat reveal">
+          <div class="node-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div>
+          <div class="beat-body">
+            <div>
+              <span class="beat-num">01 — Capture</span>
+              <h3>Throw it whatever you've got.</h3>
+              <p>Forward an email, drop a screenshot, or jot one messy line. No formatting, no fields — Tada takes it raw, from anywhere.</p>
+            </div>
+            <div class="beat-art">
+              <div class="mini">
+                <div class="mini-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Forwarded · email</div>
+                <div class="mini-line"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h7"/></svg></span><span>“…can we sync <b>Tue afternoon</b>? I'll send the brief. — Dakota”</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="beat reveal">
+          <div class="node-dot"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.5 4.6 2.7 6.8 7 7-4.3.5-6.5 2.7-7 7-.5-4.3-2.7-6.5-7-7 4.3-.5 6.5-2.7 7-7Z"/></svg></div>
+          <div class="beat-body">
+            <div>
+              <span class="beat-num">02 — Tada reads it</span>
+              <h3>It writes the real task for you.</h3>
+              <p>Tada pulls out what matters — a clear title, the due date, who's involved, the right labels and priority. One capture can become several tasks.</p>
+            </div>
+            <div class="beat-art">
+              <div class="mini">
+                <div class="mini-h"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.5 4.6 2.7 6.8 7 7-4.3.5-6.5 2.7-7 7-.5-4.3-2.7-6.5-7-7 4.3-.5 6.5-2.7 7-7Z"/></svg>Structured task</div>
+                <div class="mini-line"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg></span><span><b>Send Dakota the project brief</b></span></div>
+                <div style="padding-top:4px"><span class="mini-field">Tue 2:00 PM</span><span class="mini-field">#work</span><span class="mini-field">P1</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="beat reveal">
+          <div class="node-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12l1-9Z"/></svg></div>
+          <div class="beat-body">
+            <div>
+              <span class="beat-num">03 — Ta-da</span>
+              <h3>Then it does the task for you.</h3>
+              <p>Send the calendar invite, set the reminder, run the research — Tada does the busywork and hands back the result. Anything that leaves the app asks first.</p>
+            </div>
+            <div class="beat-art">
+              <div class="mini">
+                <div class="mini-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12l1-9Z"/></svg>Done for you</div>
+                <div class="mini-line"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></span><span><b>Invite sent</b> to Dakota · Tue 2:00 PM</span></div>
+                <div class="mini-line"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5l3 2"/><circle cx="12" cy="13" r="8"/></svg></span><span><b>Reminder set</b> · 1 hour before</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TODO VS TADA -->
+  <section class="band" id="vs" style="padding-top:20px">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow"><svg class="spk" width="11" height="11"><use href="#spk"/></svg>Todo vs Tada</span>
+        <h2>Every to-do app stops at the list. <em style="font-style:italic;color:var(--accent)">Tada keeps going.</em></h2>
+      </div>
+      <div class="versus reveal">
+        <div class="vh them">A normal to-do app</div>
+        <div class="vh us"><svg class="spark" width="12" height="12"><use href="#spk"/></svg> Tada</div>
+        <div class="vrow">
+          <div class="vcell them">You type every task out by hand.</div>
+          <div class="vcell us">You forward, snap, or jot — and it <span class="hl">writes</span> the task.</div>
+        </div>
+        <div class="vrow">
+          <div class="vcell them">It stores your work and waits.</div>
+          <div class="vcell us">It <span class="hl">does</span> your work — invites, reminders, research.</div>
+        </div>
+        <div class="vrow">
+          <div class="vcell them">You leave to go book the meeting.</div>
+          <div class="vcell us">It <span class="hl">books</span> the meeting — you just confirm.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOSE + WAITLIST -->
+  <section class="close" id="waitlist">
+    <div class="wrap reveal">
+      <span class="eyebrow" style="justify-content:center;display:flex"><svg class="spk" width="11" height="11"><use href="#spk"/></svg>Be first in line</span>
+      <h2>Stop managing your to-dos.<br>Just say <em>ta-da.</em></h2>
+      <p class="lede">Tada is opening up soon. Join the waitlist and we'll let you in early.</p>
+      <form class="wl" id="wlForm" novalidate>
+        <input type="email" id="wlEmail" required placeholder="you@email.com" aria-label="Your email address" autocomplete="email" />
+        <button type="submit" class="btn btn-primary">Join the waitlist</button>
+      </form>
+      <p class="wl-note" id="wlNote">No spam — one email when Tada opens up.</p>
+      <div class="wl-done"><span class="dc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg></span><span>You're on the list <span class="spark">✦</span> We'll be in touch.</span></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <a class="word" href="#top">Tada<svg class="spark" width="12" height="12"><use href="#spk"/></svg></a>
+    <small>Not to-do. Ta-da.</small>
+  </div>
+</footer>
+
+<script>
+  // nav: frosted on scroll + pinned, auto-merge-away on scroll down, reveal on scroll up
+  var nav = document.getElementById('nav'); var lastY = window.scrollY;
+  var onScroll = function(){
+    var y = window.scrollY;
+    nav.classList.toggle('scrolled', y > 8);
+    if(y > 140 && y > lastY + 4) nav.classList.add('nav-hidden');
+    else if(y < lastY - 4 || y <= 140) nav.classList.remove('nav-hidden');
+    lastY = y;
+  };
+  onScroll(); window.addEventListener('scroll', onScroll, {passive:true});
+
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // scroll reveal
+  if(!reduce && 'IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, {rootMargin:'0px 0px -8% 0px', threshold:.08});
+    document.querySelectorAll('.reveal:not(.in)').forEach(function(el){ io.observe(el); });
+  } else { document.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('in'); }); }
+
+  // hero switchboard — capture sources wire into Tada; the active source lights, its wire carries
+  // a traveling dot, and the activity log shifts as Tada finishes each task.
+  (function(){
+    var swb = document.querySelector('.swb');
+    if(!swb) return;
+    var SVGNS = 'http://www.w3.org/2000/svg';
+    var ICON = {
+      email:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',
+      shot:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 16l5-4 4 3 4-4 5 4"/></svg>',
+      quick:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h7"/></svg>',
+      cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>',
+      bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 21h4"/></svg>',
+      search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>'
+    };
+    var SOURCES = [
+      { id:'email', t:'Email',       m:'Forwarded · your inbox' },
+      { id:'shot',  t:'Screenshots', m:'Pasted · images' },
+      { id:'quick', t:'Quick add',   m:'Typed or spoken' }
+    ];
+    // each source plays one end-to-end story: a real input → a Tada task → the action Tada did for you
+    var FLOWS = {
+      email: { kind:'Forwarded email', kIcon:ICON.email,
+        text:'“…can we <b>sync Tuesday afternoon</b>? I’ll send over the brief.” — Dakota',
+        task:'Meet Dakota — project sync',
+        chips:[['date','Tue 2:00 PM'],['lab','#work']],
+        dIcon:ICON.cal, done:'Booked it — invite sent to Dakota' },
+      shot: { kind:'Screenshot, read by Tada', kIcon:ICON.shot,
+        text:'“can you <b>find the best CRMs</b> for a small team and summarize the trade-offs?”',
+        task:'Research CRMs for the team',
+        chips:[['lab','#research']],
+        dIcon:ICON.search, done:'Deep research done — findings written in' },
+      quick: { kind:'Typed or spoken', kIcon:ICON.quick,
+        text:'“remind me to <b>call mom tonight</b> at 6”',
+        task:'Call mom',
+        chips:[['date','Today 6:00 PM'],['lab','#family']],
+        dIcon:ICON.bell, done:'Reminder set · 6:00 PM' }
+    };
+
+    // build source cards
+    var srcWrap = swb.querySelector('.swb-sources');
+    SOURCES.forEach(function(s){
+      var el = document.createElement('div');
+      el.className = 'swb-src'; el.dataset.id = s.id;
+      el.innerHTML = '<span class="swb-src-t">'+ICON[s.id]+s.t+'</span><span class="swb-src-m">'+s.m+'</span>';
+      srcWrap.appendChild(el);
+    });
+    var srcEls = [].slice.call(srcWrap.querySelectorAll('.swb-src'));
+
+    // build one wire path + one traveling dot per source
+    var svg = swb.querySelector('.swb-wires'), grid = swb.querySelector('.swb-grid'), card = swb.querySelector('.swb-card');
+    var paths = [], dots = [];
+    SOURCES.forEach(function(){
+      var p = document.createElementNS(SVGNS,'path'); p.setAttribute('class','swb-wire'); svg.appendChild(p); paths.push(p);
+    });
+    SOURCES.forEach(function(){
+      var d = document.createElementNS(SVGNS,'circle'); d.setAttribute('class','swb-dot'); d.setAttribute('r','3.4'); d.setAttribute('opacity','0'); svg.appendChild(d); dots.push(d);
+    });
+    function drawWires(){
+      var gb = grid.getBoundingClientRect(); if(!gb.width) return;
+      svg.setAttribute('viewBox','0 0 '+gb.width+' '+gb.height);
+      var cb = card.getBoundingClientRect();
+      var endX = cb.left - gb.left, endY = cb.top - gb.top + 30;   // converge into the "Tada" mark
+      srcEls.forEach(function(el,i){
+        var b = el.getBoundingClientRect();
+        var x1 = b.right - gb.left, y1 = b.top - gb.top + b.height/2;
+        var dx = endX - x1, c1 = x1 + dx*0.5, c2 = endX - dx*0.5;
+        paths[i].setAttribute('d','M'+x1+','+y1+' C'+c1+','+y1+' '+c2+','+endY+' '+endX+','+endY);
+      });
+    }
+
+    // per-source flow renderer — In (the source) → Task → Done (Tada did it), staggered
+    var flow = swb.querySelector('.swb-flow');
+    function render(id){
+      var f = FLOWS[id];
+      var chips = f.chips.map(function(c){ return '<span class="swb-chip '+c[0]+'">'+c[1]+'</span>'; }).join('');
+      flow.classList.remove('play');
+      flow.innerHTML =
+        '<div class="swb-step swb-in"><span class="swb-step-k">'+f.kIcon+f.kind+'</span><p class="swb-in-t">'+f.text+'</p></div>'
+      + '<div class="swb-step swb-task"><span class="swb-task-t"><span class="o"></span>'+f.task+'</span><span class="swb-chips">'+chips+'</span></div>'
+      + '<div class="swb-step swb-done"><span class="dc">'+f.dIcon+'</span><span>'+f.done+'</span><span class="spark">✦</span></div>';
+      void flow.offsetWidth;        // reflow so the stagger re-triggers on each switch
+      flow.classList.add('play');
+    }
+
+    var active = 0;
+    function paint(i){
+      active = i;
+      srcEls.forEach(function(el,k){ el.classList.toggle('swb-src--on', k===i); });
+      paths.forEach(function(p,k){ p.classList.toggle('swb-wire--on', k===i); });
+      render(SOURCES[i].id);
+    }
+
+    // traveling dot along the active wire
+    var raf = null, phase = 0;
+    function tick(){
+      phase += 0.0065; if(phase>1) phase -= 1;
+      dots.forEach(function(dot,i){
+        if(i!==active){ dot.setAttribute('opacity','0'); return; }
+        var p = paths[i], len = p.getTotalLength ? p.getTotalLength() : 0;
+        if(!len){ dot.setAttribute('opacity','0'); return; }
+        var pt = p.getPointAtLength(len*phase);
+        dot.setAttribute('cx',pt.x); dot.setAttribute('cy',pt.y);
+        dot.setAttribute('class','swb-dot swb-dot--on');
+        dot.setAttribute('opacity', phase<0.04||phase>0.96 ? '0' : '1');
+      });
+      raf = requestAnimationFrame(tick);
+    }
+
+    function layout(){ drawWires(); }
+    if('fonts' in document && document.fonts.ready){ document.fonts.ready.then(layout); }
+    layout(); window.addEventListener('resize', layout); window.addEventListener('load', layout);
+    if('ResizeObserver' in window){ new ResizeObserver(layout).observe(grid); }
+
+    paint(0);
+    if(!reduce){ raf = requestAnimationFrame(tick); setInterval(function(){ paint((active+1) % SOURCES.length); }, 4600); }
+  })();
+
+  // beats: spine fill + node lighting on scroll
+  var beats = document.getElementById('beats'), fill = document.getElementById('spineFill');
+  if(beats && fill){
+    if(reduce){ document.querySelectorAll('.beat').forEach(function(b){ b.classList.add('on'); }); }
+    else {
+      var ticking = false;
+      var update = function(){
+        ticking = false;
+        var r = beats.getBoundingClientRect(), vh = window.innerHeight, ref = vh*0.6;
+        var p = (ref - r.top) / Math.max(r.height, 1); p = Math.max(0, Math.min(1, p));
+        fill.style.setProperty('--p', p.toFixed(3));
+        document.querySelectorAll('.beat').forEach(function(b){
+          var dot = b.querySelector('.node-dot').getBoundingClientRect();
+          b.classList.toggle('on', dot.top < ref + 10);
+        });
+      };
+      window.addEventListener('scroll', function(){ if(!ticking){ ticking = true; requestAnimationFrame(update); } }, {passive:true});
+      window.addEventListener('resize', update); update();
+    }
+  }
+
+  // waitlist form
+  var form = document.getElementById('wlForm'), email = document.getElementById('wlEmail'),
+      note = document.getElementById('wlNote'), close = document.getElementById('waitlist');
+  if(form){
+    form.addEventListener('submit', async function(e){
+      e.preventDefault();
+      var val = (email.value || '').trim();
+      if(!val || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val)){
+        note.textContent = 'Please enter a valid email address.'; note.style.color = '#a14a3e'; email.focus(); return;
+      }
+      var btn = form.querySelector('button'); btn.disabled = true; btn.textContent = 'Joining…';
+      // Preview server (8731) has no /api — simulate success. Real POST runs on Vercel.
+      var preview = location.port === '8731';
+      try {
+        if(!preview){
+          var r = await fetch('/api/waitlist', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email: val})});
+          if(!r.ok) throw new Error(r.status);
+        }
+        close.querySelector('.wrap').classList.add; document.querySelector('.close').classList.add('waitlist-done');
+      } catch(err){
+        btn.disabled = false; btn.textContent = 'Join the waitlist';
+        note.textContent = "Hmm — that didn't go through. Try again."; note.style.color = '#a14a3e';
+      }
+    });
+  }
+</script>
+</body>
+</html>
