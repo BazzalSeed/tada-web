@@ -1,6 +1,8 @@
-# Clawdia → Tada-web — Design System & Voice Port Manifest
+# Clawdia → Tada-web — Design System & Voice Reference
 
-> Overnight prep (2026-06-25). Exact files, props, deps, and rename surface for the architect's "port + rebrand the design system" deliverable. Source repo: `/Users/seedz/projects/clawdia-marketing-agent`.
+> Prep (2026-06-25). Exact files, props, deps for the architect's "set up the design system" deliverable. Source repo: `/Users/seedz/projects/clawdia-marketing-agent`.
+>
+> **⚠️ Reframed 2026-06-26:** Clawdia is a **feel-and-touch reference, not a code-port mandate.** **Copy the token/palette files verbatim** (§1); **build components + voice fresh**, using Clawdia for inspiration — the **voice orb animation may copy `SpiroOrb` as a first pass**, then iterate. Vendor any other file only if it's genuinely faster. **The accent swap in §1 is CANCELLED** — keep Clawdia's original sienna `#c8632e`, which *is* our rust accent (no indigo). Chat is **ChatGPT-like text** with a composer mic that enters a distinct voice mode (see spec §7).
 
 ## TL;DR — biggest finding
 **Clawdia's voice already runs on OpenAI Realtime over WebRTC**, with the long-lived key kept server-side via an ephemeral-secret mint. So Tada's voice mode is a **near-direct port**, and it confirms the OpenAI Realtime decision (resolves open-decision §9 #5). The pieces:
@@ -16,7 +18,7 @@ To make it Tada's: keep the callback/hook interfaces; swap the 3 API routes to c
   - `packages/ui/src/tokens.generated.css` — `:root` light + `@media (prefers-color-scheme: dark)` + `[data-theme]` overrides.
   - `packages/ui/src/tokens/*.css` — `effects.css` (hairlines/elevations/shadows/glow/motion), `motion.css` (load-in, shimmer, reduced-motion gates), `spacing.css`, `typography.css`, `fonts.css`.
   - `packages/ui/src/styles.css` — global reset/baseline.
-- **Accent swap sienna `#c8632e` → indigo `#5B5BD6`** touches:
+- **❌ Accent swap CANCELLED (2026-06-26).** Keep Clawdia's original sienna `#c8632e` as-is — it *is* our rust accent. Ignore the indigo swap below; it's retained only to show which tokens an accent change would touch, should one ever be needed:
   - `tokens.generated.css`: `--color-accent`, `--color-accent-bright` (light); the dark-mode `--color-accent-bright` (use a *lightened* indigo for ≥4.5:1 on dark); `[data-theme="light"|"dark"]` overrides; optionally `--dataviz-1`.
   - `tokens.ts`: `color.accentSignature`, `color.accentBright`, `color.accentDeep` (compute darker pressed indigo), `color.accentText` (≥4.5:1), `dataviz[0]`.
   - `tokens/effects.css`: `--glow-color`, `--glow-hover`, `--glow-spill`, `--cta-glow` (recompute for indigo; drop the warm/orange bias).
