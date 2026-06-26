@@ -1,0 +1,24 @@
+/* =========================================================================
+   @clawdia/ui — global entry point (ADR-020).
+   Consumers import THIS one file: `import '@clawdia/ui/styles.css'`.
+   It only @imports; never declare component rules here.
+
+   Order matters:
+     1. fonts          — @font-face loading (Google Fonts) so families resolve
+     2. tokens.generated.css — GENERATED brand colors (light + dark) + font
+                          families + platform dots + caution, from tokens.py
+                          via tokens_build.py. NEVER hand-edit.
+     3. typography     — web-only: fluid type scale, weights, line-heights, tracking
+     4. spacing        — web-only: spacing scale, layout measures, radii, edges
+     5. effects        — web-only: hairlines, elevations, highlights, glow, motion
+
+   The web-only tokens (3–5) are authored by hand; the brand colors/fonts (2)
+   are generated. No token is declared in more than one place.
+   ========================================================================= */
+
+@import './tokens/fonts.css';
+@import './tokens.generated.css';
+@import './tokens/typography.css';
+@import './tokens/spacing.css';
+@import './tokens/effects.css';
+@import './tokens/motion.css';

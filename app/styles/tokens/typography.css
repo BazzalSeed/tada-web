@@ -1,0 +1,52 @@
+/* =========================================================================
+   Clawdia — Typography (web-only: scale, weights, line-heights, tracking)
+
+   NOTE: the four font-family declarations (--font-display / --font-body /
+   --font-wordmark / --font-mono) are DELIBERATELY OMITTED here — they are
+   cross-surface brand tokens emitted from src/clawdia/design/tokens.py into
+   tokens.generated.css (which styles.css @imports BEFORE this file). Declaring
+   them here too would duplicate the source of truth. The @font-face loading
+   (Google Fonts) lives in tokens/fonts.css.
+
+   The fluid scale is validated on the marketing surface. Sizes clamp() between
+   a mobile floor and a desktop ceiling. Weights: Display/Body 400–600; the
+   brand reads "competent" so 500 is the default emphasis, not 700.
+   ========================================================================= */
+
+:root {
+  /* ---- Fluid type scale (clamp: mobile floor → desktop ceiling) ---- */
+  --fs-hero:      clamp(2.75rem, 4.2vw + 1rem, 5rem);      /* @kind spacing */ /* 44 → 80  display hero */
+  --fs-display:   clamp(2.25rem, 2.4vw + 1.25rem, 3.5rem); /* @kind spacing */ /* 36 → 56  page titles */
+  --fs-section:   clamp(1.625rem, 0.8vw + 1.25rem, 2rem);  /* @kind spacing */ /* 26 → 32  section heads */
+  --fs-bullet:    clamp(1.5rem, 1vw + 1.25rem, 1.875rem);  /* @kind spacing */ /* 24 → 30  feature lines */
+  --fs-body-lead: clamp(1.125rem, 0.4vw + 1rem, 1.25rem);  /* @kind spacing */ /* 18 → 20  lead paragraph */
+  --fs-body:      1rem;        /* @kind spacing */ /* 16  default body (marketing/long-form) */
+  --fs-meta:      0.875rem;    /* @kind spacing */ /* 14  meta, captions */
+  --fs-mono:      0.8125rem;   /* @kind spacing */ /* 13  operator chrome, mono labels */
+  --fs-eyebrow:   0.6875rem;   /* @kind spacing */ /* 11  uppercase eyebrow/label level (dashboard) */
+
+  /* ---- App-density levels (v3 — the dense data-UI ramp; the dashboard's
+         default body is --fs-ui-body, NOT --fs-body) ---- */
+  --fs-ui-body:   0.84375rem;  /* @kind spacing */ /* 13.5 app body, rows, controls */
+  --fs-ui-label:  0.71875rem;  /* @kind spacing */ /* 11.5 app secondary labels (sentence case) */
+
+  /* ---- Signature sizes (the Caveat character moment) ---- */
+  --fs-signature:  clamp(2.75rem, 3.5vw + 1rem, 4.25rem);  /* @kind spacing */ /* 44 → 68  one step LARGER than hero */
+  --fs-numeral:    clamp(1.5rem, 1vw + 1.125rem, 1.875rem);/* @kind spacing */ /* 24 → 30  hand-set numerals */
+
+  /* ---- Weights ---- */
+  --fw-regular:  400;   /* @kind other */
+  --fw-medium:   500;   /* @kind other */ /* default emphasis — "competent", not shouty */
+  --fw-semibold: 600;   /* @kind other */
+
+  /* ---- Line heights ---- */
+  --lh-tight:  1.05;   /* @kind other */ /* display headlines */
+  --lh-snug:   1.2;    /* @kind other */ /* sub-heads, multi-line titles */
+  --lh-body:   1.6;    /* @kind other */ /* body copy */
+  --lh-relaxed:1.7;    /* @kind other */ /* long-form prose */
+
+  /* ---- Tracking ---- */
+  --ls-display: -0.02em;  /* @kind other */ /* tighten large serif */
+  --ls-tight:   -0.012em; /* @kind other */
+  --ls-mono:    0.08em;   /* @kind other */ /* uppercase mono labels */
+}

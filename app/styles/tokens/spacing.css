@@ -1,0 +1,59 @@
+/* =========================================================================
+   Clawdia — Spacing, layout, radii, edges
+   Variable editorial rhythm (NOT a uniform 8pt cadence) — negative space is
+   deliberately sized, per Notion's "negative space as content". Corners run
+   a coherent ramp (v3 round 3): interactive chrome (buttons, chips, avatars,
+   selects, segmented controls) = --radius-md; inner tiles (stage cards,
+   stat/score tiles) = --radius-lg; cards = --radius-xl; pills stay
+   --radius-pill. --radius-xs is reserved for INDICATORS (nav accent bar,
+   tiny ticks) — never whole interactive surfaces.
+   ========================================================================= */
+
+:root {
+  /* ---- Base spacing step (use multiples; rhythm tokens for big gaps) ---- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  24px;
+  --space-6:  32px;
+  --space-7:  48px;
+  --space-8:  64px;
+  --space-9:  88px;
+
+  /* ---- Editorial section rhythm (variable pacing, fluid) ---- */
+  --rhythm-tight:   clamp(72px, 7vw, 112px);   /* @kind spacing */
+  --rhythm-default: clamp(112px, 11vw, 180px); /* @kind spacing */
+  --rhythm-loose:   clamp(160px, 16vw, 240px); /* @kind spacing */
+
+  /* ---- Layout ---- */
+  --page-max:    1200px;   /* marketing measure */
+  --page-max-app:1400px;   /* product/dashboard SINGLE-COLUMN comfort measure — the
+                              cap for a one-column page (Settings + any route without
+                              the wide grid). Overview reads --page-max-grid via
+                              [data-wide], at every width. S57, 2026-06-15 (was 1120). */
+  --page-max-grid:1760px;  /* product/dashboard MULTI-COLUMN measure (S59) — the wider
+                              bound the Overview responsive grid fills on wide screens:
+                              two comfortable ~810px columns at 2560, still bounding the
+                              truly-enormous case. Overview-scoped (`[data-wide]`); a
+                              single-column page keeps --page-max-app. */
+  --page-gutter: 24px;     /* widens to 48px ≥900px (see below) */
+
+  /* ---- Corner radii (coherent ramp) ---- */
+  --radius-xs:  2px;   /* INDICATORS only — nav accent bar, tiny ticks; never interactive surfaces */
+  --radius-sm:  4px;   /* focus-ring corners, skeleton bars — small non-chrome details */
+  --radius-md:  7px;   /* interactive chrome — buttons, chips, avatars, selects, segmented controls */
+  --radius-lg:  10px;  /* inner tiles (stage cards, stat/score tiles) + panels/popovers */
+  --radius-xl:  12px;  /* cards */
+  --radius-2xl: 16px;  /* the app-shell content panel — the inset rounded surface the page floats in (S57) */
+  --radius-pill: 20px; /* status pills ONLY — used sparingly */
+
+  /* ---- Edges ---- */
+  --hairline:   1px solid var(--color-surface-subtle);
+  --rule:       1.5px solid var(--color-ink);   /* the editorial left-rule */
+  --border-card:1px solid var(--color-surface-subtle);
+}
+
+@media (min-width: 900px) {
+  :root { --page-gutter: 48px; }
+}

@@ -1,0 +1,257 @@
+/* =========================================================================
+   Clawdia — Effects: hairlines, elevations, edges, glass, glow, motion vars
+   v3 (2026-06-10, taste contract): depth is figure-ground done honestly —
+   raised cards are BRIGHTER than the canvas and carry a half-pixel ink ring
+   + one soft ambient shadow (light), or a white-alpha ring with shadows
+   nearly off (dark). Glass is the floating layer ONLY: clean edge, no
+   outline, no specular shine at rest. Glow is the hover language (spills,
+   tints neighbors); tight + warm + low-alpha in light, freer in dark.
+   ========================================================================= */
+
+:root {
+  /* ---- Hairlines (warm-ink, four weights) ---- */
+  --hairline-strong: rgba(29, 27, 23, 0.16);   /* primary card border */
+  --hairline-soft:   rgba(29, 27, 23, 0.10);   /* secondary card border */
+  --hairline-faint:  rgba(29, 27, 23, 0.08);   /* icon tiles */
+  --hairline-hair:   rgba(29, 27, 23, 0.07);   /* row dividers */
+
+  /* ---- Card edge + elevation (the claude.ai recipe — ring + ambient) ---- */
+  --edge-card: 0 0 0 0.5px rgba(31, 29, 26, 0.22);            /* half-pixel ink ring */
+  --shadow-ambient: 0 4px 20px rgba(31, 29, 26, 0.07);        /* one soft ambient */
+  --card-shadow: 0 0 0 0.5px rgba(31, 29, 26, 0.22), 0 4px 20px rgba(31, 29, 26, 0.07);
+  --card-shadow-hover: 0 0 0 0.5px rgba(31, 29, 26, 0.26), 0 10px 32px -6px rgba(31, 29, 26, 0.12);
+  /* barely-there material sheen on raised cards (1-2% luminance gradient) */
+  --card-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 38%);
+
+  /* ---- Legacy elevations (marketing surface; keep until its own v3 pass) ---- */
+  --elevation-rest:    0 4px 10px -4px rgba(29, 27, 23, 0.12);
+  --elevation-card:    0 22px 60px rgba(29, 27, 23, 0.08);
+  --elevation-panel:   0 18px 40px -22px rgba(29, 27, 23, 0.18);
+  --elevation-floor:   0 8px 16px -6px rgba(29, 27, 23, 0.14);
+
+  /* ---- Highlights (top-edge catch on raised cards) ---- */
+  --highlight-inset: inset 0 1px 0 rgba(255, 254, 251, 0.82);
+
+  /* ---- Liquid Glass (floating layer ONLY: bars, popovers, sheets — never
+         content cards). Owner-tuned dose: a CALM frost (blur 28 /
+         brightness 108%, NO saturate boost — the 180% saturate read too
+         vibrant on light) over a light tint so the backdrop reads through.
+         --glass-shadow = inset top-highlight (glass thickness) + layered
+         drops; the highlight defines the edge. (An SVG refraction lens was
+         trialled in #408 and removed — janky + a per-panel perf cost.) ---- */
+  --glass-filter: blur(28px) brightness(108%);
+  --glass-bg: rgba(255, 255, 255, 0.15);
+  --glass-bg-dense: rgba(250, 248, 243, 0.80);  /* when legibility needs more */
+  --glass-bg-modal: rgba(250, 248, 243, 0.52);  /* the Ask Spotlight palette — see-through enough to READ as glass, opaque enough for a modal */
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 8px rgba(0, 0, 0, 0.12), 0 8px 34px rgba(0, 0, 0, 0.24);
+  --glass-edge: none;
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);  /* imperceptible */
+
+  /* ---- Glow (hover delight: light = tight, warm, low-alpha) ---- */
+  --glow-color: rgba(200, 99, 46, 0.20);
+  --glow-hover: 0 0 18px -8px rgba(200, 99, 46, 0.22), 0 0 40px -20px rgba(200, 99, 46, 0.12);
+  --glow-spill: 0 0 28px -10px rgba(200, 99, 46, 0.14); /* neighbors catching the tint */
+
+  /* ---- Pointer-tilt (VisionOS-style; hovered CLICKABLE elements only) ---- */
+  --tilt-sheen: rgba(255, 247, 235, 0.22);
+  --tilt-lift:  0 18px 34px -14px rgba(29, 27, 23, 0.28);
+
+  /* ---- CTA glow: 4-layer warm luminance lift (hover only — the flourish) ---- */
+  --cta-glow:
+    0 0 8px -1px rgba(255, 198, 132, 0.55),
+    0 0 30px -4px rgba(255, 246, 226, 0.90),
+    0 0 64px -14px rgba(255, 250, 236, 0.72),
+    0 0 120px -32px rgba(255, 252, 244, 0.52),
+    0 8px 16px -6px rgba(29, 27, 23, 0.14);
+
+  /* ---- Dot-matrix (the loading/shimmer language — a reaction, never a
+         permanent texture; settles to rest-opacity after the shimmer) ---- */
+  --matrix-dot: rgba(29, 27, 23, 0.10);
+  --matrix-wave-front: rgba(200, 99, 46, 0.50);   /* the warm, brighter wave front */
+  --matrix-wave-trail: rgba(29, 27, 23, 0.18);    /* the neutral trail it fades to */
+  --matrix-rest-opacity: 0.05;
+  --matrix-size: 14px;   /* dot grid pitch */
+
+  /* ---- Skeleton bone shimmer (the placeholder loading language — owner pick
+         2026-06-18, supersedes the dot-matrix-only skeleton shimmer). A soft
+         warm sheen sweeps across each placeholder bone; the sheen lifts the
+         panel-toned bone toward the near-white raised tone so the sweep READS
+         (the dot-matrix backdrop was too faint to register). The dot-matrix
+         stays a load/reload REACTION elsewhere (filter & date switches, nav). ---- */
+  --skeleton-sheen: rgba(255, 254, 251, 0.65);
+  --skeleton-band: 200px;   /* fixed sweep-band width — uniform across all bones so wide + narrow placeholders catch the same light at the same cadence */
+
+  /* ---- Scrim (modal backdrop — theme-aware) ---- */
+  --scrim: rgba(29, 27, 23, 0.32);
+  --scrim-soft: rgba(29, 27, 23, 0.18);  /* lighter dim for the frosted command palette — the heavy backdrop-blur does the focusing, so the blurred page reads as the glass backdrop */
+
+  /* ---- Z scale (the floating-layer stack — never ad-hoc numbers) ---- */
+  --z-bar:     40;   /* @kind other */ /* sticky glass bars */
+  --z-sheet:   80;   /* @kind other */ /* modal sheets — above bars */
+  --z-nav:     90;   /* @kind other */ /* the pull-down nav layer — above sheets */
+  --z-popover: 100;  /* @kind other */ /* popovers/selects — TOPMOST: they portal
+                        to body and the trigger may live inside ANY lower layer
+                        (the mobile date-range Select sits inside the z-90 nav
+                        sheet — at the old 60 it opened underneath, unusable) */
+
+  /* ---- Motion ---- */
+  --ease-out-quart:  cubic-bezier(0.22, 1, 0.36, 1);   /* @kind other */ /* dampened settle, no overshoot */
+  --ease-draw:       cubic-bezier(0.64, 0, 0.18, 1);   /* @kind other */ /* underline / stroke draw */
+  --ease-rise:       cubic-bezier(0.16, 1, 0.3, 1);    /* @kind other */ /* entrance rise */
+  --dur-fast:   150ms;   /* @kind other */
+  --dur-base:   240ms;   /* @kind other */
+  --dur-slow:   620ms;   /* @kind other */
+  --dur-shimmer: 900ms;  /* @kind other */ /* one matrix shimmer pass */
+  --dur-skeleton: 1.6s;  /* @kind other */ /* one skeleton bone-sweep pass (soft + slow) */
+  /* container-transform morph (Ask overlay → /ask). 400ms = slow enough to read
+     the Q&A move, fast enough to feel direct (Next/React VT guidance). Used by
+     the ::view-transition-group of the shared .ask-q / .ask-a elements. */
+  --dur-morph:  400ms;   /* @kind other */
+  /* slow ambient loop — the "alive" breathing on a long thinking wait. */
+  --dur-breath: 1.8s;    /* @kind other */
+  /* one seamless left→right pass of the "thinking" label shine. A touch faster than
+     the breath; the loop is seamless (travel = one gradient period) so this is the
+     pass cadence, not a snap interval. */
+  --dur-shimmer-text: 1.4s;  /* @kind other */
+  /* per-word streamed-prose reveal — slow + smooth so each word fade reads. */
+  --dur-reveal: 630ms;   /* @kind other */
+}
+
+/* Dark-mode retune — edges become white-alpha rings, shadows nearly off
+   (depth = lightness steps, not drop shadows); glow gets freer; glass tints
+   from the graphite canvas. Applies to OS-dark; mirrored by [data-theme]. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --hairline-strong: rgba(242, 237, 227, 0.18);
+    --hairline-soft:   rgba(242, 237, 227, 0.12);
+    --hairline-faint:  rgba(242, 237, 227, 0.09);
+    --hairline-hair:   rgba(242, 237, 227, 0.07);
+
+    --edge-card: 0 0 0 1px rgba(242, 237, 227, 0.10);
+    --shadow-ambient: 0 4px 18px rgba(0, 0, 0, 0.20);
+    --card-shadow: 0 0 0 1px rgba(242, 237, 227, 0.10);
+    --card-shadow-hover: 0 0 0 1px rgba(242, 237, 227, 0.16), 0 10px 28px -8px rgba(0, 0, 0, 0.40);
+    --card-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 38%);
+
+    --elevation-rest:  0 6px 14px -4px rgba(0, 0, 0, 0.55);
+    --elevation-card:  0 22px 60px rgba(0, 0, 0, 0.50);
+    --elevation-panel: 0 18px 40px -18px rgba(0, 0, 0, 0.60);
+    --elevation-floor: 0 8px 16px -6px rgba(0, 0, 0, 0.55);
+    --highlight-inset: inset 0 1px 0 rgba(242, 237, 227, 0.10);
+
+    --glass-bg: rgba(30, 29, 26, 0.42);
+    --glass-bg-dense: rgba(27, 26, 24, 0.80);
+    --glass-bg-modal: rgba(27, 26, 24, 0.56);
+    --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 2px 8px rgba(0, 0, 0, 0.4), 0 8px 34px rgba(0, 0, 0, 0.55);
+    --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+    --glow-color: rgba(217, 122, 69, 0.35);
+    --glow-hover: 0 0 24px -6px rgba(217, 122, 69, 0.35), 0 0 64px -24px rgba(217, 122, 69, 0.25);
+    --glow-spill: 0 0 36px -12px rgba(217, 122, 69, 0.22);
+
+    --tilt-sheen: rgba(255, 255, 255, 0.30);
+    --tilt-lift:  0 24px 44px -16px rgba(0, 0, 0, 0.55);
+
+    --cta-glow:
+      0 0 10px -1px rgba(255, 175, 100, 0.85),
+      0 0 34px -4px rgba(255, 205, 145, 0.70),
+      0 0 70px -14px rgba(255, 230, 180, 0.55),
+      0 0 130px -32px rgba(255, 245, 215, 0.40),
+      0 8px 16px -6px rgba(0, 0, 0, 0.55);
+
+    --matrix-dot: rgba(242, 237, 227, 0.10);
+    --matrix-wave-front: rgba(217, 122, 69, 0.55);
+    --matrix-wave-trail: rgba(242, 237, 227, 0.18);
+    --skeleton-sheen: rgba(242, 237, 227, 0.12);   /* lower-alpha on dark — a bright sweep would glare */
+    --scrim: rgba(0, 0, 0, 0.55);
+  --scrim-soft: rgba(0, 0, 0, 0.40);  /* lighter dim for the frosted command palette — the heavy backdrop-blur does the focusing */
+  }
+}
+
+/* Forced light — re-asserts the :root light values so a user can override a
+   dark OS preference back to light. Same specificity as the @media block,
+   later in source, so it wins. MUST mirror the :root set above. */
+[data-theme="light"] {
+  --hairline-strong: rgba(29, 27, 23, 0.16);
+  --hairline-soft:   rgba(29, 27, 23, 0.10);
+  --hairline-faint:  rgba(29, 27, 23, 0.08);
+  --hairline-hair:   rgba(29, 27, 23, 0.07);
+
+  --edge-card: 0 0 0 0.5px rgba(31, 29, 26, 0.22);
+  --shadow-ambient: 0 4px 20px rgba(31, 29, 26, 0.07);
+  --card-shadow: 0 0 0 0.5px rgba(31, 29, 26, 0.22), 0 4px 20px rgba(31, 29, 26, 0.07);
+  --card-shadow-hover: 0 0 0 0.5px rgba(31, 29, 26, 0.26), 0 10px 32px -6px rgba(31, 29, 26, 0.12);
+  --card-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 38%);
+
+  --elevation-rest:    0 4px 10px -4px rgba(29, 27, 23, 0.12);
+  --elevation-card:    0 22px 60px rgba(29, 27, 23, 0.08);
+  --elevation-panel:   0 18px 40px -22px rgba(29, 27, 23, 0.18);
+  --elevation-floor:   0 8px 16px -6px rgba(29, 27, 23, 0.14);
+  --highlight-inset: inset 0 1px 0 rgba(255, 254, 251, 0.82);
+
+  --glass-bg: rgba(255, 255, 255, 0.15);
+  --glass-bg-dense: rgba(250, 248, 243, 0.80);
+  --glass-bg-modal: rgba(250, 248, 243, 0.52);
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 8px rgba(0, 0, 0, 0.12), 0 8px 34px rgba(0, 0, 0, 0.24);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  --glow-color: rgba(200, 99, 46, 0.20);
+  --glow-hover: 0 0 18px -8px rgba(200, 99, 46, 0.22), 0 0 40px -20px rgba(200, 99, 46, 0.12);
+  --glow-spill: 0 0 28px -10px rgba(200, 99, 46, 0.14);
+
+  --tilt-sheen: rgba(255, 247, 235, 0.22);
+  --tilt-lift:  0 18px 34px -14px rgba(29, 27, 23, 0.28);
+
+  --cta-glow:
+    0 0 8px -1px rgba(255, 198, 132, 0.55),
+    0 0 30px -4px rgba(255, 246, 226, 0.90),
+    0 0 64px -14px rgba(255, 250, 236, 0.72),
+    0 0 120px -32px rgba(255, 252, 244, 0.52),
+    0 8px 16px -6px rgba(29, 27, 23, 0.14);
+
+  --matrix-dot: rgba(29, 27, 23, 0.10);
+  --matrix-wave-front: rgba(200, 99, 46, 0.50);
+  --matrix-wave-trail: rgba(29, 27, 23, 0.18);
+  --skeleton-sheen: rgba(255, 254, 251, 0.65);
+  --scrim: rgba(29, 27, 23, 0.32);
+  --scrim-soft: rgba(29, 27, 23, 0.18);  /* lighter dim for the frosted command palette — the heavy backdrop-blur does the focusing, so the blurred page reads as the glass backdrop */
+}
+
+[data-theme="dark"] {
+  --hairline-strong: rgba(242, 237, 227, 0.18);
+  --hairline-soft:   rgba(242, 237, 227, 0.12);
+  --hairline-faint:  rgba(242, 237, 227, 0.09);
+  --hairline-hair:   rgba(242, 237, 227, 0.07);
+  --edge-card: 0 0 0 1px rgba(242, 237, 227, 0.10);
+  --shadow-ambient: 0 4px 18px rgba(0, 0, 0, 0.20);
+  --card-shadow: 0 0 0 1px rgba(242, 237, 227, 0.10);
+  --card-shadow-hover: 0 0 0 1px rgba(242, 237, 227, 0.16), 0 10px 28px -8px rgba(0, 0, 0, 0.40);
+  --card-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 38%);
+  --elevation-rest:  0 6px 14px -4px rgba(0, 0, 0, 0.55);
+  --elevation-card:  0 22px 60px rgba(0, 0, 0, 0.50);
+  --elevation-panel: 0 18px 40px -18px rgba(0, 0, 0, 0.60);
+  --elevation-floor: 0 8px 16px -6px rgba(0, 0, 0, 0.55);
+  --highlight-inset: inset 0 1px 0 rgba(242, 237, 227, 0.10);
+  --glass-bg: rgba(30, 29, 26, 0.42);
+  --glass-bg-dense: rgba(27, 26, 24, 0.80);
+  --glass-bg-modal: rgba(27, 26, 24, 0.56);
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 2px 8px rgba(0, 0, 0, 0.4), 0 8px 34px rgba(0, 0, 0, 0.55);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glow-color: rgba(217, 122, 69, 0.35);
+  --glow-hover: 0 0 24px -6px rgba(217, 122, 69, 0.35), 0 0 64px -24px rgba(217, 122, 69, 0.25);
+  --glow-spill: 0 0 36px -12px rgba(217, 122, 69, 0.22);
+  --tilt-sheen: rgba(255, 255, 255, 0.30);
+  --tilt-lift:  0 24px 44px -16px rgba(0, 0, 0, 0.55);
+  --cta-glow:
+    0 0 10px -1px rgba(255, 175, 100, 0.85),
+    0 0 34px -4px rgba(255, 205, 145, 0.70),
+    0 0 70px -14px rgba(255, 230, 180, 0.55),
+    0 0 130px -32px rgba(255, 245, 215, 0.40),
+    0 8px 16px -6px rgba(0, 0, 0, 0.55);
+  --matrix-dot: rgba(242, 237, 227, 0.10);
+  --matrix-wave-front: rgba(217, 122, 69, 0.55);
+  --matrix-wave-trail: rgba(242, 237, 227, 0.18);
+  --skeleton-sheen: rgba(242, 237, 227, 0.12);   /* lower-alpha on dark — a bright sweep would glare */
+  --scrim: rgba(0, 0, 0, 0.55);
+  --scrim-soft: rgba(0, 0, 0, 0.40);  /* lighter dim for the frosted command palette — the heavy backdrop-blur does the focusing */
+}

@@ -1,0 +1,21 @@
+/* =========================================================================
+   Clawdia — webfonts
+   All four families are the real, licensed Clawdia typefaces (per DESIGN.md
+   §Typography), every one free + open and served from Google Fonts:
+     · EB Garamond  — OFL  — FONT_DISPLAY  (hero, section titles, editorial)
+     · Geist        — MIT  — FONT_BODY     (body, UI labels, plugin docs)
+     · Caveat       — OFL  — FONT_WORDMARK (the "Clawdia" wordmark + numerals ONLY)
+     · JetBrains Mono — Apache 2.0 — FONT_MONO (code, hexes, tabular numerics)
+
+   Consumers link the project root styles.css; this @import chains the real
+   @font-face rules from Google's CDN so the families resolve everywhere.
+
+   ⚠️ BUNDLER CAVEAT: a CSS bundler that minifies/concatenates this file may DROP
+   this nested remote @import (confirmed: Next 16 Turbopack / Lightning CSS does —
+   the families silently fall back to system fonts). Such consumers must load the
+   families via a direct <head> <link> or next/font instead; see
+   apps/app/app/layout.tsx. This @import still works for consumers that serve the
+   CSS UNBUNDLED (e.g. the static marketing site). Keep the two font URLs in sync.
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Geist:wght@400;500;600;700&family=Caveat:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');

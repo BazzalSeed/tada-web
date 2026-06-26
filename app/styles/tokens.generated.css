@@ -1,0 +1,135 @@
+/* =========================================================================
+   GENERATED FILE — DO NOT EDIT BY HAND.
+   Emitted from src/clawdia/design/tokens.py via tokens_build.py.
+   Edit the Python source, then run `python -m clawdia.design.tokens_build`.
+   Owns ONLY brand colors (light + dark) and font families. Web-only
+   scale/rhythm/radii/effects live in tokens.web.css.
+   ========================================================================= */
+
+:root {
+  color-scheme: light dark;
+
+  /* ---- Color (light) ---- */
+  --color-surface: #f0ece3;
+  --color-surface-subtle: #eae5da;
+  --color-surface-panel: #f8f5ee;
+  --color-surface-raised: #fffefb;
+  --color-chrome: #e7e1d6;
+  --color-ink: #1d1b17;
+  --color-ink-soft: #5d574d;
+  --color-ink-muted: #948d80;
+  --color-accent: #c8632e;
+  --color-accent-deep: #9b481e;
+  --color-accent-bright: #c8632e;
+  --color-on-accent: #f7f3ec;
+  --color-success: #5f7a4a;
+  --color-warning: #c89a3e;
+  --color-error: #a14a3e;
+  --color-danger-solid: #bf3a2b;
+  --color-caution: #d98a55;
+  --color-accent-text: #9b481e;
+  --color-caution-text: #8f5222;
+  --accent-tint: rgba(200, 99, 46, 0.10);
+  --accent-dust: rgba(200, 99, 46, 0.14);
+  --accent-scribble: rgba(200, 99, 46, 0.22);
+
+  /* ---- Platform identity (category dots — invariant; never a state token) ---- */
+  --platform-tiktok: #5f7a4a;
+  --platform-youtube: #c89a3e;
+  --platform-shopify: #8a6d52;
+  --platform-instagram: #a14a3e;
+  --platform-impact: #c8632e;
+
+  /* ---- Data-viz categorical palette (chart series — the multi-hue exception) ---- */
+  --dataviz-1: #c8632e;
+  --dataviz-2: #6a9bcc;
+  --dataviz-3: #788c5d;
+  --dataviz-4: #d4a27f;
+  --dataviz-5: #a3718a;
+  --dataviz-6: #6f908c;
+  --dataviz-7: #7a7295;
+  --dataviz-8: #8a6d52;
+
+  /* ---- Font families ---- */
+  --font-display: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  --font-body: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
+  --font-wordmark: 'Caveat', 'Brush Script MT', cursive;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: #1b1a18;
+    --color-surface-subtle: #2d2c29;
+    --color-surface-panel: #23221f;
+    --color-surface-raised: #282724;
+    --color-chrome: #121210;
+    --color-ink: #f2ede3;
+    --color-ink-soft: #b9b2a4;
+    --color-ink-muted: #807a6e;
+    --color-accent-bright: #d97a45;
+    --color-success: #93b277;
+    --color-warning: #d3a854;
+    --color-error: #cf8779;
+    --color-danger-solid: #d94b3b;
+    --color-caution: #e0a070;
+    --color-accent-text: #d97a45;
+    --color-caution-text: #e0a070;
+    --accent-tint: rgba(200, 99, 46, 0.22);
+    --accent-dust: rgba(200, 99, 46, 0.30);
+    --accent-scribble: rgba(216, 113, 56, 0.50);
+  }
+}
+
+/* Explicit per-user theme overrides. Both come AFTER the @media block and share
+   its specificity, so source order lets them WIN — a user can force light on a
+   dark-OS machine and dark on a light-OS one. The app defaults to "auto" (no
+   data-theme attribute → the @media query / OS preference governs, ADR-019 §5);
+   a pinned choice sets the attribute. Each override re-pins `color-scheme` so
+   the UA's native chrome (scrollbars, form controls, selection) follows the
+   PINNED theme, not the OS. */
+[data-theme="light"] {
+  color-scheme: light;
+    --color-surface: #f0ece3;
+    --color-surface-subtle: #eae5da;
+    --color-surface-panel: #f8f5ee;
+    --color-surface-raised: #fffefb;
+    --color-chrome: #e7e1d6;
+    --color-ink: #1d1b17;
+    --color-ink-soft: #5d574d;
+    --color-ink-muted: #948d80;
+    --color-accent-bright: #c8632e;
+    --color-success: #5f7a4a;
+    --color-warning: #c89a3e;
+    --color-error: #a14a3e;
+    --color-danger-solid: #bf3a2b;
+    --color-caution: #d98a55;
+    --color-accent-text: #9b481e;
+    --color-caution-text: #8f5222;
+    --accent-tint: rgba(200, 99, 46, 0.10);
+    --accent-dust: rgba(200, 99, 46, 0.14);
+    --accent-scribble: rgba(200, 99, 46, 0.22);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+    --color-surface: #1b1a18;
+    --color-surface-subtle: #2d2c29;
+    --color-surface-panel: #23221f;
+    --color-surface-raised: #282724;
+    --color-chrome: #121210;
+    --color-ink: #f2ede3;
+    --color-ink-soft: #b9b2a4;
+    --color-ink-muted: #807a6e;
+    --color-accent-bright: #d97a45;
+    --color-success: #93b277;
+    --color-warning: #d3a854;
+    --color-error: #cf8779;
+    --color-danger-solid: #d94b3b;
+    --color-caution: #e0a070;
+    --color-accent-text: #d97a45;
+    --color-caution-text: #e0a070;
+    --accent-tint: rgba(200, 99, 46, 0.22);
+    --accent-dust: rgba(200, 99, 46, 0.30);
+    --accent-scribble: rgba(216, 113, 56, 0.50);
+}

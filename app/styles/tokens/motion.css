@@ -1,0 +1,222 @@
+/* =========================================================================
+   Load-in motion — the dashboard's "comes alive on load" layer.
+
+   Every animation here is gated on `prefers-reduced-motion: no-preference`, so
+   reduced-motion users get the final state with NO motion (the elements just
+   appear). Durations/easings come from the token scale (tokens.web spacing/
+   effects). Classes are additive: an element renders correctly with or without
+   them — the keyframes only animate INTO the element's normal resting state, so
+   the static (and reduced-motion) render is always the finished design.
+
+   Fill mode is BACKWARDS, never both/forwards (round 12): each to-state
+   equals the element's natural resting style, so a forwards fill adds
+   nothing — and because the animation origin outranks author styles AND
+   inline styles, a forwards fill would permanently lock out hover
+   transforms (Tiltable's JS tilt, the chips' hover lift). Backwards keeps
+   the from-state through the delay (the Reveal hold), then RELEASES.
+   ========================================================================= */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---- consistent section entrance: fade + slight rise (stagger via --enter-delay) ---- */
+  @keyframes tada-enter {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .tada-enter {
+    animation: tada-enter var(--dur-base) var(--ease-out-quart) backwards;
+    animation-delay: var(--enter-delay, 0ms);
+  }
+
+  /* ---- a number "ticks" in with a subtle scale settle (the bounce is a
+         transform, never a numeric overshoot — CountUp keeps the figure honest). ---- */
+  @keyframes tada-tick {
+    0% {
+      transform: scale(0.96);
+    }
+    60% {
+      transform: scale(1.035);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  .tada-tick {
+    animation: tada-tick var(--dur-slow) var(--ease-out-quart) backwards;
+    animation-delay: var(--enter-delay, 120ms);
+  }
+
+  /* ---- fade-only entrance — for elements whose geometry DOCKS onto
+         neighbors (source threads meeting chip centers): a translate would
+         visibly detach the docking mid-flight, so they only fade. ---- */
+  @keyframes tada-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .tada-fade {
+    animation: tada-fade var(--dur-base) var(--ease-out-quart) backwards;
+    animation-delay: var(--enter-delay, 0ms);
+  }
+
+  /* ---- chart area "rises to its level" from the baseline ---- */
+  @keyframes tada-rise {
+    from {
+      opacity: 0;
+      transform: scaleY(0.78);
+    }
+    to {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+  }
+  .tada-rise {
+    transform-origin: bottom;
+    animation: tada-rise var(--dur-slow) var(--ease-out-quart) backwards;
+    animation-delay: var(--enter-delay, 120ms);
+  }
+
+  /* ---- a line/stroke draws itself on. Pair with pathLength="1" on the path so
+         the normalized dasharray of 1 == the whole path. ---- */
+  @keyframes tada-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  .tada-draw {
+    stroke-dasharray: 1;
+    animation: tada-draw var(--dur-slow) var(--ease-out-quart) backwards;
+    animation-delay: var(--enter-delay, 120ms);
+  }
+
+  /* ---- a donut/ring arc fills up. Pair with pathLength="100" + a base
+         stroke-dasharray of "<arc> <gap>"; the keyframe grows it from 0. ---- */
+  @keyframes tada-arc {
+    from {
+      stroke-dasharray: 0 100;
+    }
+  }
+  .tada-arc {
+    animation: tada-arc var(--dur-slow) var(--ease-out-quart) backwards;
+    animation-delay: var(--enter-delay, 160ms);
+  }
+
+  /* ---- a hand-written note "scribes" on: a left→right clip wipe (the
+         reliable write-on — true glyph masking is jank). The generous
+         vertical/leading insets keep Caveat ascenders + the note's tilt
+         unclipped. Pair with tada-draw on the note's connector so the
+         stroke draws after the words land (sequence via --enter-delay). ---- */
+  @keyframes tada-scribe {
+    from {
+      clip-path: inset(-24% 102% -24% -8%);
+    }
+    to {
+      clip-path: inset(-24% -8% -24% -8%);
+    }
+  }
+  .tada-scribe {
+    animation: tada-scribe calc(var(--dur-slow) * 0.85) var(--ease-out-quart) backwards;
+    animation-delay: var(--enter-delay, 0ms);
+  }
+
+  /* ---- scroll-reveal gating (the Reveal component). Inside a .tada-reveal
+         section, every load-in animation HOLDS its from-state (paused, fill
+         backwards) until the section enters the viewport and gets .is-shown —
+         so graphs/numbers animate when first SEEN, never wasted offscreen.
+         Outside a Reveal, the classes animate on load exactly as before.
+
+         Scoped to `.js`, which the app RENDERS on <html> server-side (its root
+         layout) so it survives React hydration. A before-paint SCRIPT that added
+         the class instead was reconciled away by React 19 — the hold never armed
+         in production and every card animated on load. `.js` is therefore always
+         present when the page is served; the no-JS safety is the layout's
+         <noscript>, which sets `animation: none` on these classes so a JS-disabled
+         client shows the final state and the always-present `.js` can't strand
+         content. ---- */
+  .js .tada-reveal.tada-enter:not(.is-shown) {
+    animation-play-state: paused;
+  }
+  .js .tada-reveal:not(.is-shown)
+    :is(.tada-enter, .tada-rise, .tada-draw, .tada-stroke-wipe, .tada-arc, .tada-tick, .tada-scribe, .tada-fade) {
+    animation-play-state: paused;
+  }
+
+  /* ---- skeleton bone shimmer: the placeholder loading language (2026-06-18,
+         owner pick — supersedes the dot-matrix-only skeleton shimmer; the
+         classic, universally-legible "content is loading" sweep). A soft warm
+         sheen of a FIXED width (--skeleton-band) travels across each placeholder
+         bone. Fixed-width is the coherence move (v0.15): a per-element translate
+         scaled the band to each bone's width, so a wide chart block and a narrow
+         label shimmered at visibly different speeds and read as different effects
+         — the "shapes don't match" tell. A constant band + constant velocity =
+         one material catching one light. Lives on SkeletonBlock + SkeletonRow's
+         bars, so EVERY component-owned `*Skeleton` inherits it by construction
+         (one lever). It's a non-repeating `background-image`, so it's clipped to
+         the bone's border-radius / mask / clip-path for free — that's how the
+         donut RING and chart AREA silhouettes get a shape-tracing sweep; the bone
+         keeps its base fill on `background-COLOR`, leaving `background-image` for
+         the sweep. Reduced-motion gated: no-preference users get the static bone
+         (its silhouette still reads — shape is not motion). ---- */
+  .tada-skeleton {
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      var(--skeleton-sheen),
+      transparent
+    );
+    background-repeat: no-repeat;
+    background-size: var(--skeleton-band) 100%;
+    /* linear: a constant-velocity light reads as ONE material across bones; an
+       eased loop would slow at the (off-bone) seams and desync wide vs narrow. */
+    animation: tada-skeleton-sweep var(--dur-skeleton) linear infinite;
+  }
+  @keyframes tada-skeleton-sweep {
+    from {
+      background-position: calc(-1 * var(--skeleton-band)) 0;
+    }
+    to {
+      background-position: calc(100% + var(--skeleton-band)) 0;
+    }
+  }
+
+  /* ---- dot-matrix shimmer: a load/reload REACTION (v3). A wave of opacity
+         sweeps the matrix once (or loops while .is-loading), then the matrix
+         settles to its rest opacity. Now a reaction for filter & date switches
+         and the nav reveal — NOT the skeleton placeholder language (that moved
+         to the bone sweep above). Never a permanent texture. ---- */
+  @keyframes tada-shimmer {
+    /* peak 0.5 (was 0.35 — over the ~0.10-alpha dots it read invisible);
+       rest stays the token. The shimmer must READ, then settle. */
+    0%   { opacity: var(--matrix-rest-opacity, 0.05); }
+    35%  { opacity: 0.5; }
+    100% { opacity: var(--matrix-rest-opacity, 0.05); }
+  }
+  .tada-shimmer {
+    animation: tada-shimmer var(--dur-shimmer) var(--ease-out-quart) 1 both;
+  }
+  .tada-shimmer.is-loading {
+    animation: tada-shimmer var(--dur-shimmer) var(--ease-out-quart) infinite both;
+  }
+
+  /* ---- radar pulse: a selected node announcing itself (metro stations,
+         live indicators). Quiet, slow, never a notification dot. ---- */
+  @keyframes tada-pulse {
+    0%   { box-shadow: 0 0 0 0 var(--glow-color); }
+    70%  { box-shadow: 0 0 0 9px rgba(0, 0, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+  }
+  .tada-pulse {
+    animation: tada-pulse 2.4s var(--ease-out-quart) infinite;
+  }
+}
