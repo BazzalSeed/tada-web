@@ -15,15 +15,11 @@ const { auth } = NextAuth(authConfig);
 export default auth((req) => {
   if (req.auth) return; // valid session → proceed
 
-  // Unauthenticated → the built-in sign-in page, preserving the intended
-  // destination via callbackUrl. /api/auth/signin lists BOTH Google AND (in
-  // non-prod) dev-login, so it's not a Google-only dead-end and the reviewer's
-  // e2e can reach an authed session through it. callbackUrl returns the user to
-  // /app post-sign-in; the branded marketing "/" + its Log-in CTA is a separate
-  // entry (frontend's).
-  const signInUrl = new URL("/api/auth/signin", req.nextUrl.origin);
-  signInUrl.searchParams.set("callbackUrl", req.nextUrl.pathname + req.nextUrl.search);
-  return Response.redirect(signInUrl);
+  // Unauthenticated → the branded landing "/". Its "Log in" CTA carries
+  // redirectTo:'/app', so a logged-out deep-linker lands on "/", signs in, and
+  // ends at /app. /dev-login stays directly reachable for the reviewer's
+  // test-session, and /api/auth/* remains public.
+  return Response.redirect(new URL("/", req.nextUrl.origin));
 });
 
 export const config = {
