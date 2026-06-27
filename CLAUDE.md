@@ -28,6 +28,9 @@ Tagline: **Not to-do. Ta-da.**
 - Keep providers/voice/executors behind interfaces (seams) so they can be swapped without touching the core.
 - Wire keys snake_case; TS fields camelCase.
 
+## Before pushing (local CI)
+- No hosted CI — CI runs locally. **Before every `git push`, run `npm run ci`** (typecheck + `npm test` unit + `npm run test:integration`) and push only if green. Integration tests need Docker running. Full rule in `AGENTS.md`.
+
 ## Local testing
 - Preview the landing page with the no-cache server: `python3 design/landing-preview/.nocache_server.py` (serves `:8731` with `Cache-Control: no-store` so the browser auto-refreshes).
 - **cmux browser = quick visual/spot checks** (fast; the user often has a cmux webview open). **Playwright MCP = thorough end-to-end testing** — required for any flow cmux's WKWebView can't drive: **file drop/upload, drag-and-drop, raw input injection, and full multi-step user journeys.** Don't report an interactive flow "verified" off a cmux check that couldn't actually exercise it; drive it in Playwright. (DOM-element-present ≠ visually-correct; seed/demo data ≠ the real data path — verify against real data with a screenshot.)
