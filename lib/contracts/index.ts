@@ -5,6 +5,7 @@
 // ============================================================================
 
 export * from "./types";
+export * from "./contacts";
 export * from "./filter";
 export * from "./extractor";
 export * from "./executors";

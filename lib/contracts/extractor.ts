@@ -47,13 +47,9 @@ export interface ExtractorClient {
 // Provider = Postmark; alias = u_<id>@in.gettada.app. Same capture-first pipeline.
 export const INBOUND_DOMAIN = "in.gettada.app";
 
-export function aliasForUser(userId: string): string {
-  throw new Error("not implemented");
-}
+export type AliasForUser = (userId: string) => string;
 
-export function userIdFromAlias(toAddress: string): string | null {
-  throw new Error("not implemented");
-}
+export type UserIdFromAlias = (toAddress: string) => string | null;
 
 export interface InboundEmail {
   from: string;
@@ -66,6 +62,4 @@ export interface InboundEmail {
 
 // POST /api/inbound/email — verify signature -> parse -> alias->user ->
 //   capture-first (Capture{kind:'email'} + plain Todo) -> extract() -> create todos.
-export function handleInboundEmail(req: Request): Promise<Response> {
-  throw new Error("not implemented");
-}
+export type HandleInboundEmail = (req: Request) => Promise<Response>;

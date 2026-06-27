@@ -19,6 +19,7 @@ export interface TadaStore {
   ): Promise<Todo>; // fractional index
   subtasks(userId: string, parentId: string): Promise<Todo[]>; // children where parentId == id
   createCapture(userId: string, c: Partial<Capture>): Promise<Capture>;
+  listCaptures(userId: string): Promise<Capture[]>; // captures for a user, newest first
   labels(userId: string): Promise<TodoLabel[]>;
   upsertLabelByName(userId: string, name: string): Promise<TodoLabel>;
   views(userId: string): Promise<SavedView[]>;

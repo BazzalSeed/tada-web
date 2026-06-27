@@ -12,7 +12,12 @@
 export type TodoStatus = "open" | "done" | "dismissed";
 export type Priority = "none" | "p1" | "p2" | "p3"; // p4 == none (native parity)
 export type ActionType = "none" | "meeting" | "reminder" | "research";
-export type ActionState = "none" | "proposed" | "done" | "failed";
+export type ActionState =
+  | "none"
+  | "proposed"
+  | "done"
+  | "failed"
+  | "needs_disambiguation";
 export type DateWindow = "any" | "today" | "overdue" | "next7" | "noDate";
 export type RecurFreq = "daily" | "weekly" | "monthly" | "yearly";
 export type CaptureKind = "image" | "text" | "file" | "email";
@@ -31,12 +36,30 @@ export interface RecurrenceRule {
   weekday?: number; // 1=Sun .. 7=Sat (weekly anchoring)
 }
 
+// ---- Contact resolution (meeting attendee disambiguation) ----
+export interface ContactCandidate {
+  name: string;
+  email: string;
+  org?: string;
+  photoUrl?: string;
+  rank?: number; // higher == better match
+}
+
+// A meeting attendee progressing unresolved(name) -> resolved(email).
+export interface Attendee {
+  name?: string;
+  email?: string;
+  status: "unresolved" | "resolved";
+  candidates?: ContactCandidate[]; // per-attendee picks while disambiguating
+}
+
 // Tagged union; the wire form is a bare object named by actionType.
 export type ActionPayload =
   | {
       kind: "meeting";
       title: string;
-      attendees?: string[] | null;
+      attendees?: string[] | null; // raw extracted names (extractor emits this)
+      resolvedAttendees?: Attendee[] | null; // disambiguation flow; Send gated until all resolved
       start?: string | null; // ISO8601 local, offset-less
       durationMin?: number; // default 30
       notes?: string | null;

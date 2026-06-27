@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.vercel
+.playwright-mcp
+*.log
+npm-debug.log*
+.DS_Store
+# .env is intentionally NOT ignored at build — but it's only read at runtime via
+# compose env_file, not baked into the image. Keep secrets out of image layers:
+.env
+.env.local

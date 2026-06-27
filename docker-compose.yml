@@ -1,0 +1,62 @@
+# Tada Web — self-contained local e2e stack.
+#   docker compose up  →  http://localhost:3000  →  /dev-login  →  full hero flow.
+# DB is a LOCAL Postgres (pgvector image), NOT cloud Neon. The app uses plain Prisma
+# over a standard Postgres URL, so no driver toggle is needed — we just point
+# DATABASE_URL/DIRECT_URL at the `db` container below.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: tada
+      POSTGRES_PASSWORD: tada
+      POSTGRES_DB: tada
+    # Host port mapping is only for external/debug access — the app reaches the DB
+    # over the compose network at db:5432 regardless. Override DB_PORT if 5432 is
+    # taken on the host (e.g. a local Postgres): DB_PORT=5433 docker compose up.
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - tada-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tada -d tada"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    # All secrets + cloud keys flow from the repo .env via env_file:
+    #   GEMINI_API_KEY, OPENAI_API_KEY, BLOB_READ_WRITE_TOKEN, AUTH_SECRET,
+    #   AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET  (gitignored; never baked into the image).
+    # The `environment:` block below ONLY sets what must differ from .env, and
+    # compose precedence (environment > env_file) makes those win — notably the
+    # local DB URL replaces .env's Neon URL. We deliberately do NOT list the
+    # secret/cloud keys here, so we never blank them out with an empty shell value.
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      # Local DB (overrides .env's Neon URL):
+      DATABASE_URL: postgresql://tada:tada@db:5432/tada
+      DIRECT_URL: postgresql://tada:tada@db:5432/tada
+      # Dev mode so backend's dev-login gate (NODE_ENV !== 'production') is active.
+      NODE_ENV: development
+      ENABLE_DEV_LOGIN: "1"
+      DEV_LOGIN_EMAIL: seedzpy@gmail.com
+      ADMIN_EMAILS: seedzpy@gmail.com
+      # Auth.js base URL. Canonical localhost:3000 = the registered Google redirect
+      # (real Google sign-in works locally). TRUST_HOST lets dev-login also work if
+      # you map an alternate host port. Override AUTH_URL if you change the port.
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: "true"
+    ports:
+      # Canonical host port is 3000 (matches the Google OAuth redirect URI).
+      # For a smoke test while 3000 is occupied: APP_PORT=3939 docker compose up
+      # (dev-login works on any port; real Google needs 3000).
+      - "${APP_PORT:-3000}:3000"
+
+volumes:
+  tada-pgdata:

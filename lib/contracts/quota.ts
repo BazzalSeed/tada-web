@@ -30,10 +30,9 @@ export class QuotaError extends Error {
 }
 
 // Reserves cost atomically, runs the capability, refunds on failure where applicable.
-export function withQuota<T>(
+// Impl lives in backend-owned lib/ (lib/quota.ts), typed against this alias.
+export type WithQuota = <T>(
   user: UserCtx,
   cap: Capability,
   run: () => Promise<T>,
-): Promise<T> {
-  throw new Error("not implemented");
-}
+) => Promise<T>;

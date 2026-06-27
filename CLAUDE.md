@@ -30,5 +30,5 @@ Tagline: **Not to-do. Ta-da.**
 
 ## Local testing
 - Preview the landing page with the no-cache server: `python3 design/landing-preview/.nocache_server.py` (serves `:8731` with `Cache-Control: no-store` so the browser auto-refreshes).
-- **Use the cmux browser for verification, not Playwright MCP** (faster; the user often has a cmux webview open).
+- **cmux browser = quick visual/spot checks** (fast; the user often has a cmux webview open). **Playwright MCP = thorough end-to-end testing** — required for any flow cmux's WKWebView can't drive: **file drop/upload, drag-and-drop, raw input injection, and full multi-step user journeys.** Don't report an interactive flow "verified" off a cmux check that couldn't actually exercise it; drive it in Playwright. (DOM-element-present ≠ visually-correct; seed/demo data ≠ the real data path — verify against real data with a screenshot.)
 - Secrets live in gitignored `.env` files — never commit them.

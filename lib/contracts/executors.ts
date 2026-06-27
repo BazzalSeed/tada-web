@@ -6,7 +6,7 @@
 // Never auto-execute a side effect.
 // ============================================================================
 
-import type { ActionPayload, Todo } from "./types";
+import type { ActionPayload, Attendee, Todo } from "./types";
 import type { UserCtx } from "./auth";
 
 export interface ExecResult {
@@ -14,10 +14,12 @@ export interface ExecResult {
   actionExternalId?: string;
   error?: string;
   needsField?: string; // single missing essential field -> one inline ask
+  needsDisambiguation?: Attendee[]; // unresolved attendees (each w/ candidates) -> OfferView picker; blocks Send
 }
 
 export interface Executors {
-  // Google Calendar + Gmail via the user's stored refresh token.
+  // Google Calendar (events.insert + sendUpdates:'all') via the user's stored
+  // refresh token — no Gmail (calendar.events scope only; avoids restricted scopes).
   sendMeetingInvite(
     p: Extract<ActionPayload, { kind: "meeting" }>,
     user: UserCtx,
@@ -34,10 +36,9 @@ export interface Executors {
 }
 
 // Routes by todo.actionType to the matching executor (tap path).
-export function finishTodo(
+// Impl lives in backend-owned lib/, typed against this alias.
+export type FinishTodo = (
   todo: Todo,
   user: UserCtx,
   ex: Executors,
-): Promise<ExecResult> {
-  throw new Error("not implemented");
-}
+) => Promise<ExecResult>;

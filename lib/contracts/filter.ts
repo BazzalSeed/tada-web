@@ -1,8 +1,13 @@
 // ============================================================================
-// FROZEN v0 CONTRACT — pure, deterministic flow core.
-// Filtering, view-selection mapping, quick-add parse, fractional drag-index,
-// and recurrence. Everything here is pure and `now`-injected for testability
-// (T1.1 implements the bodies against native parity tests).
+// FROZEN v0 CONTRACT — pure, deterministic flow core (DECLARATION-ONLY SEAM).
+// Types + frozen function SIGNATURES for filtering, view-selection mapping,
+// quick-add parse, fractional drag-index, and recurrence. Everything is pure
+// and `now`-injected for testability.
+//
+// Implementations (T1.1) live in `lib/core/` (Backend-owned), typed against
+// these aliases so any signature drift fails `tsc`. Import the runtime fns from
+// "@/lib/core"; import these types/interfaces from "@/lib/contracts".
+// These signatures are LAW — do not change one without the Architect.
 // ============================================================================
 
 import type {
@@ -14,26 +19,7 @@ import type {
   ViewSelection,
 } from "./types";
 
-// ---- Filtering (native FilterEngine order) ----
-// dismissed-out -> status (open unless includeCompleted) -> priority >= minPriority
-//   -> labels ANY-of -> dateWindow.
-export function applyFilter(
-  c: FilterCriteria,
-  todos: Todo[],
-  now: Date,
-): Todo[] {
-  throw new Error("not implemented");
-}
-
-// Maps a sidebar selection to its FilterCriteria (SavedView lookup for projects).
-export function criteriaFor(
-  sel: ViewSelection,
-  views: SavedView[],
-): FilterCriteria {
-  throw new Error("not implemented");
-}
-
-// ---- Quick-add parse (live highlight) ----
+// ---- Quick-add parse shapes (live highlight) ----
 export interface ParseToken {
   kind: "date" | "priority" | "label" | "list";
   start: number; // character offset in the original string
@@ -50,24 +36,27 @@ export interface ParsedQuickAdd {
   tokens: ParseToken[];
 }
 
-// tokens: p1/p2/p3 - @label - #list - today|tomorrow|tmr|<weekday>|<ISO yyyy-MM-dd>
-//   - "every <unit|weekday>". Recurrence is scanned before bare weekday dates.
-export function parseQuickAdd(text: string, now?: Date): ParsedQuickAdd {
-  throw new Error("not implemented");
-}
+// ---- Frozen signatures (LAW). lib/core implements these exact types. ----
 
-// ---- Fractional drag-reorder index ----
-// One-off drop between two neighbors; no full re-sequence.
-export function between(before: number | null, after: number | null): number {
-  throw new Error("not implemented");
-}
+// Filtering (native FilterEngine order):
+// dismissed-out -> status (open unless includeCompleted) -> priority >= minPriority
+//   -> labels ANY-of -> dateWindow.
+export type ApplyFilter = (c: FilterCriteria, todos: Todo[], now: Date) => Todo[];
 
-// ---- Recurrence (next occurrence math) ----
-// Pure date arithmetic; deterministic given `now`.
-export function nextOccurrence(
+// Maps a sidebar selection to its FilterCriteria (SavedView lookup for projects).
+export type CriteriaFor = (sel: ViewSelection, views: SavedView[]) => FilterCriteria;
+
+// Quick-add parse. tokens: p1/p2/p3 - @label - #list -
+//   today|tomorrow|tmr|<weekday>|<ISO yyyy-MM-dd> - "every <unit|weekday>".
+//   Recurrence is scanned before bare weekday dates.
+export type ParseQuickAdd = (text: string, now?: Date) => ParsedQuickAdd;
+
+// Fractional drag-reorder index: one-off drop between two neighbors; no re-sequence.
+export type Between = (before: number | null, after: number | null) => number;
+
+// Recurrence next-occurrence math; pure date arithmetic, deterministic given `now`.
+export type NextOccurrence = (
   after: Date,
   rule: RecurrenceRule,
   now?: Date,
-): Date | null {
-  throw new Error("not implemented");
-}
+) => Date | null;

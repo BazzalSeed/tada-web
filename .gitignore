@@ -25,3 +25,5 @@ next-env.d.ts
 .playwright-mcp/
 skills-lock.json
 .vercel
+.claude/team-plans/
+.env*

@@ -25,9 +25,8 @@ export interface UserCtx {
 }
 
 // The boundary every query passes through (resolves the session -> UserCtx).
-export function currentUser(): Promise<UserCtx> {
-  throw new Error("not implemented");
-}
+// Impl lives in backend-owned lib/auth.ts, typed against this alias.
+export type CurrentUser = () => Promise<UserCtx>;
 
 // ---- Invite codes (gate account CREATION only) ----
 export interface InviteCode {
@@ -39,11 +38,7 @@ export interface InviteCode {
 }
 
 // Atomic conditional UPDATE ... RETURNING; true if a use was successfully claimed.
-export function redeemInvite(code: string, email: string): Promise<boolean> {
-  throw new Error("not implemented");
-}
+export type RedeemInvite = (code: string, email: string) => Promise<boolean>;
 
 // email is in ADMIN_EMAILS (comma-split env).
-export function isAdminEmail(email: string): boolean {
-  throw new Error("not implemented");
-}
+export type IsAdminEmail = (email: string) => boolean;
