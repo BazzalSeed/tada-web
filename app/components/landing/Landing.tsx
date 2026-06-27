@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { signIn } from "next-auth/react";
 import { WaitlistForm } from "./WaitlistForm";
 import styles from "./Landing.module.css";
 
@@ -89,13 +90,15 @@ export function Landing() {
             <Spark size={13} />
           </a>
           <div className={styles.navCta}>
-            {/* Invited users sign in with Google; the gate lives on /join (T4.2). */}
-            <a href="/join" className={styles.navSignin}>
-              Sign in
-            </a>
-            <a href="#waitlist" className={`${styles.btn} ${styles.btnPrimary} ${styles.btnSm}`}>
-              Join the waitlist
-            </a>
+            {/* Top-right = Log in for existing (invited) users → Google OAuth,
+                landing back on /app. Waitlist is a separate CTA in the close. */}
+            <button
+              type="button"
+              className={`${styles.btn} ${styles.btnPrimary} ${styles.btnSm}`}
+              onClick={() => signIn("google", { redirectTo: "/app" })}
+            >
+              Log in
+            </button>
           </div>
         </div>
       </header>

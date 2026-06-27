@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+
+const signIn = vi.fn();
+vi.mock("next-auth/react", () => ({ signIn: (...args: unknown[]) => signIn(...args) }));
+
 import { Landing } from "../Landing";
 
 beforeEach(() => {
@@ -16,7 +20,10 @@ beforeEach(() => {
   vi.stubGlobal("IntersectionObserver", IO as never);
 });
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  signIn.mockClear();
+});
 
 describe("Landing", () => {
   it("renders the hero thesis and the three capture sources", () => {
@@ -34,16 +41,24 @@ describe("Landing", () => {
     expect(screen.getByText(/03 — Ta-da/i)).toBeInTheDocument();
   });
 
-  it("mounts the waitlist form and points the nav CTA at it", () => {
+  it("mounts the waitlist form in the closing section", () => {
     render(<Landing />);
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    const cta = screen.getAllByRole("link", { name: /join the waitlist/i })[0];
-    expect(cta).toHaveAttribute("href", "#waitlist");
   });
 
-  it("offers a Google sign-in CTA routing to the invite-gated /join page (T4.2)", () => {
+  it("top-right Log in triggers Google sign-in and lands on /app (T4.2)", () => {
     render(<Landing />);
-    const signIn = screen.getByRole("link", { name: /sign in/i });
-    expect(signIn).toHaveAttribute("href", "/join");
+    const login = screen.getByRole("button", { name: /log in/i });
+    fireEvent.click(login);
+    expect(signIn).toHaveBeenCalledWith("google", { redirectTo: "/app" });
+  });
+
+  it("keeps Join the waitlist as a separate CTA (not the top-right login)", () => {
+    render(<Landing />);
+    // the waitlist join lives on its own submit, distinct from Log in
+    expect(
+      screen.getByRole("button", { name: /join the waitlist/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /log in/i })).toBeInTheDocument();
   });
 });
