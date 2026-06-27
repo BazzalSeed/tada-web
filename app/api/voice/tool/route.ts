@@ -18,12 +18,23 @@ export async function POST(req: Request): Promise<Response> {
     const t = agentTools[name];
     if (!t) throw new HttpError(404, `unknown tool: ${name}`);
 
-    // Gated writes require an explicit approval before any side effect fires.
-    if (t.gated && !approved) {
-      return json({ status: "approval_required", name, args: args ?? {} });
+    // The OpenAI Realtime event delivers function arguments as a JSON *string* —
+    // tolerate that (parse to an object) as well as a pre-parsed object.
+    let argsObj: unknown = args ?? {};
+    if (typeof args === "string") {
+      try {
+        argsObj = JSON.parse(args);
+      } catch {
+        throw badRequest("args must be a JSON object or valid JSON string");
+      }
     }
 
-    const result = await runApprovedTool(name, args, user);
+    // Gated writes require an explicit approval before any side effect fires.
+    if (t.gated && !approved) {
+      return json({ status: "approval_required", name, args: argsObj });
+    }
+
+    const result = await runApprovedTool(name, argsObj, user);
     return json({ status: "ok", ...result });
   } catch (err) {
     return handleApiError(err);

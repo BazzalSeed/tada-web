@@ -115,6 +115,25 @@ describe("POST /api/voice/tool", () => {
     const res = await voiceTool(req("http://localhost/api/voice/tool", { name: "nope", args: {} }));
     expect(res.status).toBe(404);
   });
+
+  it("tolerates args as a JSON string (Realtime delivers arguments as a string)", async () => {
+    (executors.setReminder as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, actionExternalId: "rem-1" });
+    const res = await voiceTool(
+      req("http://localhost/api/voice/tool", {
+        name: "set_reminder",
+        args: JSON.stringify({ text: "Call mom", remindAt: "2026-07-01T09:00:00" }),
+        approved: true,
+      }),
+    );
+    expect(res.status).toBe(200);
+    // parsed → executor got the object fields, not a string
+    expect(executors.setReminder).toHaveBeenCalledWith(expect.objectContaining({ text: "Call mom", remindAt: "2026-07-01T09:00:00" }));
+  });
+
+  it("400s malformed JSON-string args (not a 500)", async () => {
+    const res = await voiceTool(req("http://localhost/api/voice/tool", { name: "set_reminder", args: "{not json", approved: true }));
+    expect(res.status).toBe(400);
+  });
 });
 
 describe("POST /api/voice/usage", () => {
