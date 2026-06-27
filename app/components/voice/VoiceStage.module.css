@@ -1,0 +1,119 @@
+/* The immersive voice "call" overlay. Warm cream surface, rust orb; round iOS-style
+   controls. Active/end states use accent / danger, never a heavy black fill. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  background: var(--color-surface);
+  box-sizing: border-box;
+}
+
+.minimize {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out-quart), color var(--dur-fast) var(--ease-out-quart);
+}
+
+.minimize:hover {
+  background: var(--color-surface-subtle);
+  color: var(--color-ink);
+}
+
+.hero {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  overflow: hidden;
+}
+
+.cue {
+  flex: none;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--color-ink-soft);
+  min-height: 1.4em;
+}
+
+.error {
+  display: block;
+  color: var(--color-error);
+  font-size: var(--fs-meta);
+}
+
+.heard {
+  flex: none;
+  margin: 0;
+  max-width: 40ch;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--fs-body-lead);
+  color: var(--color-ink);
+}
+
+.confirmBand {
+  flex: none;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  justify-content: center;
+}
+
+.controls {
+  flex: none;
+  display: flex;
+  gap: var(--space-7);
+  padding-top: var(--space-5);
+}
+
+.ctrl {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  color: var(--color-ink);
+  background: var(--color-surface-subtle);
+  transition: background var(--dur-fast) var(--ease-out-quart), box-shadow var(--dur-fast) var(--ease-out-quart);
+}
+
+.ctrl:hover {
+  background: var(--color-surface-raised);
+}
+
+.ctrl[aria-pressed="true"] {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.end {
+  background: var(--color-danger-solid);
+  color: var(--color-on-accent);
+}
+
+.end:hover {
+  background: var(--color-danger-solid);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-danger-solid) 30%, transparent);
+}

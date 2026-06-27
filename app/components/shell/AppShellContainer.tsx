@@ -6,6 +6,7 @@ import { criteriaFor } from "@/lib/core";
 import { paletteItemsFor, useTada } from "@/app/lib/store";
 import { TodoListView } from "@/app/components/todo/TodoListView";
 import { ChatView } from "@/app/components/chat/ChatView";
+import { VoiceStage } from "@/app/components/voice/VoiceStage";
 import { ViewEditor } from "@/app/components/views/ViewEditor";
 import { AppShell } from "./AppShell";
 import { DetailPaneView } from "./DetailPaneView";
@@ -24,6 +25,8 @@ export function AppShellContainer({ children }: { children?: ReactNode }) {
     state.todos.find((t) => t.id === state.selectedTodoId) ?? null;
   const isChat = state.selection.kind === "chat";
   const [editor, setEditor] = useState<EditorState | null>(null);
+  // The live-voice overlay (entered from the chat composer's mic).
+  const [voiceOpen, setVoiceOpen] = useState(false);
 
   // New views seed from the current selection's criteria (snapshot default),
   // then the builder lets the user compose the full FilterCriteria.
@@ -58,6 +61,7 @@ export function AppShellContainer({ children }: { children?: ReactNode }) {
   }
 
   return (
+    <>
     <AppShell
       selection={state.selection}
       views={state.views}
@@ -104,7 +108,14 @@ export function AppShellContainer({ children }: { children?: ReactNode }) {
         ) : null
       }
     >
-      {children ?? (isChat ? <ChatView /> : <TodoListView />)}
+      {children ??
+        (isChat ? (
+          <ChatView onVoice={() => setVoiceOpen(true)} />
+        ) : (
+          <TodoListView />
+        ))}
     </AppShell>
+    {voiceOpen ? <VoiceStage onClose={() => setVoiceOpen(false)} /> : null}
+    </>
   );
 }
