@@ -30,6 +30,14 @@ const APPROVE_LABEL: Record<ProposedAction["kind"], string> = {
   research: "Approve & run",
 };
 
+// The agent should emit offset-less ISO, but sometimes hands back a natural
+// phrase ("6pm today"). Format ISO dates; show anything else verbatim (never
+// "undefined NaN, NaN").
+function whenLabel(iso: string | null | undefined, now: Date): string | null {
+  if (!iso) return null;
+  return /^\d{4}-\d{2}-\d{2}/.test(iso) ? formatDue(iso, now).label : iso;
+}
+
 export function OfferCard({
   action,
   onApprove,
@@ -68,7 +76,7 @@ export function OfferCard({
 
 function OfferEffect({ action, now }: { action: ProposedAction; now: Date }) {
   if (action.kind === "todo") {
-    const when = action.dueAt ? formatDue(action.dueAt, now).label : null;
+    const when = whenLabel(action.dueAt, now);
     return (
       <div className={styles.effect}>
         <p className={styles.title}>{action.title}</p>
@@ -83,7 +91,7 @@ function OfferEffect({ action, now }: { action: ProposedAction; now: Date }) {
     );
   }
   if (action.kind === "meeting") {
-    const when = action.start ? formatDue(action.start, now).label : "time TBD";
+    const when = whenLabel(action.start, now) ?? "time TBD";
     const who = action.attendees?.length ? action.attendees.join(", ") : null;
     return (
       <div className={styles.effect}>
@@ -97,7 +105,7 @@ function OfferEffect({ action, now }: { action: ProposedAction; now: Date }) {
     );
   }
   if (action.kind === "reminder") {
-    const when = action.remindAt ? formatDue(action.remindAt, now).label : null;
+    const when = whenLabel(action.remindAt, now);
     return (
       <div className={styles.effect}>
         <p className={styles.title}>{action.text}</p>

@@ -38,6 +38,15 @@ describe("OfferCard (pending gated write)", () => {
     expect(screen.getByRole("button", { name: /approve & set/i })).toBeInTheDocument();
   });
 
+  it("shows a non-ISO time phrase verbatim instead of an unparseable date", () => {
+    // The agent sometimes emits a natural phrase ("6pm today") rather than ISO;
+    // render it as-is, never "undefined NaN, NaN".
+    const reminder: ProposedAction = { kind: "reminder", text: "Call mom", remindAt: "6pm today" };
+    render(<OfferCard action={reminder} onApprove={vi.fn()} onDeny={vi.fn()} />);
+    expect(screen.getByText("6pm today")).toBeInTheDocument();
+    expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
+  });
+
   it("renders a create-todo offer's effect", () => {
     const t: ProposedAction = { kind: "todo", title: "Buy oat milk", priority: "p2" };
     render(<OfferCard action={t} onApprove={vi.fn()} onDeny={vi.fn()} />);
