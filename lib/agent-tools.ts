@@ -154,12 +154,14 @@ export function toAiSdkTools(user: UserCtx): ToolSet {
     const description = DESCRIPTIONS[name] ?? name;
     const inputSchema = t.inputSchema as ZodTypeAny;
     // GATED write tools omit `execute` → AI SDK pauses for approval (HITL).
+    // Read tools return the FULL { output, card } so the client can render a tile
+    // from part.output.card (the model also gets the structured result).
     out[name] = t.gated
       ? tool({ description, inputSchema })
       : tool({
           description,
           inputSchema,
-          execute: async (args: unknown) => (await t.run(args, user)).output,
+          execute: async (args: unknown) => t.run(args, user),
         });
   }
   return out;

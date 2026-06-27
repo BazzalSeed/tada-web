@@ -12,7 +12,7 @@ vi.mock("@/lib/executors", () => ({
 }));
 vi.mock("@/lib/contacts", () => ({ contactResolverFor: vi.fn() }));
 
-import { agentTools } from "@/lib/agent-tools";
+import { agentTools, toAiSdkTools } from "@/lib/agent-tools";
 import { contactResolverFor } from "@/lib/contacts";
 import { store } from "@/lib/store";
 import { executors } from "@/lib/executors";
@@ -75,5 +75,22 @@ describe("tool run()", () => {
     const r = await agentTools.set_reminder.run({ text: "Call mom", remindAt: "2026-07-01T09:00:00" }, user);
     expect(executors.setReminder).toHaveBeenCalled();
     expect(r.output).toBeTruthy();
+  });
+});
+
+describe("toAiSdkTools (chat wiring)", () => {
+  it("read tool execute returns the FULL { output, card } so tiles can render", async () => {
+    (store.listTodos as ReturnType<typeof vi.fn>).mockResolvedValue([{ id: "t1", title: "a", status: "open" }]);
+    const tools = toAiSdkTools(user);
+    const res = (await (tools.list_todos.execute as (a: unknown, o: unknown) => Promise<{ output: string; card: { type: string } }>)({}, {}));
+    expect(res.output).toContain("a");
+    expect(res.card.type).toBe("todos"); // card preserved (was previously dropped)
+  });
+
+  it("gated write tools omit execute (HITL pause for approval)", () => {
+    const tools = toAiSdkTools(user);
+    expect(tools.list_todos.execute).toBeTypeOf("function"); // read = auto
+    expect(tools.send_meeting_invite.execute).toBeUndefined(); // gated = paused
+    expect(tools.create_todo.execute).toBeUndefined();
   });
 });
