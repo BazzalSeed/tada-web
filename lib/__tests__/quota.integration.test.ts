@@ -1,15 +1,14 @@
-// @vitest-environment node
-// withQuota (T2.2 dependency / T3.3) — integration test against the Neon TEST
-// branch (gated RUN_DB_TESTS). Verifies atomic metering, the 402 at limit, the
-// admin/unlimited short-circuit, and refund-on-failure.
+// withQuota (T2.2 dependency / T3.3) — integration test. Runs against the
+// isolated Postgres container the harness provisions (see
+// vitest.integration.config.ts). Verifies atomic metering, the 402 at limit,
+// the admin/unlimited short-circuit, and refund-on-failure.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import { withQuota } from "@/lib/quota";
 import { QuotaError } from "@/lib/contracts";
 import type { UserCtx } from "@/lib/contracts";
 
-const RUN = !!process.env.RUN_DB_TESTS && !!process.env.DATABASE_URL;
-const prisma = RUN ? new PrismaClient() : (null as unknown as PrismaClient);
+const prisma = new PrismaClient();
 
 const stamp = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
 const freeId = `free-${stamp}`;
@@ -19,7 +18,7 @@ const period = new Date().toISOString().slice(0, 7);
 const free: UserCtx = { userId: freeId, email: `${freeId}@t.local`, plan: "free" };
 const admin: UserCtx = { userId: adminId, email: `${adminId}@t.local`, plan: "unlimited" };
 
-describe.skipIf(!RUN)("withQuota", () => {
+describe("withQuota", () => {
   beforeAll(async () => {
     await prisma.user.create({ data: { id: freeId, email: free.email, plan: "free" } });
     await prisma.user.create({ data: { id: adminId, email: admin.email, plan: "unlimited" } });

@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:db": "RUN_DB_TESTS=1 vitest run",
+    "test:integration": "vitest run -c vitest.integration.config.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy"

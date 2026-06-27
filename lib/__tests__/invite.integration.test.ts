@@ -1,13 +1,11 @@
-// @vitest-environment node
-// T3.6 — redeemInvite atomic claim, integration against the Neon TEST branch
-// (gated RUN_DB_TESTS). Covers under-cap claim, exhaustion, expiry, and
-// email-binding.
+// T3.6 — redeemInvite atomic claim. Integration test: runs against the isolated
+// Postgres container the harness provisions (see vitest.integration.config.ts).
+// Covers under-cap claim, exhaustion, expiry, and email-binding.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import { redeemInvite } from "@/lib/auth";
 
-const RUN = !!process.env.RUN_DB_TESTS && !!process.env.DATABASE_URL;
-const prisma = RUN ? new PrismaClient() : (null as unknown as PrismaClient);
+const prisma = new PrismaClient();
 const stamp = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
 const codes = {
   twoUse: `c2-${stamp}`,
@@ -15,7 +13,7 @@ const codes = {
   bound: `cb-${stamp}`,
 };
 
-describe.skipIf(!RUN)("redeemInvite", () => {
+describe("redeemInvite", () => {
   beforeAll(async () => {
     await prisma.inviteCode.createMany({
       data: [
