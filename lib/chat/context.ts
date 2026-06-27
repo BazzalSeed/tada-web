@@ -21,15 +21,17 @@ import {
 } from "ai";
 
 // Kept verbatim every turn — comfortably covers a multi-turn disambiguation flow
-// ("book with Sarah" → "make it Tuesday" → "add Tom").
-export const RECENT_TAIL_MESSAGES = 12;
+// ("book with Sarah" → "make it Tuesday" → "add Tom"). Env-overridable so a test
+// or a tuning run can shrink it without a code edit; default holds in prod.
+export const RECENT_TAIL_MESSAGES =
+  Number(process.env.CHAT_RECENT_TAIL_MESSAGES) || 12;
 
 // Layer 2 fires only when the older-than-tail slice exceeds this many estimated
 // tokens. Generous on purpose (hero interface keeps lots of verbatim context);
-// still far under Flash's ~1M ceiling, so it's pure cost tuning.
-export const SUMMARY_TRIGGER_TOKENS = 66_000;
-
-const SUMMARY_SYSTEM_PREFIX = "Summary of the earlier conversation so far:\n";
+// still far under Flash's ~1M ceiling, so it's pure cost tuning. Env-overridable
+// (CHAT_SUMMARY_TRIGGER_TOKENS) for testing/tuning; default holds in prod.
+export const SUMMARY_TRIGGER_TOKENS =
+  Number(process.env.CHAT_SUMMARY_TRIGGER_TOKENS) || 66_000;
 
 // AI SDK heuristic: ~4 chars/token over the serialized payload. Good enough to
 // decide when to compact; we never need exact token counts.
@@ -66,28 +68,31 @@ export function needsSummary(
   return older.length > 0 && estimateTokens(older) > trigger;
 }
 
-// Build the model input: the rolling summary (if any) as a leading system
-// message, then the Layer-1-pruned live messages. `liveMessages` are the
-// messages AFTER the summary watermark — the summarized prefix is represented
-// by `summary` alone and never resent.
-export async function buildModelMessages({
-  summary,
-  liveMessages,
-}: {
-  summary: string | null | undefined;
-  liveMessages: UIMessage[];
-}): Promise<ModelMessage[]> {
+// Build the model input from the live window (messages AFTER the summary
+// watermark): convert to model messages, then Layer-1 prune. The summarized
+// prefix is NOT resent here — it rides in the system instruction instead (see
+// composeSystem); the AI SDK forbids a system-role message inside `messages`.
+export async function buildModelMessages(
+  liveMessages: UIMessage[],
+): Promise<ModelMessage[]> {
   const converted = await convertToModelMessages(liveMessages, {
     ignoreIncompleteToolCalls: true,
   });
-  const pruned = pruneMessages({
+  return pruneMessages({
     messages: converted,
     reasoning: "all",
     toolCalls: "before-last-3-messages",
     emptyMessages: "remove",
   });
-  const head: ModelMessage[] = summary
-    ? [{ role: "system", content: SUMMARY_SYSTEM_PREFIX + summary }]
-    : [];
-  return [...head, ...pruned];
+}
+
+// Fold the rolling summary into the system instruction. The summary represents
+// the conversation prefix before the live window; it belongs in `system`, never
+// as a message (the provider rejects system-role messages in the array).
+export function composeSystem(
+  base: string,
+  summary: string | null | undefined,
+): string {
+  if (!summary) return base;
+  return `${base}\n\n## Summary of earlier conversation\nThe earlier part of this conversation (before the messages shown) has been condensed:\n${summary}`;
 }

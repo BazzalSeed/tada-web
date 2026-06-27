@@ -3,6 +3,7 @@ import type { UIMessage } from "ai";
 import {
   RECENT_TAIL_MESSAGES,
   buildModelMessages,
+  composeSystem,
   estimateTokens,
   messagesAfterWatermark,
   needsSummary,
@@ -80,20 +81,28 @@ describe("needsSummary", () => {
 });
 
 describe("buildModelMessages", () => {
-  it("omits the system head when there is no summary", async () => {
-    const out = await buildModelMessages({
-      summary: null,
-      liveMessages: [msg("a", "user", "what's due today?")],
-    });
-    expect(out[0].role).toBe("user");
-  });
-  it("prepends the rolling summary as a leading system message", async () => {
-    const out = await buildModelMessages({
-      summary: "The user is booking a meeting with Sarah on Tuesday.",
-      liveMessages: [msg("a", "user", "add Tom too")],
-    });
-    expect(out[0].role).toBe("system");
-    expect(String(out[0].content)).toContain("Sarah on Tuesday");
+  it("returns the pruned live messages with no synthetic system message", async () => {
+    // The provider rejects system-role messages in the array; the summary rides
+    // in the system instruction (composeSystem), never here.
+    const out = await buildModelMessages([
+      msg("a", "user", "what's due today?"),
+      msg("b", "assistant", "Nothing due."),
+      msg("c", "user", "thanks"),
+    ]);
+    expect(out.every((m) => m.role !== "system")).toBe(true);
     expect(out[out.length - 1].role).toBe("user");
+  });
+});
+
+describe("composeSystem", () => {
+  it("returns the base prompt unchanged when there is no summary", () => {
+    expect(composeSystem("BASE", null)).toBe("BASE");
+    expect(composeSystem("BASE", "")).toBe("BASE");
+  });
+  it("appends the rolling summary into the system instruction", () => {
+    const out = composeSystem("BASE", "The user is booking a meeting with Sarah on Tuesday.");
+    expect(out.startsWith("BASE")).toBe(true);
+    expect(out).toContain("Sarah on Tuesday");
+    expect(out.toLowerCase()).toContain("summary");
   });
 });

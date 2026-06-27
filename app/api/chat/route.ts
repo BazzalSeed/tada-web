@@ -7,14 +7,18 @@
 // pruned recent window (lib/chat/context). After the turn streams, we persist the
 // new messages and fold older ones into the summary if needed (lib/chat/compact).
 // Stateless compute, DB is the source of truth. NO Claude/Anthropic.
-import { streamText, stepCountIs } from "ai";
+import { streamText, stepCountIs, generateId } from "ai";
 import type { UIMessage } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { currentUser } from "@/lib/auth";
 import { withQuota } from "@/lib/quota";
 import { toAiSdkTools } from "@/lib/agent-tools";
 import { handleApiError, readJson, badRequest, json } from "@/lib/http";
-import { buildModelMessages, messagesAfterWatermark } from "@/lib/chat/context";
+import {
+  buildModelMessages,
+  composeSystem,
+  messagesAfterWatermark,
+} from "@/lib/chat/context";
 import {
   getOrCreateConversation,
   loadLatestConversation,
@@ -72,13 +76,10 @@ export async function POST(req: Request): Promise<Response> {
     // Ownership check + compaction state in one query.
     const meta = await getOrCreateConversation(user.userId, conversationId);
 
-    // The model sees only the live window (after the summary watermark), pruned,
-    // with the rolling summary prepended — never the whole history.
+    // The model sees only the live window (after the summary watermark), pruned;
+    // the rolling summary rides in the system instruction, never as a message.
     const live = messagesAfterWatermark(messages, meta.summaryThroughId);
-    const modelMessages = await buildModelMessages({
-      summary: meta.summary,
-      liveMessages: live,
-    });
+    const modelMessages = await buildModelMessages(live);
 
     const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -86,7 +87,7 @@ export async function POST(req: Request): Promise<Response> {
     const result = await withQuota(user, "chatTurn", async () =>
       streamText({
         model: google("gemini-2.5-flash"),
-        system: SYSTEM,
+        system: composeSystem(SYSTEM, meta.summary),
         messages: modelMessages,
         tools: toAiSdkTools(user),
         stopWhen: stepCountIs(6),
@@ -95,6 +96,12 @@ export async function POST(req: Request): Promise<Response> {
 
     return result.toUIMessageStreamResponse({
       originalMessages: messages,
+      // The assistant reply needs a stable id to persist by. toUIMessageStream
+      // only auto-assigns one when the last original message is an assistant
+      // message — ours is always the user's turn, so without this the response
+      // gets an empty id and successive replies collide onto one row (and the
+      // compaction watermark lands on "").
+      generateMessageId: generateId,
       onEnd: async ({ messages: finalMessages }) => {
         // Persist the completed turn, then fold older messages into the summary
         // if the live window has grown past the trigger. Off the user's path.

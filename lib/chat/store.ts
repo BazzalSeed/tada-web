@@ -101,14 +101,25 @@ export async function persistMessages(
   conversationId: string,
   messages: UIMessage[],
 ): Promise<void> {
+  // Guard the whole id-collision class: a message with no id would upsert onto
+  // the empty-string key and let successive turns overwrite each other. The
+  // route assigns response ids (generateMessageId), so this should never fire —
+  // but if it ever regresses we drop the row loudly rather than corrupt history.
+  const withIds = messages.filter((m) => m.id);
+  if (withIds.length !== messages.length) {
+    console.error(
+      `persistMessages: dropping ${messages.length - withIds.length} message(s) with empty id`,
+    );
+  }
+
   const existing = await prisma.message.findMany({
     where: { conversationId },
     select: { id: true },
   });
   const existingIds = new Set(existing.map((m) => m.id));
-  const activeFrom = Math.max(0, messages.length - 3);
+  const activeFrom = Math.max(0, withIds.length - 3);
 
-  const writes = messages
+  const writes = withIds
     .map((m, i) => ({ m, i }))
     .filter(({ m, i }) => !existingIds.has(m.id) || i >= activeFrom)
     .map(({ m }) =>
