@@ -95,6 +95,44 @@ model SavedView {
 }
 
 // ============================================================================
+// Chat — persisted agent conversations (text chat; voice can land here later).
+// One Conversation = one thread the user sees; `summary`/`summaryThroughId` hold
+// the Layer-2 rolling-compaction state (see lib/chat/context.ts). Messages store
+// the full AI SDK UIMessage shape (parts: text + tool calls/results) so tool
+// tiles re-render verbatim on reload. The model only ever receives a bounded
+// slice (summary + pruned recent tail); the DB keeps every raw message.
+// ============================================================================
+
+model Conversation {
+  id               String   @id @default(cuid())
+  userId           String   @map("user_id")
+  title            String? // null until the first turn names it
+  summary          String? // rolling summary of turns older than the tail
+  summaryThroughId String?  @map("summary_through_id") // watermark: last message folded into `summary`
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId, updatedAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String   @map("conversation_id")
+  role           String // user|assistant|system
+  parts          Json // AI SDK UIMessage.parts (text + tool-invocation parts)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+// ============================================================================
 // Accounts & auth (Auth.js / NextAuth Prisma adapter shape)
 // ============================================================================
 
@@ -109,11 +147,12 @@ model User {
 
   accounts Account[]
   sessions Session[]
-  todos    Todo[]
-  captures Capture[]
-  labels   TodoLabel[]
-  views    SavedView[]
-  aiUsage  AiUsage[]
+  todos         Todo[]
+  captures      Capture[]
+  labels        TodoLabel[]
+  views         SavedView[]
+  aiUsage       AiUsage[]
+  conversations Conversation[]
 
   @@map("users")
 }

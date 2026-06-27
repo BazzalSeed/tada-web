@@ -1,17 +1,50 @@
 // POST /api/chat — the text agent (AI SDK useChat endpoint). Gemini 2.5 Flash +
 // the shared AgentTool registry: read tools auto-run, write tools are gated
 // (human-in-the-loop approval before execute). Metered by withQuota(chatTurn).
-// NO Claude/Anthropic.
-import { streamText, convertToModelMessages, stepCountIs } from "ai";
+//
+// Persistence + memory: the conversation lives in Postgres (lib/chat/store), and
+// the model receives only a bounded slice each turn — the rolling summary plus a
+// pruned recent window (lib/chat/context). After the turn streams, we persist the
+// new messages and fold older ones into the summary if needed (lib/chat/compact).
+// Stateless compute, DB is the source of truth. NO Claude/Anthropic.
+import { streamText, stepCountIs } from "ai";
 import type { UIMessage } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { currentUser } from "@/lib/auth";
 import { withQuota } from "@/lib/quota";
 import { toAiSdkTools } from "@/lib/agent-tools";
-import { handleApiError, readJson } from "@/lib/http";
+import { handleApiError, readJson, badRequest, json } from "@/lib/http";
+import { buildModelMessages, messagesAfterWatermark } from "@/lib/chat/context";
+import {
+  getOrCreateConversation,
+  loadLatestConversation,
+  persistMessages,
+} from "@/lib/chat/store";
+import { compactIfNeeded } from "@/lib/chat/compact";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+// GET /api/chat — what the chat window loads on mount: the user's most recent
+// conversation (id + full message history for display), or a fresh id with an
+// empty thread when they've never chatted. The row itself is created lazily on
+// the first POST, so a minted id costs nothing until used.
+export async function GET(): Promise<Response> {
+  try {
+    const user = await currentUser();
+    const latest = await loadLatestConversation(user.userId);
+    if (latest) {
+      return json({
+        conversationId: latest.id,
+        messages: latest.messages,
+        summaryThroughId: latest.summaryThroughId,
+      });
+    }
+    return json({ conversationId: crypto.randomUUID(), messages: [], summaryThroughId: null });
+  } catch (err) {
+    return handleApiError(err);
+  }
+}
 
 const SYSTEM = `You are Tada, a capture-first to-do assistant. You can do anything the app's UI can do across the user's todos.
 
@@ -27,7 +60,25 @@ Be concise. Never claim a write happened until it's approved and executed.`;
 export async function POST(req: Request): Promise<Response> {
   try {
     const user = await currentUser();
-    const { messages } = await readJson<{ messages: UIMessage[] }>(req);
+    const { messages, conversationId } = await readJson<{
+      messages: UIMessage[];
+      conversationId?: string;
+    }>(req);
+
+    if (typeof conversationId !== "string" || !conversationId) {
+      throw badRequest("conversationId is required");
+    }
+
+    // Ownership check + compaction state in one query.
+    const meta = await getOrCreateConversation(user.userId, conversationId);
+
+    // The model sees only the live window (after the summary watermark), pruned,
+    // with the rolling summary prepended — never the whole history.
+    const live = messagesAfterWatermark(messages, meta.summaryThroughId);
+    const modelMessages = await buildModelMessages({
+      summary: meta.summary,
+      liveMessages: live,
+    });
 
     const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -36,12 +87,26 @@ export async function POST(req: Request): Promise<Response> {
       streamText({
         model: google("gemini-2.5-flash"),
         system: SYSTEM,
-        messages: await convertToModelMessages(messages),
+        messages: modelMessages,
         tools: toAiSdkTools(user),
         stopWhen: stepCountIs(6),
       }),
     );
-    return result.toUIMessageStreamResponse();
+
+    return result.toUIMessageStreamResponse({
+      originalMessages: messages,
+      onEnd: async ({ messages: finalMessages }) => {
+        // Persist the completed turn, then fold older messages into the summary
+        // if the live window has grown past the trigger. Off the user's path.
+        await persistMessages(conversationId, finalMessages);
+        await compactIfNeeded({
+          conversationId,
+          summary: meta.summary,
+          summaryThroughId: meta.summaryThroughId,
+          messages: finalMessages,
+        });
+      },
+    });
   } catch (err) {
     return handleApiError(err);
   }

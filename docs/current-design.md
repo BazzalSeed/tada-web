@@ -68,7 +68,7 @@ Two `lib` directories on purpose: **`lib/`** is server-only core (DB, AI, execut
 | `POST /api/todos/:id/finish` | "do it for me" tap path — dispatch on `actionType` |
 | `POST /api/labels` | inline label upsert |
 | `POST /api/research`, `GET /api/research/:id` | deep-research job + progress |
-| `POST /api/chat` | text agent (AI SDK `useChat`, gated write tools) |
+| `GET/POST /api/chat` | text agent (AI SDK `useChat`, gated write tools); persisted + memory-managed — see [chat-persistence.md](chat-persistence.md) |
 | `POST /api/voice/{session,tool,usage}` | OpenAI Realtime relay (shared tool registry) |
 | `POST /api/contacts/{resolve,search}` | Google contact name → email |
 | `POST /api/inbound/email` | inbound-email capture webhook (built, dormant) |

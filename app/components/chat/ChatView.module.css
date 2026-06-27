@@ -5,6 +5,61 @@
   min-height: 0;
 }
 
+/* Slim header: just the New chat affordance, right-aligned over the thread. */
+.header {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: var(--space-3) var(--space-5) 0;
+}
+
+.newChat {
+  appearance: none;
+  border: 1px solid var(--hair-strong, rgba(0, 0, 0, 0.12));
+  background: transparent;
+  color: var(--ink-muted, #6b6257);
+  font: inherit;
+  font-size: 13px;
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.newChat:hover {
+  color: var(--accent, #c8632e);
+  border-color: var(--accent, #c8632e);
+  background: var(--accent-wash, rgba(200, 99, 46, 0.08));
+}
+
+/* Watermark line — only shown once a conversation has been compacted. The user
+   keeps full scroll-back; this just marks where the assistant's recall above is
+   condensed into a summary rather than verbatim. */
+.compactDivider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-2) 0;
+  color: var(--ink-muted, #6b6257);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.compactDivider::before,
+.compactDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hair, rgba(0, 0, 0, 0.08));
+}
+
+.loading {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  color: var(--ink-muted, #6b6257);
+  font-size: 14px;
+}
+
 .thread {
   flex: 1;
   min-height: 0;
