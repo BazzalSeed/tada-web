@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import type { Capture, Todo, TodoLabel } from "@/lib/contracts";
 import { neighborsForDrop } from "@/app/lib/reorder";
-import { hasOffer, offerEffect } from "@/app/lib/offer";
+import { offerEffect } from "@/app/lib/offer";
 import { TodoRow } from "./TodoRow";
 import styles from "./TodoList.module.css";
 
@@ -87,7 +87,7 @@ export function TodoList({
     const captureThumb = capturesById[todo.sourceCaptureId]?.blobPath ?? null;
     // Do-it-for-me offer surfaced on the row (FIX2): the live offer for actionable
     // todos, or a calm done badge once executed.
-    const eff = hasOffer(todo) ? offerEffect(todo, now) : null;
+    const eff = offerEffect(todo);
     const offer = eff ? { eyebrow: eff.eyebrow, line: eff.lines[0] } : null;
     const offerDone =
       todo.actionType !== "none" && todo.actionState === "done"

@@ -4,8 +4,6 @@ import type { Todo } from "@/lib/contracts";
 import type { FinishResponse } from "@/app/lib/api";
 import { OfferPanel } from "../OfferPanel";
 
-const NOW = new Date("2026-06-27T09:00:00");
-
 function todo(over: Partial<Todo>): Todo {
   return {
     id: "t1",
@@ -22,7 +20,7 @@ function todo(over: Partial<Todo>): Todo {
   };
 }
 
-describe("OfferPanel (FIX2 — do it for me)", () => {
+describe("OfferPanel (FIX2 — do it for me; FIX11 unified on describeOffer)", () => {
   it("shows the concrete effect and only finishes on the explicit tap (never auto)", async () => {
     const onFinish = vi.fn(
       async (): Promise<FinishResponse> => ({ ok: true, actionExternalId: "rmd_1" }),
@@ -33,13 +31,12 @@ describe("OfferPanel (FIX2 — do it for me)", () => {
           actionType: "reminder",
           actionPayload: { kind: "reminder", text: "Email Priya", remindAt: "2026-06-28T09:00:00" },
         })}
-        now={NOW}
         onFinish={onFinish}
         onPatchPayload={vi.fn()}
       />,
     );
-    // effect shown; nothing executed yet (never auto-execute)
-    expect(screen.getByText("Email Priya")).toBeInTheDocument();
+    // concrete effect (from describeOffer) shown; nothing executed yet
+    expect(screen.getByText(/Email Priya/)).toBeInTheDocument();
     expect(onFinish).not.toHaveBeenCalled();
     // the tap IS the confirmation
     fireEvent.click(screen.getByRole("button", { name: /set reminder/i }));
@@ -52,25 +49,22 @@ describe("OfferPanel (FIX2 — do it for me)", () => {
       <OfferPanel
         todo={todo({
           actionType: "meeting",
-          actionPayload: { kind: "meeting", title: "Sync with Sam", attendees: [] },
+          actionPayload: { kind: "meeting", title: "Sync with Sam", attendees: ["Sam"] },
         })}
-        now={NOW}
         onFinish={vi.fn()}
         onPatchPayload={onPatchPayload}
       />,
     );
-    // no start → the inline ask shows instead of the do-it button
+    // no start → the inline ask shows instead of the do-it button (never-auto)
     expect(screen.getByText(/when should the meeting be/i)).toBeInTheDocument();
-    fireEvent.change(screen.getByDisplayValue(""), {
-      target: { value: "2026-06-30T14:00" },
-    });
+    fireEvent.change(screen.getByDisplayValue(""), { target: { value: "2026-06-30T14:00" } });
     fireEvent.click(screen.getByRole("button", { name: /save/i }));
     await waitFor(() =>
       expect(onPatchPayload).toHaveBeenCalledWith(
         expect.objectContaining({ kind: "meeting", start: "2026-06-30T14:00" }),
       ),
     );
-    // simulate the store updating the todo with the new start → do-it appears
+    // store updates the todo with the new start (attendees present) → do-it appears
     rerender(
       <OfferPanel
         todo={todo({
@@ -78,16 +72,31 @@ describe("OfferPanel (FIX2 — do it for me)", () => {
           actionPayload: {
             kind: "meeting",
             title: "Sync with Sam",
-            attendees: [],
+            attendees: ["Sam"],
             start: "2026-06-30T14:00",
           },
         })}
-        now={NOW}
         onFinish={vi.fn()}
         onPatchPayload={onPatchPayload}
       />,
     );
     expect(screen.getByRole("button", { name: /send invite/i })).toBeInTheDocument();
+  });
+
+  it("gates on missing attendees (the drift the FE-only check missed)", () => {
+    render(
+      <OfferPanel
+        todo={todo({
+          actionType: "meeting",
+          actionPayload: { kind: "meeting", title: "Sync", attendees: [], start: "2026-06-30T14:00" },
+        })}
+        onFinish={vi.fn()}
+        onPatchPayload={vi.fn()}
+      />,
+    );
+    // time present but NO attendees → describeOffer.needsField='attendees' → ask, not arm
+    expect(screen.getByText(/who's the meeting with/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /send invite/i })).toBeNull();
   });
 
   it("renders attendee candidate pickers when disambiguation is needed", async () => {
@@ -114,7 +123,6 @@ describe("OfferPanel (FIX2 — do it for me)", () => {
             ],
           },
         })}
-        now={NOW}
         onFinish={vi.fn()}
         onPatchPayload={onPatchPayload}
       />,
@@ -138,9 +146,8 @@ describe("OfferPanel (FIX2 — do it for me)", () => {
         todo={todo({
           actionType: "meeting",
           actionState: "done",
-          actionPayload: { kind: "meeting", title: "Sync", attendees: [], start: "2026-06-30T14:00" },
+          actionPayload: { kind: "meeting", title: "Sync", attendees: ["Sam"], start: "2026-06-30T14:00" },
         })}
-        now={NOW}
         onFinish={vi.fn()}
         onPatchPayload={vi.fn()}
       />,

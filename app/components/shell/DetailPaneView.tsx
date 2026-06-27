@@ -2,7 +2,7 @@
 
 import type { ActionPayload, Todo } from "@/lib/contracts";
 import { finishTodo as finishTodoApi, patchTodo } from "@/app/lib/api";
-import { hasOffer, reflectFinish } from "@/app/lib/offer";
+import { reflectFinish } from "@/app/lib/offer";
 import { useEnsureLabel, useTada } from "@/app/lib/store";
 import { OfferPanel } from "@/app/components/todo/OfferPanel";
 import { SubtaskSection } from "@/app/components/todo/SubtaskSection";
@@ -35,22 +35,16 @@ export function DetailPaneView({ todo }: { todo: Todo }) {
     return res;
   }
 
-  const offer = hasOffer(todo) ? (
-    <OfferPanel
-      todo={todo}
-      onFinish={finishOffer}
-      onPatchPayload={(payload: ActionPayload) => patch({ actionPayload: payload })}
-    />
-  ) : (
-    // actionType !== none but already done → still show the executed confirmation.
-    todo.actionType !== "none" && todo.actionState === "done" ? (
+  // OfferPanel self-manages: active offer, the executed-confirmation (done), or
+  // null. Mount it for any actionType todo (none → it renders nothing).
+  const offer =
+    todo.actionType !== "none" ? (
       <OfferPanel
         todo={todo}
         onFinish={finishOffer}
         onPatchPayload={(payload: ActionPayload) => patch({ actionPayload: payload })}
       />
-    ) : undefined
-  );
+    ) : undefined;
 
   return (
     <DetailPane

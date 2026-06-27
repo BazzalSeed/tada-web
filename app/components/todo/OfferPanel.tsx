@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { ActionPayload, Attendee, Todo } from "@/lib/contracts";
 import type { FinishResponse } from "@/app/lib/api";
-import { offerEffect } from "@/app/lib/offer";
+import { doneEyebrow, offerEffect, offerSubject } from "@/app/lib/offer";
 import styles from "./OfferPanel.module.css";
 
 // FIX2 — the "do it for me" offer, the spec's headline differentiator #2: the
@@ -15,7 +15,6 @@ import styles from "./OfferPanel.module.css";
 // Outcome states: done (executed confirmation) / failed (error + retry).
 export interface OfferPanelProps {
   todo: Todo;
-  now?: Date;
   // POST the finish; the parent reflects the persisted result into the store and
   // returns it so this panel can drive the inline-resolution UI.
   onFinish: () => Promise<FinishResponse>;
@@ -24,29 +23,17 @@ export interface OfferPanelProps {
 }
 
 // datetime-local needs ISO without the trailing seconds/zone; our payloads are
-// offset-less local already.
+// offset-less local already. "attendees" is a free-text name.
 const DATE_FIELDS = new Set(["start", "remindAt"]);
 
-export function OfferPanel({
-  todo,
-  now = new Date(),
-  onFinish,
-  onPatchPayload,
-}: OfferPanelProps) {
+export function OfferPanel({ todo, onFinish, onPatchPayload }: OfferPanelProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsField, setNeedsField] = useState<string | null>(null);
   const [fieldValue, setFieldValue] = useState("");
 
-  const effect = offerEffect(todo, now);
-  if (!effect) return null;
-
-  // A required field we can detect up-front (so we ask BEFORE the tap, not only
-  // after the server bounces it back).
-  const proactiveMissing = requiredField(todo);
-  const ask = needsField ?? proactiveMissing;
-
-  // Executed — show the calm confirmation, not the offer.
+  // Executed — show the calm confirmation, not the offer. (describeOffer returns
+  // null for a done action, so handle it before deriving the effect.)
   if (todo.actionState === "done") {
     return (
       <div className={styles.panel} data-state="done">
@@ -55,11 +42,20 @@ export function OfferPanel({
         </span>
         <div className={styles.body}>
           <p className={styles.eyebrow}>{doneEyebrow(todo)}</p>
-          <p className={styles.title}>{effect.title}</p>
+          <p className={styles.title}>{offerSubject(todo)}</p>
         </div>
       </div>
     );
   }
+
+  // The offer's concrete effect + the never-auto-execute gate, from the single
+  // source of truth (describeOffer). null → nothing to offer.
+  const effect = offerEffect(todo);
+  if (!effect) return null;
+
+  // The inline ask: a server-bounced needsField overrides the up-front one that
+  // describeOffer flags (missing start / attendees / remindAt).
+  const ask = needsField ?? effect.needsField;
 
   async function runFinish() {
     setBusy(true);
@@ -127,9 +123,8 @@ export function OfferPanel({
   return (
     <div className={styles.panel} data-state={todo.actionState}>
       <p className={styles.eyebrow}>{effect.eyebrow}</p>
-      <p className={styles.title}>{effect.title}</p>
       {effect.lines.map((l, i) => (
-        <p key={i} className={styles.detail}>
+        <p key={i} className={styles.title}>
           {l}
         </p>
       ))}
@@ -231,48 +226,30 @@ export function OfferPanel({
   );
 }
 
-function doneEyebrow(todo: Todo): string {
-  switch (todo.actionType) {
-    case "meeting":
-      return "Invite sent";
-    case "reminder":
-      return "Reminder set";
-    case "research":
-      return "Research written into notes";
-    default:
-      return "Done";
-  }
-}
-
-// Essential field we can detect missing up-front (the deterministic "one inline
-// question" the spec calls for). Meetings need a time; reminders need a time.
-function requiredField(todo: Todo): string | null {
-  const p = todo.actionPayload;
-  if (todo.actionType === "meeting" && !(p?.kind === "meeting" && p.start))
-    return "start";
-  if (todo.actionType === "reminder" && !(p?.kind === "reminder" && p.remindAt))
-    return "remindAt";
-  return null;
-}
-
 function fieldPrompt(field: string): string {
   switch (field) {
     case "start":
       return "When should the meeting be?";
     case "remindAt":
       return "When should I remind you?";
+    case "attendees":
+      return "Who's the meeting with?";
     default:
       return `Need ${field} to continue`;
   }
 }
 
 // Immutably set a single missing field on the payload (the needsField ask).
+// attendees is a string[] (a typed name); the rest are scalar fields.
 function withField(
   payload: ActionPayload | null | undefined,
   field: string,
   value: string,
 ): ActionPayload | null {
   if (!payload) return null;
+  if (field === "attendees") {
+    return { ...payload, attendees: [value] } as ActionPayload;
+  }
   return { ...payload, [field]: value } as ActionPayload;
 }
 
