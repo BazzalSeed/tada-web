@@ -16,10 +16,14 @@
     "prisma:deploy": "prisma migrate deploy"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.0",
     "@prisma/client": "^6.2.1",
+    "@vercel/blob": "^2.5.0",
+    "ai": "^7.0.2",
     "next": "16.2.9",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
