@@ -12,21 +12,25 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request): Promise<Response> {
   try {
-    const { email, source } = await readJson<{ email?: unknown; source?: unknown }>(req);
+    const { email, source, ref } = await readJson<{ email?: unknown; source?: unknown; ref?: unknown }>(req);
 
     const normalized = typeof email === "string" ? email.trim().toLowerCase() : "";
     if (!EMAIL_RE.test(normalized)) throw badRequest("a valid email is required");
 
-    const src = typeof source === "string" && source.trim() ? source.trim() : null;
+    // `source` is the column; accept `ref` as an alias for the CTA tag.
+    const tag = [source, ref].find((v) => typeof v === "string" && v.trim()) as string | undefined;
+    const src = tag ? tag.trim() : null;
 
-    // Idempotent: a repeat signup is a no-op, not a unique-constraint error.
-    await prisma.waitlist.upsert({
-      where: { email: normalized },
-      update: {},
-      create: { email: normalized, source: src },
-    });
-
-    return json({ ok: true });
+    // Idempotent: a repeat signup is a no-op (alreadyJoined), not a 500.
+    try {
+      await prisma.waitlist.create({ data: { email: normalized, source: src } });
+      return json({ ok: true, alreadyJoined: false });
+    } catch (err) {
+      if ((err as { code?: string }).code === "P2002") {
+        return json({ ok: true, alreadyJoined: true });
+      }
+      throw err;
+    }
   } catch (err) {
     return handleApiError(err);
   }
