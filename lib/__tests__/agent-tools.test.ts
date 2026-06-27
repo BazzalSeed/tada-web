@@ -98,4 +98,17 @@ describe("toAiSdkTools (chat wiring)", () => {
     expect((tools.send_meeting_invite as { needsApproval?: unknown }).needsApproval).toBe(true);
     expect((tools.create_todo as { needsApproval?: unknown }).needsApproval).toBe(true);
   });
+
+  it("a gated tool's execute IS the real executor (runs only when the SDK invokes it post-approval)", async () => {
+    (executors.sendMeetingInvite as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, actionExternalId: "evt-9" });
+    const tools = toAiSdkTools(user);
+    // The SDK calls execute() ONLY after an approval response — invoking it here
+    // proves it drives the real executor (not a placeholder / approval boolean).
+    const res = await (tools.send_meeting_invite.execute as (a: unknown, o: unknown) => Promise<{ output: string }>)(
+      { title: "Sync", attendees: ["d@x.com"], start: "2026-07-01T14:00:00" },
+      {},
+    );
+    expect(executors.sendMeetingInvite).toHaveBeenCalled();
+    expect(res.output).toContain("evt-9");
+  });
 });
