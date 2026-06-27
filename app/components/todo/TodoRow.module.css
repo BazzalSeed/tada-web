@@ -1,0 +1,74 @@
+/* List row. Calm rhythm; selected = soft raised surface + faint accent edge,
+   never a heavy black fill. Done = struck + muted. */
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  list-style: none;
+  transition: background var(--dur-fast) var(--ease-out-quart);
+}
+
+.row:hover {
+  background: var(--color-surface-subtle);
+}
+
+.row[data-selected="true"] {
+  background: var(--color-surface-raised);
+  box-shadow: inset 2px 0 0 0 var(--color-accent);
+}
+
+.caret {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-ink-muted);
+  font-size: 10px;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out-quart);
+}
+
+.caret[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+.caret:hover {
+  color: var(--color-accent-text);
+}
+
+.caretSpacer {
+  flex: none;
+  width: 18px;
+}
+
+.row[data-indented="true"] {
+  margin-left: var(--space-6);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.title {
+  color: var(--color-ink);
+  font-size: var(--fs-ui-body);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.row[data-done="true"] .title {
+  color: var(--color-ink-muted);
+  text-decoration: line-through;
+}

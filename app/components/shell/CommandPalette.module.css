@@ -1,0 +1,87 @@
+/* ⌘K command palette — floating panel over a soft scrim.
+   Highlighted result = accent text on raised surface, never a black fill. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 14vh;
+  background: color-mix(in srgb, var(--color-ink) 28%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.palette {
+  width: min(560px, 92vw);
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface-raised);
+  border: var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-ambient);
+  overflow: hidden;
+}
+
+.input {
+  flex: none;
+  padding: var(--space-4);
+  border: none;
+  border-bottom: var(--hairline);
+  background: transparent;
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-body-lead);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-ink-muted);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2);
+  overflow-y: auto;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-ink-soft);
+  cursor: pointer;
+}
+
+.active {
+  background: var(--color-surface-panel);
+  color: var(--color-accent-text);
+}
+
+.kind {
+  flex: none;
+  min-width: 46px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+.optionLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--color-ink-muted);
+  font-size: var(--fs-meta);
+}

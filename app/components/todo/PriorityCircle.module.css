@@ -1,0 +1,47 @@
+/* Priority-colored complete toggle. Ring color encodes urgency; a check fills
+   on done. Filled state uses the priority accent, never a heavy black fill. */
+
+.circle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1.5px solid var(--ring, var(--color-ink-muted));
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ring, var(--color-ink-muted));
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out-quart),
+    border-color var(--dur-fast) var(--ease-out-quart);
+}
+
+.circle[data-priority="p1"] {
+  --ring: var(--color-accent);
+}
+.circle[data-priority="p2"] {
+  --ring: var(--color-accent-bright);
+}
+.circle[data-priority="p3"] {
+  --ring: var(--color-caution, var(--color-ink-soft));
+}
+.circle[data-priority="none"] {
+  --ring: var(--color-ink-muted);
+}
+
+.circle:hover {
+  background: color-mix(in srgb, var(--ring) 14%, transparent);
+}
+
+.done {
+  background: var(--ring);
+  color: var(--color-on-accent);
+}
+
+.check {
+  font-weight: 700;
+}

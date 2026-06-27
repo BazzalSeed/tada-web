@@ -1,0 +1,146 @@
+"use client";
+
+import { useRef, useState } from "react";
+import type { Todo, TodoLabel } from "@/lib/contracts";
+import { neighborsForDrop } from "@/app/lib/reorder";
+import { TodoRow } from "./TodoRow";
+import styles from "./TodoList.module.css";
+
+export interface SubtaskCount {
+  done: number;
+  total: number;
+}
+
+export interface TodoListProps {
+  open: Todo[]; // already filtered + sorted
+  done: Todo[]; // scoped Done, sorted
+  now: Date;
+  labelsById: Record<string, TodoLabel>;
+  subtaskCounts: Record<string, SubtaskCount>;
+  childrenByParent?: Record<string, Todo[]>; // one-level subtasks, indented on expand
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onToggleComplete: (id: string) => void;
+  onReorder: (id: string, beforeId: string | null, afterId: string | null) => void;
+}
+
+function labelsFor(
+  todo: Todo,
+  labelsById: Record<string, TodoLabel>,
+): TodoLabel[] {
+  return todo.labelIds
+    .map((id) => labelsById[id])
+    .filter((l): l is TodoLabel => Boolean(l));
+}
+
+export function TodoList({
+  open,
+  done,
+  now,
+  labelsById,
+  subtaskCounts,
+  childrenByParent = {},
+  selectedId,
+  onSelect,
+  onToggleComplete,
+  onReorder,
+}: TodoListProps) {
+  const [doneOpen, setDoneOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const dragFrom = useRef<number | null>(null);
+
+  function toggleExpand(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function rowFor(
+    todo: Todo,
+    opts: { dragIndex?: number; indented?: boolean } = {},
+  ) {
+    const { dragIndex, indented } = opts;
+    const count = subtaskCounts[todo.id] ?? { done: 0, total: 0 };
+    const isOpenRow = dragIndex !== undefined;
+    const kids = childrenByParent[todo.id] ?? [];
+    return (
+      <TodoRow
+        key={todo.id}
+        todo={todo}
+        now={now}
+        labels={labelsFor(todo, labelsById)}
+        subtaskDone={count.done}
+        subtaskTotal={count.total}
+        selected={selectedId === todo.id}
+        onSelect={() => onSelect(todo.id)}
+        onToggleComplete={() => onToggleComplete(todo.id)}
+        indented={indented}
+        hasChildren={!indented && kids.length > 0}
+        expanded={expanded.has(todo.id)}
+        onToggleExpand={() => toggleExpand(todo.id)}
+        draggable={isOpenRow}
+        onDragStart={isOpenRow ? () => (dragFrom.current = dragIndex) : undefined}
+        onDragOver={isOpenRow ? (e) => e.preventDefault() : undefined}
+        onDrop={
+          isOpenRow
+            ? () => {
+                const from = dragFrom.current;
+                dragFrom.current = null;
+                if (from === null || from === dragIndex) return;
+                const ids = open.map((t) => t.id);
+                const { beforeId, afterId } = neighborsForDrop(
+                  ids,
+                  from,
+                  dragIndex,
+                );
+                onReorder(open[from].id, beforeId, afterId);
+              }
+            : undefined
+        }
+      />
+    );
+  }
+
+  return (
+    <div className={styles.list}>
+      <ul className={styles.open} role="list">
+        {open.flatMap((t, i) => {
+          const rows = [rowFor(t, { dragIndex: i })];
+          if (expanded.has(t.id)) {
+            for (const kid of childrenByParent[t.id] ?? []) {
+              rows.push(rowFor(kid, { indented: true }));
+            }
+          }
+          return rows;
+        })}
+        {open.length === 0 ? (
+          <li className={styles.empty}>Nothing here yet.</li>
+        ) : null}
+      </ul>
+
+      {done.length > 0 ? (
+        <div className={styles.doneSection}>
+          <button
+            type="button"
+            className={styles.doneToggle}
+            aria-expanded={doneOpen}
+            onClick={() => setDoneOpen((o) => !o)}
+          >
+            <span className={styles.caret} data-open={doneOpen}>
+              ▸
+            </span>
+            Done ({done.length})
+          </button>
+          {doneOpen ? (
+            <ul className={styles.doneList} role="list">
+              {done.map((t) => rowFor(t))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}

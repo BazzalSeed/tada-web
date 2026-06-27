@@ -1,0 +1,65 @@
+/* Transparent input over a colored backdrop. Both share identical box metrics
+   so the highlight aligns with the caret. */
+
+.wrap {
+  position: relative;
+  width: 100%;
+}
+
+.backdrop,
+.input {
+  margin: 0;
+  padding: var(--space-3);
+  font-family: var(--font-body);
+  font-size: var(--fs-ui-body);
+  line-height: 1.4;
+  letter-spacing: normal;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: none;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--color-ink);
+  overflow: hidden;
+}
+
+.input {
+  position: relative;
+  width: 100%;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--color-accent);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-ink-muted);
+}
+
+/* Token accents — rust family on the warm substrate. */
+.token {
+  border-radius: var(--radius-sm);
+  padding: 0 1px;
+}
+
+.token[data-kind="priority"] {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.token[data-kind="label"] {
+  color: var(--color-accent-text);
+}
+
+.token[data-kind="list"] {
+  color: var(--color-accent-deep);
+}
+
+.token[data-kind="date"] {
+  color: var(--color-caution-text, var(--color-accent-text));
+  font-weight: 500;
+}

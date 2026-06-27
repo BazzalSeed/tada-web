@@ -1,0 +1,44 @@
+/* Three-pane grid. Detail pane slides in on select (column animates open).
+   Sidebar fixed width · content fluid · detail revealed on demand. */
+
+.shell {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 0;
+  height: 100dvh;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  transition: grid-template-columns var(--dur-base) var(--ease-out-quart);
+}
+
+.detailOpen {
+  grid-template-columns: 260px minmax(0, 1fr) clamp(340px, 32vw, 440px);
+}
+
+.sidebar {
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.content {
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.detail {
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 720px) {
+  .shell,
+  .detailOpen {
+    grid-template-columns: 1fr;
+  }
+  .sidebar,
+  .detail {
+    display: none;
+  }
+}
