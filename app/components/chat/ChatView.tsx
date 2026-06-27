@@ -158,11 +158,6 @@ function ChatThread({
         ) : (
           views.map((v) => (
             <div key={v.id}>
-              {v.id === session.summaryThroughId ? (
-                <div className={styles.compactDivider}>
-                  Earlier messages condensed for the assistant
-                </div>
-              ) : null}
               <MessageBlock
                 role={v.role}
                 text={v.text}
@@ -178,6 +173,14 @@ function ChatThread({
                 onApprove={(i) => resolveOffer(v, i, true)}
                 onDeny={(i) => resolveOffer(v, i, false)}
               />
+              {/* Watermark = last message folded into the summary, so the line
+                  sits AFTER it: everything above is condensed (for the model),
+                  everything below is the verbatim live window. */}
+              {v.id === session.summaryThroughId ? (
+                <div className={styles.compactDivider}>
+                  Earlier messages condensed for the assistant
+                </div>
+              ) : null}
             </div>
           ))
         )}
