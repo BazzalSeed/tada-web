@@ -1,0 +1,6 @@
+.thumb {
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: var(--hairline);
+}

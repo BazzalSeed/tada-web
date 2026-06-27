@@ -62,6 +62,14 @@ describe("TodoRow", () => {
     expect(screen.getByRole("listitem")).toHaveAttribute("data-selected", "true");
   });
 
+  it("renders a source-capture thumbnail when provided", () => {
+    render(<TodoRow {...rowProps({ captureThumb: "https://blob/shot.png" })} />);
+    expect(screen.getByRole("img")).toHaveAttribute(
+      "src",
+      "https://blob/shot.png",
+    );
+  });
+
   it("renders a done todo with done styling", () => {
     render(
       <TodoRow {...rowProps({ todo: { ...base, status: "done" } })} />,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { Todo, TodoLabel } from "@/lib/contracts";
+import type { Capture, Todo, TodoLabel } from "@/lib/contracts";
 import { neighborsForDrop } from "@/app/lib/reorder";
 import { TodoRow } from "./TodoRow";
 import styles from "./TodoList.module.css";
@@ -18,6 +18,7 @@ export interface TodoListProps {
   labelsById: Record<string, TodoLabel>;
   subtaskCounts: Record<string, SubtaskCount>;
   childrenByParent?: Record<string, Todo[]>; // one-level subtasks, indented on expand
+  capturesById?: Record<string, Capture>; // source captures for row thumbnails
   selectedId: string | null;
   onSelect: (id: string) => void;
   onToggleComplete: (id: string) => void;
@@ -40,6 +41,7 @@ export function TodoList({
   labelsById,
   subtaskCounts,
   childrenByParent = {},
+  capturesById = {},
   selectedId,
   onSelect,
   onToggleComplete,
@@ -66,6 +68,7 @@ export function TodoList({
     const count = subtaskCounts[todo.id] ?? { done: 0, total: 0 };
     const isOpenRow = dragIndex !== undefined;
     const kids = childrenByParent[todo.id] ?? [];
+    const captureThumb = capturesById[todo.sourceCaptureId]?.blobPath ?? null;
     return (
       <TodoRow
         key={todo.id}
@@ -74,6 +77,7 @@ export function TodoList({
         labels={labelsFor(todo, labelsById)}
         subtaskDone={count.done}
         subtaskTotal={count.total}
+        captureThumb={captureThumb}
         selected={selectedId === todo.id}
         onSelect={() => onSelect(todo.id)}
         onToggleComplete={() => onToggleComplete(todo.id)}

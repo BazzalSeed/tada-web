@@ -1,5 +1,18 @@
-import type { SavedView, Todo, TodoLabel } from "@/lib/contracts";
+import type { Capture, SavedView, Todo, TodoLabel } from "@/lib/contracts";
 import type { TadaState } from "./store";
+
+// A tiny inline SVG "screenshot" so a capture thumbnail is visible in the demo.
+const SAMPLE_THUMB =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23f0ece3'/%3E%3Crect x='6' y='8' width='28' height='4' rx='2' fill='%23c8632e'/%3E%3Crect x='6' y='18' width='20' height='3' rx='1.5' fill='%235d574d'/%3E%3Crect x='6' y='26' width='24' height='3' rx='1.5' fill='%235d574d'/%3E%3C/svg%3E";
+
+const captures: Record<string, Capture> = {
+  "c-1": {
+    id: "c-1",
+    createdAt: "2026-06-26T09:00:00",
+    kind: "image",
+    blobPath: SAMPLE_THUMB,
+  },
+};
 
 // TEMPORARY demo data so the shell is verifiable before live data lands.
 // T1.4 replaces this preload with a fetch through the API seam (/api/todos).
@@ -110,4 +123,4 @@ const todos: Todo[] = [
   },
 ];
 
-export const seedState: Partial<TadaState> = { todos, views, labels };
+export const seedState: Partial<TadaState> = { todos, views, labels, captures };

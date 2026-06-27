@@ -3,6 +3,7 @@
 import type { Todo, TodoLabel } from "@/lib/contracts";
 import { PriorityCircle } from "./PriorityCircle";
 import { MetaChips } from "./MetaChips";
+import { CaptureThumbnail } from "@/app/components/capture/CaptureThumbnail";
 import styles from "./TodoRow.module.css";
 
 // A single list row: priority/complete circle · title · meta chips. Selecting
@@ -27,6 +28,7 @@ export interface TodoRowProps {
   expanded?: boolean;
   onToggleExpand?: () => void;
   indented?: boolean;
+  captureThumb?: string | null; // source-capture image url
 }
 
 export function TodoRow({
@@ -46,6 +48,7 @@ export function TodoRow({
   expanded,
   onToggleExpand,
   indented,
+  captureThumb,
 }: TodoRowProps) {
   const done = todo.status === "done";
   return (
@@ -93,6 +96,9 @@ export function TodoRow({
           subtaskTotal={subtaskTotal}
         />
       </div>
+      {captureThumb ? (
+        <CaptureThumbnail src={captureThumb} alt={`Capture for ${todo.title}`} />
+      ) : null}
     </li>
   );
 }

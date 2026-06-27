@@ -1,0 +1,26 @@
+.zone {
+  position: relative;
+  min-height: 100%;
+}
+
+.overlay {
+  position: absolute;
+  inset: var(--space-3);
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--color-accent);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  pointer-events: none;
+}
+
+.hint {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  color: var(--color-accent-text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.06em;
+}

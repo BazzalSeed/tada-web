@@ -67,6 +67,7 @@ export function TodoListView() {
         labelsById={labelsById}
         subtaskCounts={subtaskCounts}
         childrenByParent={childrenByParent}
+        capturesById={state.captures}
         selectedId={state.selectedTodoId}
         onSelect={(id) => dispatch({ type: "SELECT_TODO", id })}
         onToggleComplete={toggleComplete}

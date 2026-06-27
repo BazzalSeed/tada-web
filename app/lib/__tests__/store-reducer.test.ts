@@ -76,6 +76,17 @@ describe("store reducer", () => {
     expect(s2.views[0].name).toBe("Job");
   });
 
+  it("upserts a capture by id (keyed map for row thumbnails)", () => {
+    const capture = {
+      id: "cap1",
+      createdAt: "2026-06-26T09:00:00",
+      kind: "image" as const,
+      blobPath: "https://blob/x.png",
+    };
+    const s = reducer(initialState, { type: "UPSERT_CAPTURE", capture });
+    expect(s.captures["cap1"].blobPath).toBe("https://blob/x.png");
+  });
+
   it("derives palette items ranked views → labels → todos", () => {
     const items = paletteItemsFor({
       ...initialState,

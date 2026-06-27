@@ -7,7 +7,7 @@ import {
   useReducer,
   type ReactNode,
 } from "react";
-import type { SavedView, Todo, TodoLabel } from "@/lib/contracts";
+import type { Capture, SavedView, Todo, TodoLabel } from "@/lib/contracts";
 import type { NavSelection } from "@/app/components/shell/Sidebar";
 import type { PaletteItem } from "@/app/components/shell/CommandPalette";
 
@@ -19,6 +19,7 @@ export interface TadaState {
   todos: Todo[];
   views: SavedView[];
   labels: TodoLabel[];
+  captures: Record<string, Capture>; // by id — source captures for row thumbnails
   selection: NavSelection;
   selectedTodoId: string | null;
 }
@@ -27,6 +28,7 @@ export const initialState: TadaState = {
   todos: [],
   views: [],
   labels: [],
+  captures: {},
   selection: { kind: "all" },
   selectedTodoId: null,
 };
@@ -36,6 +38,7 @@ export type TadaAction =
   | { type: "UPSERT_TODO"; todo: Todo }
   | { type: "UPSERT_LABEL"; label: TodoLabel }
   | { type: "UPSERT_VIEW"; view: SavedView }
+  | { type: "UPSERT_CAPTURE"; capture: Capture }
   | { type: "SELECT_NAV"; selection: NavSelection }
   | { type: "SELECT_TODO"; id: string | null };
 
@@ -68,6 +71,11 @@ export function reducer(state: TadaState, action: TadaAction): TadaState {
           : [...state.labels, action.label],
       };
     }
+    case "UPSERT_CAPTURE":
+      return {
+        ...state,
+        captures: { ...state.captures, [action.capture.id]: action.capture },
+      };
     case "UPSERT_VIEW": {
       const exists = state.views.some((v) => v.id === action.view.id);
       return {
