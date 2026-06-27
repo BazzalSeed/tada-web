@@ -102,6 +102,10 @@ describe.skipIf(!RUN)("enrichExtractor (live) — FIX4 fill-all", () => {
     expect(out.todos).toHaveLength(1);
     const t = out.todos[0];
     expect(t.suggestedDueAt).toBeTruthy(); // "friday" resolved
+    // resolved against the CURRENT date (not a stale 2024) — enrich injects now.
+    const due = new Date(t.suggestedDueAt!);
+    expect(Number.isNaN(due.getTime())).toBe(false);
+    expect(due.getFullYear()).toBe(new Date().getFullYear());
     expect(t.suggestedPriority).toBe("p1"); // "urgent"
     expect(t.actionType).toBe("reminder"); // explicit "remind me"
     expect(t.title.toLowerCase()).not.toContain("urgent"); // token stripped
