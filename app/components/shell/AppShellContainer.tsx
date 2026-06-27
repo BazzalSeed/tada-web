@@ -5,6 +5,7 @@ import type { FilterCriteria, SavedView, ViewSelection } from "@/lib/contracts";
 import { criteriaFor } from "@/lib/core";
 import { paletteItemsFor, useTada } from "@/app/lib/store";
 import { TodoListView } from "@/app/components/todo/TodoListView";
+import { ChatView } from "@/app/components/chat/ChatView";
 import { ViewEditor } from "@/app/components/views/ViewEditor";
 import { AppShell } from "./AppShell";
 import { DetailPaneView } from "./DetailPaneView";
@@ -15,17 +16,6 @@ const VIEW_ACCENT = "#c8632e";
 type EditorState =
   | { mode: "create"; seed: FilterCriteria }
   | { mode: "edit"; view: SavedView };
-
-// Chat is a destination, not a filter-View; its surface lands in T3.4. Until then
-// the Chat selection shows a calm placeholder.
-function ChatPlaceholder() {
-  return (
-    <div className={styles.placeholder}>
-      <p className={styles.eyebrow}>Chat</p>
-      <p className={styles.note}>The text + voice agent lands in T3.4–T3.5.</p>
-    </div>
-  );
-}
 
 // Maps store state → AppShell props and routes palette selections.
 export function AppShellContainer({ children }: { children?: ReactNode }) {
@@ -114,7 +104,7 @@ export function AppShellContainer({ children }: { children?: ReactNode }) {
         ) : null
       }
     >
-      {children ?? (isChat ? <ChatPlaceholder /> : <TodoListView />)}
+      {children ?? (isChat ? <ChatView /> : <TodoListView />)}
     </AppShell>
   );
 }
