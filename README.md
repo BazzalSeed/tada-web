@@ -15,12 +15,12 @@ Requires Node and a Postgres database (local Docker Postgres for dev — see [do
 Secrets live in gitignored env files. Copy the template and fill it in:
 
 ```bash
-cp .env.example .env        # .env is read by both `next dev` and the Prisma CLI
+cp .env.example .env.local  # next dev reads it; prisma:migrate feeds it via dotenv-cli
 ```
 
 `.env.example` documents every variable you need (database URL, `GEMINI_API_KEY`, `OPENAI_API_KEY`, Auth.js + Google OAuth, `BLOB_READ_WRITE_TOKEN`) and defaults the database to the local Docker Postgres. **Never commit a real secret.**
 
-Env layout: **`.env`** = local dev (local DB). **`.env.prod`** = a parallel reference of the production values (`vercel env pull .env.prod --environment=production`) — loaded by no tool automatically. **`.env.test`** = test runs. Production itself reads from the **Vercel** env store, not from any local file.
+Env layout: **`.env.local`** = local dev (local DB) — read by `next dev`, and fed to Prisma by the `prisma:migrate` script. **`.env.prod`** = a parallel reference of the production values (`vercel env pull .env.prod --environment=production`) — loaded by no tool automatically. **`.env.test`** = the opt-in DB integration tests. Production itself reads from the **Vercel** env store, not from any local file.
 
 ## Run it locally
 
