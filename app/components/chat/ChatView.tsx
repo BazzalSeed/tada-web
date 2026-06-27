@@ -1,7 +1,10 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import {
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithApprovalResponses,
+} from "ai";
 import { useTada } from "@/app/lib/store";
 import { messageToView } from "./messageView";
 import { MessageBlock } from "./MessageBlock";
@@ -10,16 +13,19 @@ import { ChatComposer } from "./ChatComposer";
 import styles from "./ChatView.module.css";
 
 // T3.4 text chat. useChat ↔ /api/chat (Gemini tool-loop). Read tools auto-run and
-// stream result tiles; gated writes pause as OfferCards and fire only on an
-// explicit Approve (HITL via addToolResult) — the never-auto-execute invariant.
+// stream result tiles; gated writes pause as OfferCards (approval-requested) and
+// run SERVER-SIDE only on an explicit Approve — native AI SDK HITL, the
+// never-auto-execute invariant. `sendAutomaticallyWhen` resubmits once every
+// pending approval has a response so the executed result streams back.
 export interface ChatViewProps {
   onVoice?: () => void;
 }
 
 export function ChatView({ onVoice }: ChatViewProps) {
   const { state } = useTada();
-  const { messages, sendMessage, status, addToolResult } = useChat({
+  const { messages, sendMessage, status, addToolApprovalResponse } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
   });
   const views = messages.map(messageToView);
   const busy = status === "streaming" || status === "submitted";
@@ -32,13 +38,9 @@ export function ChatView({ onVoice }: ChatViewProps) {
   ) {
     const offer = view.offers.find((o) => o.cardIndex === cardIndex);
     if (!offer) return;
-    // HITL: hand the approval decision back to the tool loop; the server-side
-    // executor runs (or skips) the gated action and streams the result tile.
-    void addToolResult({
-      tool: offer.toolName,
-      toolCallId: offer.toolCallId,
-      output: { approved },
-    });
+    // HITL: respond to the tool's approval request. The SDK runs (or skips) the
+    // gated executor server-side and streams the result tile.
+    addToolApprovalResponse({ id: offer.approvalId, approved });
   }
 
   return (

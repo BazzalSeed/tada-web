@@ -56,10 +56,10 @@ describe("Tile dispatcher", () => {
     expect(screen.getByText("three")).toBeInTheDocument();
   });
 
-  it("renders an offer card with Approve/Deny", () => {
+  it("renders a pending offer card with Approve/Deny", () => {
     render(
       <Tile
-        card={{ type: "offer", payload: { kind: "reminder", text: "Stretch" } }}
+        card={{ type: "pending", toolName: "set_reminder", action: { kind: "reminder", text: "Stretch" } }}
         labels={[]}
         now={NOW}
         onApprove={() => {}}
@@ -68,5 +68,47 @@ describe("Tile dispatcher", () => {
     );
     expect(screen.getByText("Stretch")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /approve/i })).toBeInTheDocument();
+  });
+
+  it("renders an executed meeting result (booked)", () => {
+    render(
+      <Tile
+        card={{ type: "offer", kind: "meeting", result: { ok: true, actionExternalId: "evt_1" } }}
+        labels={[]}
+        now={NOW}
+      />,
+    );
+    expect(screen.getByText(/meeting booked/i)).toBeInTheDocument();
+  });
+
+  it("renders a meeting result that still needs an attendee email", () => {
+    render(
+      <Tile
+        card={{
+          type: "offer",
+          kind: "meeting",
+          result: { ok: false, needsDisambiguation: [{ name: "Sam", status: "unresolved" }] },
+        }}
+        labels={[]}
+        now={NOW}
+      />,
+    );
+    expect(screen.getByText(/couldn't confirm who: sam/i)).toBeInTheDocument();
+  });
+
+  it("renders search_contacts candidates", () => {
+    render(
+      <Tile
+        card={{ type: "contacts", query: "sam", candidates: [{ name: "Sam Lee", email: "sam@acme.com", org: "Acme" }] }}
+        labels={[]}
+        now={NOW}
+      />,
+    );
+    expect(screen.getByText("sam@acme.com")).toBeInTheDocument();
+  });
+
+  it("renders a denied note", () => {
+    render(<Tile card={{ type: "denied", toolName: "set_reminder" }} labels={[]} now={NOW} />);
+    expect(screen.getByText(/dismissed/i)).toBeInTheDocument();
   });
 });

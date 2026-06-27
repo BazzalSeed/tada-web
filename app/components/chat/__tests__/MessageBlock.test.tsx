@@ -46,7 +46,7 @@ describe("MessageBlock", () => {
     render(
       <MessageBlock
         role="assistant"
-        cards={[{ type: "offer", payload: { kind: "reminder", text: "Stretch" } }]}
+        cards={[{ type: "pending", toolName: "set_reminder", action: { kind: "reminder", text: "Stretch" } }]}
         labels={[]}
         now={NOW}
         onApprove={onApprove}

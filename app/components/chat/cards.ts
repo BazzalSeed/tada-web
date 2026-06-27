@@ -1,16 +1,45 @@
-import type { ActionPayload, Attendee, Todo } from "@/lib/contracts";
+import type {
+  ContactCandidate,
+  ExecResult,
+  Priority,
+  Todo,
+} from "@/lib/contracts";
 
-// Presentational contract for chat/voice generative-UI tiles. The agent runtime
-// returns a tool `card` ({type, ...}); the container maps that wire shape onto
-// this union, and the tile components render purely from it. Gated-write offers
-// carry the concrete effect + (for meetings) the attendee disambiguation set —
-// the offer only fires on an explicit Approve (never auto-execute).
+// A gated write the agent has PROPOSED but not run — built from the tool call's
+// input args while it sits in `approval-requested`. Drives the OfferCard's
+// concrete-effect preview + Approve/Deny (the never-auto-execute surface). One
+// variant per gated tool (create_todo / set_reminder / send_meeting_invite /
+// deep_research).
+export type ProposedAction =
+  | { kind: "todo"; title: string; dueAt?: string | null; priority?: Priority }
+  | {
+      kind: "meeting";
+      title: string;
+      attendees?: string[];
+      start?: string | null;
+      durationMin?: number;
+      notes?: string | null;
+    }
+  | { kind: "reminder"; text: string; remindAt?: string | null }
+  | { kind: "research"; topic: string };
+
+// Presentational contract for chat/voice generative-UI tiles. Two sources:
+// (1) a tool's executed result `card` ({type, ...}) streamed back after it runs
+// (read tools auto-run; gated writes run server-side only after approval), and
+// (2) a client-built `pending` offer (from the paused tool input) / `denied`
+// note. The tile components render purely from this union.
 export type ChatCard =
+  // --- executed results (from part.output.card) ---
   | { type: "todo"; todo: Todo }
   | { type: "todos"; todos: Todo[] }
+  | { type: "contacts"; query: string; candidates: ContactCandidate[] }
+  | { type: "offer"; kind: "reminder" | "meeting"; result: ExecResult }
   | {
-      type: "offer";
-      payload: ActionPayload;
-      attendees?: Attendee[] | null;
+      type: "research";
+      topic?: string;
+      markdown?: string | null;
+      status?: "running" | "done";
     }
-  | { type: "research"; status: "running" | "done"; markdown?: string | null };
+  // --- client-side gated-write states ---
+  | { type: "pending"; toolName: string; action: ProposedAction }
+  | { type: "denied"; toolName: string };

@@ -4,8 +4,8 @@ import { Tile } from "./tiles/Tile";
 import styles from "./MessageBlock.module.css";
 
 // One chat message: user (right, plain) or assistant (left, with any generative
-// tiles below the text). Offer callbacks are keyed by card index so the
-// container can resolve them to the right tool call.
+// tiles below the text). A pending offer's Approve/Deny is keyed by card index so
+// the container can resolve it to the right tool approval.
 export interface MessageBlockProps {
   role: "user" | "assistant";
   text?: string;
@@ -14,8 +14,7 @@ export interface MessageBlockProps {
   now?: Date;
   onApprove?: (cardIndex: number) => void;
   onDeny?: (cardIndex: number) => void;
-  onResolveAttendee?: (cardIndex: number, name: string, email: string) => void;
-  offerStatuses?: Record<number, "pending" | "running" | "approved" | "denied">;
+  offerStatuses?: Record<number, "pending" | "running" | "denied">;
 }
 
 export function MessageBlock({
@@ -26,7 +25,6 @@ export function MessageBlock({
   now,
   onApprove,
   onDeny,
-  onResolveAttendee,
   offerStatuses,
 }: MessageBlockProps) {
   return (
@@ -43,11 +41,6 @@ export function MessageBlock({
                 now={now}
                 onApprove={onApprove ? () => onApprove(i) : undefined}
                 onDeny={onDeny ? () => onDeny(i) : undefined}
-                onResolveAttendee={
-                  onResolveAttendee
-                    ? (name, email) => onResolveAttendee(i, name, email)
-                    : undefined
-                }
                 offerStatus={offerStatuses?.[i]}
               />
             ))}

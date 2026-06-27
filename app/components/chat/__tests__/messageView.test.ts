@@ -32,7 +32,7 @@ describe("messageToView", () => {
     expect(v.cards).toEqual([]);
   });
 
-  it("renders a tool part's output.card as a tile", () => {
+  it("renders an executed tool's output.card as a tile", () => {
     const v = messageToView({
       id: "m2",
       role: "assistant",
@@ -51,7 +51,7 @@ describe("messageToView", () => {
     expect(v.offers).toEqual([]);
   });
 
-  it("renders a gated meeting tool call (no output) as a pending offer from its input", () => {
+  it("renders a gated meeting awaiting approval as a pending offer + approval ref", () => {
     const v = messageToView({
       id: "m3",
       role: "assistant",
@@ -59,17 +59,24 @@ describe("messageToView", () => {
         {
           type: "tool-send_meeting_invite",
           toolCallId: "c9",
-          state: "input-available",
-          input: { title: "Sync with Dakota", start: "2026-06-30T14:00:00", durationMin: 30 },
+          state: "approval-requested",
+          input: { title: "Sync with Dakota", start: "2026-06-30T14:00:00", durationMin: 30, attendees: ["Dakota"] },
+          approval: { id: "appr-1" },
         },
       ],
     } as never);
     expect(v.cards).toHaveLength(1);
-    expect(v.cards[0]).toMatchObject({ type: "offer", payload: { kind: "meeting", title: "Sync with Dakota" } });
-    expect(v.offers).toEqual([{ cardIndex: 0, toolCallId: "c9", toolName: "send_meeting_invite" }]);
+    expect(v.cards[0]).toMatchObject({
+      type: "pending",
+      toolName: "send_meeting_invite",
+      action: { kind: "meeting", title: "Sync with Dakota" },
+    });
+    expect(v.offers).toEqual([
+      { cardIndex: 0, approvalId: "appr-1", toolName: "send_meeting_invite" },
+    ]);
   });
 
-  it("maps a gated reminder tool call to a reminder offer", () => {
+  it("maps a gated reminder awaiting approval to a reminder pending offer", () => {
     const v = messageToView({
       id: "m4",
       role: "assistant",
@@ -77,17 +84,96 @@ describe("messageToView", () => {
         {
           type: "tool-set_reminder",
           toolCallId: "c10",
-          state: "input-available",
+          state: "approval-requested",
           input: { text: "Call mom", remindAt: "2026-06-26T18:00:00" },
+          approval: { id: "appr-2" },
         },
       ],
     } as never);
-    expect(v.cards[0]).toMatchObject({ type: "offer", payload: { kind: "reminder", text: "Call mom" } });
+    expect(v.cards[0]).toMatchObject({
+      type: "pending",
+      action: { kind: "reminder", text: "Call mom" },
+    });
+    expect(v.offers[0].approvalId).toBe("appr-2");
+  });
+
+  it("maps a gated create_todo awaiting approval to a todo pending offer", () => {
+    const v = messageToView({
+      id: "m5",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-create_todo",
+          toolCallId: "c11",
+          state: "approval-requested",
+          input: { title: "Buy oat milk", priority: "p2" },
+          approval: { id: "appr-3" },
+        },
+      ],
+    } as never);
+    expect(v.cards[0]).toMatchObject({
+      type: "pending",
+      action: { kind: "todo", title: "Buy oat milk", priority: "p2" },
+    });
+  });
+
+  it("renders an executed meeting result (offer card) from output.card", () => {
+    const v = messageToView({
+      id: "m6",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-send_meeting_invite",
+          toolCallId: "c9",
+          state: "output-available",
+          input: { title: "Sync" },
+          output: { output: "Meeting booked.", card: { type: "offer", kind: "meeting", result: { ok: true, actionExternalId: "evt_1" } } },
+        },
+      ],
+    } as never);
+    expect(v.cards[0]).toMatchObject({ type: "offer", kind: "meeting", result: { ok: true } });
+    expect(v.offers).toEqual([]);
+  });
+
+  it("shows a research-running tile while a gated research executes (approval-responded)", () => {
+    const v = messageToView({
+      id: "m7",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-deep_research",
+          toolCallId: "c12",
+          state: "approval-responded",
+          input: { topic: "best CRMs" },
+          approval: { id: "appr-4", approved: true },
+        },
+      ],
+    } as never);
+    expect(v.cards[0]).toMatchObject({ type: "research", status: "running" });
+    expect(v.offers).toEqual([]);
+  });
+
+  it("renders a denied gated write as a denied note", () => {
+    const v = messageToView({
+      id: "m8",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-set_reminder",
+          toolCallId: "c10",
+          state: "output-denied",
+          input: { text: "Call mom" },
+          approval: { id: "appr-2", approved: false },
+        },
+      ],
+    } as never);
+    expect(v.cards[0]).toMatchObject({ type: "denied", toolName: "set_reminder" });
+    expect(v.offers).toEqual([]);
   });
 
   it("ignores input-streaming tool parts that have no usable input yet", () => {
     const v = messageToView({
-      id: "m5",
+      id: "m9",
       role: "assistant",
       parts: [{ type: "tool-deep_research", toolCallId: "c11", state: "input-streaming", input: undefined }],
     } as never);
