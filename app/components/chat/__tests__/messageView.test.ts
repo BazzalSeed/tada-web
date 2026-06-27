@@ -153,6 +153,23 @@ describe("messageToView", () => {
     expect(v.offers).toEqual([]);
   });
 
+  it("renders a denied gated write (approval-responded, not approved) as a denied note", () => {
+    const v = messageToView({
+      id: "m8b",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-deep_research",
+          toolCallId: "c12",
+          state: "approval-responded",
+          input: { topic: "best CRMs" },
+          approval: { id: "appr-4", approved: false },
+        },
+      ],
+    } as never);
+    expect(v.cards[0]).toMatchObject({ type: "denied", toolName: "deep_research" });
+  });
+
   it("renders a denied gated write as a denied note", () => {
     const v = messageToView({
       id: "m8",

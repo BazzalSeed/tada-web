@@ -138,15 +138,18 @@ export function messageToView(message: UIMessageLike): MessageView {
       continue;
     }
 
-    // Approved + executing: research runs synchronously (~10-30s) — show a pulse.
-    if (part.state === "approval-responded" && part.approval?.approved) {
-      if (toolName === "deep_research") {
+    // Approval recorded but not yet executed. Approved → the executor is running
+    // (research is the slow one, ~10-30s; show a pulse). Denied → a quiet note.
+    if (part.state === "approval-responded") {
+      if (part.approval?.approved === false) {
+        cards.push({ type: "denied", toolName });
+      } else if (toolName === "deep_research") {
         cards.push({ type: "research", status: "running" });
       }
       continue;
     }
 
-    // Denied → nothing ran; a quiet note.
+    // Denied result → nothing ran; a quiet note.
     if (part.state === "output-denied") {
       cards.push({ type: "denied", toolName });
       continue;
