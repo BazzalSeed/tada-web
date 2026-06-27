@@ -37,7 +37,13 @@ export const initialState: TadaState = {
 };
 
 export type TadaAction =
-  | { type: "SET_DATA"; todos: Todo[]; views: SavedView[]; labels: TodoLabel[] }
+  | {
+      type: "SET_DATA";
+      todos: Todo[];
+      views: SavedView[];
+      labels: TodoLabel[];
+      captures?: Capture[];
+    }
   | { type: "UPSERT_TODO"; todo: Todo }
   | { type: "UPSERT_LABEL"; label: TodoLabel }
   | { type: "RELABEL"; fromId: string; label: TodoLabel }
@@ -55,6 +61,14 @@ export function reducer(state: TadaState, action: TadaAction): TadaState {
         todos: action.todos,
         views: action.views,
         labels: action.labels,
+        // Merge captures (keyed by id) so row thumbnails survive reload; keep any
+        // already-known captures if a load omits them.
+        captures: action.captures
+          ? {
+              ...state.captures,
+              ...Object.fromEntries(action.captures.map((c) => [c.id, c])),
+            }
+          : state.captures,
       };
     case "UPSERT_TODO": {
       const exists = state.todos.some((t) => t.id === action.todo.id);

@@ -4,6 +4,7 @@ import {
   createTodo,
   ensureLabel,
   enrichText,
+  listCaptures,
   listLabels,
   patchTodo,
   reorderTodo,
@@ -98,6 +99,19 @@ describe("api client", () => {
     expect(url).toBe("/api/labels");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body)).toEqual({ name: "pets" });
+  });
+
+  it("listCaptures GETs /api/captures and unwraps { captures }", async () => {
+    const fetchMock = mockFetch({
+      captures: [{ id: "cap1", createdAt: "x", kind: "image", blobPath: "https://blob/x.png" }],
+    });
+    const result = await listCaptures();
+    expect(result).toEqual([
+      { id: "cap1", createdAt: "x", kind: "image", blobPath: "https://blob/x.png" },
+    ]);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/captures");
+    expect(init?.method ?? "GET").toBe("GET");
   });
 
   it("throws on a non-ok response", async () => {

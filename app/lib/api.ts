@@ -1,4 +1,4 @@
-import type { ExtractedTodo, Todo, TodoLabel } from "@/lib/contracts";
+import type { Capture, ExtractedTodo, Todo, TodoLabel } from "@/lib/contracts";
 
 // Typed client for the frozen front↔back todo routes. Every endpoint returns a
 // `{ todo }` envelope; these unwrap to the bare Todo. Wire keys are snake_case
@@ -41,6 +41,13 @@ export async function listTodos(): Promise<Todo[]> {
     method: "GET",
   });
   return todos;
+}
+
+export async function listCaptures(): Promise<Capture[]> {
+  const { captures } = await send<{ captures: Capture[] }>("/api/captures", {
+    method: "GET",
+  });
+  return captures;
 }
 
 export async function createTodo(draft: TodoDraft): Promise<Todo> {

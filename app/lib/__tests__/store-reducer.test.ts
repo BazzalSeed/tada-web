@@ -44,6 +44,23 @@ describe("store reducer", () => {
     expect(s.labels).toHaveLength(1);
   });
 
+  it("hydrates captures via SET_DATA (keyed by id for row thumbnails)", () => {
+    const capture = {
+      id: "cap9",
+      createdAt: "2026-06-26T09:00:00",
+      kind: "image" as const,
+      blobPath: "https://blob/shot.png",
+    };
+    const s = reducer(initialState, {
+      type: "SET_DATA",
+      todos: [todo],
+      views: [view],
+      labels: [label],
+      captures: [capture],
+    });
+    expect(s.captures["cap9"].blobPath).toBe("https://blob/shot.png");
+  });
+
   it("changes the nav selection and clears the selected todo", () => {
     const s0 = reducer(initialState, { type: "SELECT_TODO", id: "t1" });
     const s1 = reducer(s0, { type: "SELECT_NAV", selection: { kind: "today" } });
