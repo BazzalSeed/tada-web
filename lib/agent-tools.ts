@@ -11,6 +11,7 @@ import type { ToolSet } from "ai";
 import type { ZodTypeAny } from "zod";
 import { store } from "./store";
 import { executors } from "./executors";
+import { contactResolverFor } from "./contacts";
 import type { AgentTool, AgentToolRegistry, UserCtx } from "./contracts";
 
 // ---- read (auto) ----
@@ -29,6 +30,22 @@ const list_todos: AgentTool = {
         todos.map((t) => ({ id: t.id, title: t.title, status: t.status, dueAt: t.dueAt, priority: t.priority })),
       ),
       card: { type: "todos", todos },
+    };
+  },
+};
+
+const search_contacts: AgentTool = {
+  name: "search_contacts",
+  gated: false,
+  inputSchema: z.object({ query: z.string() }),
+  run: async (args, user: UserCtx) => {
+    const { query } = (args ?? {}) as { query?: string };
+    const candidates = await contactResolverFor(user).resolve(query ?? "");
+    return {
+      output: candidates.length
+        ? candidates.map((c) => `${c.name} <${c.email}>`).join("; ")
+        : "No matching contacts.",
+      card: { type: "contacts", query: query ?? "", candidates },
     };
   },
 };
@@ -108,6 +125,7 @@ const deep_research: AgentTool = {
 
 export const agentTools: AgentToolRegistry = {
   list_todos,
+  search_contacts,
   create_todo,
   set_reminder,
   send_meeting_invite,
@@ -116,6 +134,7 @@ export const agentTools: AgentToolRegistry = {
 
 const DESCRIPTIONS: Record<string, string> = {
   list_todos: "List the user's todos. Optionally filter by status.",
+  search_contacts: "Search the user's Google contacts by name to find an email for a meeting attendee.",
   create_todo: "Create a new todo (the user must approve).",
   set_reminder: "Set a reminder with text and a time (the user must approve).",
   send_meeting_invite: "Book a meeting and send a Google Calendar invite (the user must approve).",

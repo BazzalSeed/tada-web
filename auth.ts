@@ -22,9 +22,10 @@ const providers: Provider[] = [
       params: {
         access_type: "offline",
         prompt: "consent",
-        // calendar.events → sendMeetingInvite can create events + send invites.
+        // calendar.events → sendMeetingInvite creates events + sends invites.
+        // contacts.readonly → T3.1a resolves attendee names to emails.
         scope:
-          "openid email profile https://www.googleapis.com/auth/calendar.events",
+          "openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/contacts.readonly",
       },
     },
     allowDangerousEmailAccountLinking: true,

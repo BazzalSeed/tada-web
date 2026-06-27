@@ -8,6 +8,7 @@
 
 import { generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { getGoogleAccessToken } from "./google";
 import type { ActionPayload, ExecResult, Executors, UserCtx } from "./contracts";
 
 type Meeting = Extract<ActionPayload, { kind: "meeting" }>;
@@ -41,23 +42,6 @@ async function deepResearch(
 }
 
 // ---- sendMeetingInvite (Google Calendar via the user's refresh token) ----
-async function getGoogleAccessToken(refreshToken: string): Promise<string> {
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: process.env.AUTH_GOOGLE_ID ?? "",
-      client_secret: process.env.AUTH_GOOGLE_SECRET ?? "",
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-    }),
-  });
-  if (!res.ok) throw new Error(`token refresh failed (${res.status})`);
-  const json = (await res.json()) as { access_token?: string };
-  if (!json.access_token) throw new Error("no access_token in refresh response");
-  return json.access_token;
-}
-
 function addMinutesIso(localIso: string, minutes: number): string {
   const d = new Date(localIso);
   d.setMinutes(d.getMinutes() + minutes);

@@ -10,8 +10,10 @@ vi.mock("@/lib/store", () => ({
 vi.mock("@/lib/executors", () => ({
   executors: { setReminder: vi.fn(), sendMeetingInvite: vi.fn(), deepResearch: vi.fn() },
 }));
+vi.mock("@/lib/contacts", () => ({ contactResolverFor: vi.fn() }));
 
 import { agentTools } from "@/lib/agent-tools";
+import { contactResolverFor } from "@/lib/contacts";
 import { store } from "@/lib/store";
 import { executors } from "@/lib/executors";
 import type { UserCtx } from "@/lib/contracts";
@@ -23,6 +25,7 @@ beforeEach(() => vi.clearAllMocks());
 describe("registry gating", () => {
   it("reads are auto (gated=false), writes are gated (gated=true)", () => {
     expect(agentTools.list_todos.gated).toBe(false);
+    expect(agentTools.search_contacts.gated).toBe(false);
     expect(agentTools.create_todo.gated).toBe(true);
     expect(agentTools.set_reminder.gated).toBe(true);
     expect(agentTools.send_meeting_invite.gated).toBe(true);
@@ -37,6 +40,15 @@ describe("tool run()", () => {
     expect(store.listTodos).toHaveBeenCalledWith("u1");
     expect(r.card).toBeTruthy();
     expect(r.output).toContain("a");
+  });
+
+  it("search_contacts (read) resolves names to candidates", async () => {
+    (contactResolverFor as ReturnType<typeof vi.fn>).mockReturnValue({
+      resolve: vi.fn(async () => [{ name: "Dakota Lee", email: "dakota@x.com" }]),
+    });
+    const r = await agentTools.search_contacts.run({ query: "dakota" }, user);
+    expect(contactResolverFor).toHaveBeenCalledWith(user);
+    expect(r.output).toContain("dakota@x.com");
   });
 
   it("create_todo is capture-first (capture then todo)", async () => {
