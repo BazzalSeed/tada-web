@@ -142,6 +142,22 @@ export function toAiSdkTools(user: UserCtx): ToolSet {
   return out;
 }
 
+// OpenAI Realtime function-tool defs (embedded in the voice session). Gated-ness
+// is enforced server-side in /api/voice/tool, not in the schema.
+export function toOpenAIToolDefs(): Array<{
+  type: "function";
+  name: string;
+  description: string;
+  parameters: unknown;
+}> {
+  return Object.entries(agentTools).map(([name, t]) => ({
+    type: "function",
+    name,
+    description: DESCRIPTIONS[name] ?? name,
+    parameters: z.toJSONSchema(t.inputSchema as ZodTypeAny),
+  }));
+}
+
 // Runs a gated tool after the user approves it (called by the chat/voice approval
 // path). Centralizes "execute only on explicit approval".
 export async function runApprovedTool(
