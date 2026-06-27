@@ -7,7 +7,7 @@
 // ============================================================================
 
 import { store as defaultStore } from "./store";
-import { extractor as defaultExtractor } from "./extractor";
+import { enrichExtractor as defaultExtractor } from "./extractor";
 import { withQuota } from "./quota";
 import type {
   ExtractedTodo,
