@@ -5,36 +5,38 @@
   min-height: 0;
 }
 
-/* Slim header: just the New chat affordance, right-aligned over the thread. */
-.header {
-  flex: none;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: var(--space-3) var(--space-5) 0;
-}
-
-.newChat {
+/* "Show earlier messages" — collapses the summarized prefix to cut scroll. The
+   user keeps full access (one tap to expand); by default the thread shows just
+   the verbatim live window the model actually sees. */
+.earlierToggle {
+  align-self: center;
   appearance: none;
   border: 1px solid var(--hair-strong, rgba(0, 0, 0, 0.12));
   background: transparent;
   color: var(--ink-muted, #6b6257);
   font: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   border-radius: 999px;
-  padding: 5px 12px;
+  padding: 5px 14px;
   cursor: pointer;
   transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
-.newChat:hover {
+.earlierToggle:hover {
   color: var(--accent, #c8632e);
   border-color: var(--accent, #c8632e);
   background: var(--accent-wash, rgba(200, 99, 46, 0.08));
 }
 
-/* Watermark line — only shown once a conversation has been compacted. The user
-   keeps full scroll-back; this just marks where the assistant's recall above is
-   condensed into a summary rather than verbatim. */
+/* Expanded condensed prefix — dimmed to signal "the assistant only has the
+   summary of these," while staying readable. */
+.condensed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  opacity: 0.55;
+}
+
+/* Boundary line between the condensed prefix and the verbatim live window. */
 .compactDivider {
   display: flex;
   align-items: center;

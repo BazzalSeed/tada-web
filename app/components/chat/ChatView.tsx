@@ -21,10 +21,11 @@ import styles from "./ChatView.module.css";
 // never-auto-execute invariant. `sendAutomaticallyWhen` resubmits once every
 // pending approval has a response so the executed result streams back.
 //
-// Persistence: the conversation lives in Postgres. On mount we load the latest
-// thread (GET /api/chat); every turn carries its `conversationId` so the server
-// can rehydrate, persist, and compact. "New chat" mints a fresh id (Option 1:
-// one visible thread, reset on demand — see docs/chat-persistence.md).
+// Persistence: the conversation lives in Postgres. On mount we load the thread
+// (GET /api/chat); every turn carries its `conversationId` so the server can
+// rehydrate, persist, and compact. One continuous auto-managed thread — no
+// "new chat" reset; the summarized prefix collapses behind "show earlier"
+// (see docs/chat-persistence.md).
 export interface ChatViewProps {
   onVoice?: () => void;
 }
@@ -65,14 +66,6 @@ export function ChatView({ onVoice }: ChatViewProps) {
     };
   }, []);
 
-  function newChat() {
-    setSession({
-      conversationId: crypto.randomUUID(),
-      initialMessages: [],
-      summaryThroughId: null,
-    });
-  }
-
   if (!session) {
     return (
       <div className={styles.chat}>
@@ -81,26 +74,18 @@ export function ChatView({ onVoice }: ChatViewProps) {
     );
   }
 
-  return (
-    <ChatThread
-      key={session.conversationId}
-      session={session}
-      onVoice={onVoice}
-      onNewChat={newChat}
-    />
-  );
+  return <ChatThread key={session.conversationId} session={session} onVoice={onVoice} />;
 }
 
 function ChatThread({
   session,
   onVoice,
-  onNewChat,
 }: {
   session: Session;
   onVoice?: () => void;
-  onNewChat: () => void;
 }) {
   const { state } = useTada();
+  const [showEarlier, setShowEarlier] = useState(false);
   const { messages, sendMessage, status, addToolApprovalResponse } = useChat({
     id: session.conversationId,
     messages: session.initialMessages,
@@ -114,6 +99,16 @@ function ChatThread({
   const busy = status === "streaming" || status === "submitted";
   const now = new Date();
   const last = views[views.length - 1];
+
+  // Split at the summary watermark: messages through it are "condensed" (the
+  // model only has the summary of them), so they collapse behind a toggle to
+  // cut scroll. Everything after is the verbatim live window. Watermark comes
+  // from the load; mid-session compaction shows up on the next reload.
+  const wmIdx = session.summaryThroughId
+    ? views.findIndex((v) => v.id === session.summaryThroughId)
+    : -1;
+  const condensed = wmIdx >= 0 ? views.slice(0, wmIdx + 1) : [];
+  const live = wmIdx >= 0 ? views.slice(wmIdx + 1) : views;
 
   // Show the typing indicator while the model is "thinking": after send but
   // before the first token, OR mid-stream while the latest assistant turn is
@@ -129,7 +124,7 @@ function ChatThread({
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
-  }, [messages, awaitingReply]);
+  }, [messages, awaitingReply, showEarlier]);
 
   function resolveOffer(
     view: (typeof views)[number],
@@ -143,46 +138,56 @@ function ChatThread({
     addToolApprovalResponse({ id: offer.approvalId, approved });
   }
 
+  function renderBlock(v: (typeof views)[number]) {
+    return (
+      <MessageBlock
+        key={v.id}
+        role={v.role}
+        text={v.text}
+        cards={v.cards}
+        labels={state.labels}
+        now={now}
+        streaming={
+          status === "streaming" &&
+          v.id === last?.id &&
+          v.role === "assistant" &&
+          Boolean(v.text)
+        }
+        onApprove={(i) => resolveOffer(v, i, true)}
+        onDeny={(i) => resolveOffer(v, i, false)}
+      />
+    );
+  }
+
   return (
     <div className={styles.chat}>
-      {messages.length > 0 ? (
-        <div className={styles.header}>
-          <button type="button" className={styles.newChat} onClick={onNewChat}>
-            New chat
-          </button>
-        </div>
-      ) : null}
       <div className={styles.thread}>
         {views.length === 0 ? (
           <SuggestionCards onPick={(p) => void sendMessage({ text: p })} />
         ) : (
-          views.map((v) => (
-            <div key={v.id}>
-              <MessageBlock
-                role={v.role}
-                text={v.text}
-                cards={v.cards}
-                labels={state.labels}
-                now={now}
-                streaming={
-                  status === "streaming" &&
-                  v.id === last?.id &&
-                  v.role === "assistant" &&
-                  Boolean(v.text)
-                }
-                onApprove={(i) => resolveOffer(v, i, true)}
-                onDeny={(i) => resolveOffer(v, i, false)}
-              />
-              {/* Watermark = last message folded into the summary, so the line
-                  sits AFTER it: everything above is condensed (for the model),
-                  everything below is the verbatim live window. */}
-              {v.id === session.summaryThroughId ? (
-                <div className={styles.compactDivider}>
-                  Earlier messages condensed for the assistant
-                </div>
-              ) : null}
-            </div>
-          ))
+          <>
+            {condensed.length > 0 ? (
+              <button
+                type="button"
+                className={styles.earlierToggle}
+                onClick={() => setShowEarlier((s) => !s)}
+                aria-expanded={showEarlier}
+              >
+                {showEarlier
+                  ? "Hide earlier messages"
+                  : `Show ${condensed.length} earlier message${condensed.length === 1 ? "" : "s"} (condensed for the assistant)`}
+              </button>
+            ) : null}
+            {showEarlier ? (
+              <div className={styles.condensed}>{condensed.map(renderBlock)}</div>
+            ) : null}
+            {condensed.length > 0 && showEarlier ? (
+              <div className={styles.compactDivider}>
+                Above is condensed for the assistant · below is verbatim
+              </div>
+            ) : null}
+            {live.map(renderBlock)}
+          </>
         )}
         {awaitingReply ? <TypingIndicator /> : null}
         <div ref={endRef} />
