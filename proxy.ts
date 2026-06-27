@@ -15,14 +15,13 @@ const { auth } = NextAuth(authConfig);
 export default auth((req) => {
   if (req.auth) return; // valid session → proceed
 
-  // Unauthenticated → sign-in, preserving the intended destination via callbackUrl.
-  // Non-prod → /dev-login (clean dedicated test-session page the reviewer can drive
-  // on any port; it carries a "Sign in with Google instead" escape hatch so a real
-  // deep-link isn't trapped). Prod → the built-in /api/auth/signin (Google). Real
-  // Google only works on a registered redirect URI (:3000 / app.gettada.app), so a
-  // Google-only target would dead-end on the local :3939 fallback.
-  const target = process.env.NODE_ENV === "production" ? "/api/auth/signin" : "/dev-login";
-  const signInUrl = new URL(target, req.nextUrl.origin);
+  // Unauthenticated → the built-in sign-in page, preserving the intended
+  // destination via callbackUrl. /api/auth/signin lists BOTH Google AND (in
+  // non-prod) dev-login, so it's not a Google-only dead-end and the reviewer's
+  // e2e can reach an authed session through it. callbackUrl returns the user to
+  // /app post-sign-in; the branded marketing "/" + its Log-in CTA is a separate
+  // entry (frontend's).
+  const signInUrl = new URL("/api/auth/signin", req.nextUrl.origin);
   signInUrl.searchParams.set("callbackUrl", req.nextUrl.pathname + req.nextUrl.search);
   return Response.redirect(signInUrl);
 });
