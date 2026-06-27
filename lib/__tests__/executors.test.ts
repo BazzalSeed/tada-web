@@ -82,10 +82,36 @@ describe("sendMeetingInvite", () => {
     expect(r.needsField).toBe("start");
   });
 
-  it("Send-gate: refuses when an attendee is unresolved (no email)", async () => {
+  it("Send-gate: returns needsDisambiguation when an attendee is an unresolved name", async () => {
+    const fetchMock = okFetch();
     const r = await executors.sendMeetingInvite(meeting({ attendees: ["Dakota"] }), user);
     expect(r.ok).toBe(false);
+    expect(r.needsDisambiguation).toHaveLength(1);
+    expect(r.needsDisambiguation![0]).toMatchObject({ name: "Dakota", status: "unresolved" });
+    // never auto-executes: no calendar event is created while unresolved
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).includes("calendar"))).toBe(false);
+  });
+
+  it("Send-gate: needsField when there are no attendees at all", async () => {
+    const r = await executors.sendMeetingInvite(meeting({ attendees: [] }), user);
+    expect(r.ok).toBe(false);
     expect(r.needsField).toBe("attendees");
+  });
+
+  it("sends using resolvedAttendees emails once every attendee is resolved", async () => {
+    const fetchMock = okFetch();
+    const r = await executors.sendMeetingInvite(
+      meeting({
+        attendees: ["Dakota"], // raw name ignored once resolvedAttendees is present
+        resolvedAttendees: [{ name: "Dakota Lee", email: "dakota@x.com", status: "resolved" }],
+      }),
+      user,
+    );
+    expect(r.ok).toBe(true);
+    const calCall = fetchMock.mock.calls.find((c) => String(c[0]).includes("calendar")) as unknown as [string, RequestInit];
+    expect(JSON.parse(String(calCall[1].body))).toMatchObject({
+      attendees: [{ email: "dakota@x.com" }],
+    });
   });
 
   it("errors cleanly when Google isn't connected", async () => {

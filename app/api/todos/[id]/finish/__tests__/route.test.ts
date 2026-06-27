@@ -66,6 +66,32 @@ describe("POST /api/todos/:id/finish", () => {
     expect((await finishReq("ghost")).status).toBe(404);
   });
 
+  it("returns needsDisambiguation and parks the todo (no send) when an attendee is unresolved", async () => {
+    mockList.mockResolvedValue([
+      todo({ id: "t1", actionType: "meeting", actionPayload: { kind: "meeting", title: "Sync", attendees: ["Dakota"], start: "2026-07-01T14:00:00" } }),
+    ]);
+    const candidates = [
+      { name: "Dakota Lee", email: "dakota@x.com" },
+      { name: "Dakota Smith", email: "ds@x.com" },
+    ];
+    (executors.sendMeetingInvite as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      needsDisambiguation: [{ name: "Dakota", status: "unresolved", candidates }],
+    });
+    const res = await finishReq("t1");
+    const body = await res.json();
+    expect(body.needsDisambiguation).toHaveLength(1);
+    // parked for the picker — actionState flips, candidates persisted, NOT done
+    expect(mockUpdate).toHaveBeenCalledWith(
+      "u1",
+      "t1",
+      expect.objectContaining({
+        actionState: "needs_disambiguation",
+        actionPayload: expect.objectContaining({ resolvedAttendees: [{ name: "Dakota", status: "unresolved", candidates }] }),
+      }),
+    );
+  });
+
   it("routes a research todo through the research runner (writes detail)", async () => {
     mockList.mockResolvedValue([todo({ id: "t1", actionType: "research", actionPayload: { kind: "research", topic: "note apps" } })]);
     (executors.deepResearch as ReturnType<typeof vi.fn>).mockResolvedValue({ markdown: "# Report" });

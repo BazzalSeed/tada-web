@@ -104,10 +104,14 @@ const send_meeting_invite: AgentTool = {
       { kind: "meeting", title: a.title, attendees: a.attendees, start: a.start ?? null, durationMin: a.durationMin, notes: a.notes ?? null },
       user,
     );
-    return {
-      output: r.ok ? `Meeting booked (${r.actionExternalId}).` : r.needsField ? `Need ${r.needsField} to book.` : `Couldn't book: ${r.error}`,
-      card: { type: "offer", kind: "meeting", result: r },
-    };
+    const output = r.ok
+      ? `Meeting booked (${r.actionExternalId}).`
+      : r.needsDisambiguation
+        ? `Need to confirm who: ${r.needsDisambiguation.filter((x) => x.status !== "resolved").map((x) => x.name ?? "?").join(", ")}.`
+        : r.needsField
+          ? `Need ${r.needsField} to book.`
+          : `Couldn't book: ${r.error}`;
+    return { output, card: { type: "offer", kind: "meeting", result: r } };
   },
 };
 

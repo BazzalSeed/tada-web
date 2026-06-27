@@ -9,7 +9,7 @@
 import { generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { getGoogleAccessToken } from "./google";
-import type { ActionPayload, ExecResult, Executors, UserCtx } from "./contracts";
+import type { ActionPayload, Attendee, ExecResult, Executors, UserCtx } from "./contracts";
 
 type Meeting = Extract<ActionPayload, { kind: "meeting" }>;
 type Reminder = Extract<ActionPayload, { kind: "reminder" }>;
@@ -50,14 +50,32 @@ function addMinutesIso(localIso: string, minutes: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
+// Classify the attendee list at SEND time (no live People API call — resolution
+// with candidates happens at propose time via /api/contacts/resolve + the
+// search_contacts tool). Prefer the offer's resolvedAttendees; otherwise treat
+// raw extracted strings as emails (resolved) or names (unresolved).
+function effectiveAttendees(p: Meeting): Attendee[] {
+  if (p.resolvedAttendees && p.resolvedAttendees.length) return p.resolvedAttendees;
+  return (p.attendees ?? []).map((a) =>
+    a.includes("@")
+      ? { name: a, email: a, status: "resolved" as const }
+      : { name: a, status: "unresolved" as const },
+  );
+}
+
 async function sendMeetingInvite(p: Meeting, user: UserCtx): Promise<ExecResult> {
   // Single inline ask for the one missing essential field.
   if (!p.start) return { ok: false, needsField: "start" };
-  const attendees = p.attendees ?? [];
-  // Send-gate: every attendee must be a resolved email (T3.1a resolves names).
-  if (attendees.length === 0 || attendees.some((a) => !a.includes("@"))) {
-    return { ok: false, needsField: "attendees" };
-  }
+
+  const attendees = effectiveAttendees(p);
+  if (attendees.length === 0) return { ok: false, needsField: "attendees" };
+  // Send-gate (never-auto-execute): any unresolved attendee blocks Send and
+  // surfaces the disambiguation picker instead of firing the invite.
+  const unresolved = attendees.filter((a) => a.status !== "resolved" || !a.email);
+  if (unresolved.length) return { ok: false, needsDisambiguation: attendees };
+
+  const emails = attendees.map((a) => a.email!).filter(Boolean);
+
   if (!user.googleRefreshToken) {
     return { ok: false, error: "Google account not connected" };
   }
@@ -78,7 +96,7 @@ async function sendMeetingInvite(p: Meeting, user: UserCtx): Promise<ExecResult>
           description: p.notes ?? undefined,
           start: { dateTime: p.start, timeZone: tz },
           end: { dateTime: addMinutesIso(p.start, durationMin), timeZone: tz },
-          attendees: attendees.map((email) => ({ email })),
+          attendees: emails.map((email) => ({ email })),
         }),
       },
     );

@@ -43,6 +43,19 @@ export async function applyFinishResult(
   result: ExecResult,
 ): Promise<void> {
   if (result.needsField) return;
+  // Unresolved attendees → park the todo for the OfferView picker, persisting
+  // the candidates onto the meeting payload. No send (never-auto-execute).
+  if (result.needsDisambiguation) {
+    const actionPayload =
+      todo.actionPayload?.kind === "meeting"
+        ? { ...todo.actionPayload, resolvedAttendees: result.needsDisambiguation }
+        : todo.actionPayload;
+    await store.updateTodo(user.userId, todo.id, {
+      actionState: "needs_disambiguation",
+      actionPayload,
+    });
+    return;
+  }
   if (result.ok) {
     await store.updateTodo(user.userId, todo.id, {
       actionState: "done",
