@@ -76,6 +76,34 @@ describe("store reducer", () => {
     expect(s2.views[0].name).toBe("Job");
   });
 
+  it("relabels a temp label id → persisted id across labels, todos, and views", () => {
+    const temp: TodoLabel = { id: "temp-1", name: "pets", colorHex: "#c8632e" };
+    const tagged: Todo = { ...todo, id: "t9", labelIds: ["temp-1", "other"] };
+    const taggedView: SavedView = {
+      ...view,
+      id: "v9",
+      criteria: { labelIds: ["temp-1"], dateWindow: "any", includeCompleted: false },
+    };
+    const s0 = {
+      ...initialState,
+      labels: [temp],
+      todos: [tagged],
+      views: [taggedView],
+    };
+    const real: TodoLabel = { id: "l-pets", name: "pets", colorHex: "#c8632e" };
+    const s1 = reducer(s0, { type: "RELABEL", fromId: "temp-1", label: real });
+    expect(s1.labels).toEqual([real]);
+    expect(s1.todos[0].labelIds).toEqual(["l-pets", "other"]);
+    expect(s1.views[0].criteria.labelIds).toEqual(["l-pets"]);
+  });
+
+  it("deletes a saved view by id", () => {
+    const s1 = reducer(initialState, { type: "UPSERT_VIEW", view });
+    expect(s1.views).toHaveLength(1);
+    const s2 = reducer(s1, { type: "DELETE_VIEW", id: view.id });
+    expect(s2.views).toHaveLength(0);
+  });
+
   it("upserts a capture by id (keyed map for row thumbnails)", () => {
     const capture = {
       id: "cap1",

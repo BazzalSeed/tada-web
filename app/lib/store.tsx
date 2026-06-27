@@ -10,6 +10,9 @@ import {
 import type { Capture, SavedView, Todo, TodoLabel } from "@/lib/contracts";
 import type { NavSelection } from "@/app/components/shell/Sidebar";
 import type { PaletteItem } from "@/app/components/shell/CommandPalette";
+import { ensureLabel as persistLabel } from "./api";
+
+const LABEL_ACCENT = "#c8632e";
 
 // Client store — deterministic UI state over the frozen domain types. The model
 // is never in the list's hot path; this holds the loaded pool + ephemeral
@@ -37,7 +40,9 @@ export type TadaAction =
   | { type: "SET_DATA"; todos: Todo[]; views: SavedView[]; labels: TodoLabel[] }
   | { type: "UPSERT_TODO"; todo: Todo }
   | { type: "UPSERT_LABEL"; label: TodoLabel }
+  | { type: "RELABEL"; fromId: string; label: TodoLabel }
   | { type: "UPSERT_VIEW"; view: SavedView }
+  | { type: "DELETE_VIEW"; id: string }
   | { type: "UPSERT_CAPTURE"; capture: Capture }
   | { type: "SELECT_NAV"; selection: NavSelection }
   | { type: "SELECT_TODO"; id: string | null };
@@ -71,6 +76,28 @@ export function reducer(state: TadaState, action: TadaAction): TadaState {
           : [...state.labels, action.label],
       };
     }
+    case "RELABEL": {
+      // Swap an optimistic temp label id for its persisted one everywhere it's
+      // referenced (label list, todos, view criteria). Keeps inline-created
+      // labels on stable server ids without blocking the optimistic UI.
+      const { fromId, label } = action;
+      const swap = (ids: string[]) =>
+        ids.map((id) => (id === fromId ? label.id : id));
+      return {
+        ...state,
+        labels: state.labels.map((l) => (l.id === fromId ? label : l)),
+        todos: state.todos.map((t) =>
+          t.labelIds.includes(fromId)
+            ? { ...t, labelIds: swap(t.labelIds) }
+            : t,
+        ),
+        views: state.views.map((v) =>
+          v.criteria.labelIds.includes(fromId)
+            ? { ...v, criteria: { ...v.criteria, labelIds: swap(v.criteria.labelIds) } }
+            : v,
+        ),
+      };
+    }
     case "UPSERT_CAPTURE":
       return {
         ...state,
@@ -87,6 +114,8 @@ export function reducer(state: TadaState, action: TadaAction): TadaState {
           : [...state.views, action.view],
       };
     }
+    case "DELETE_VIEW":
+      return { ...state, views: state.views.filter((v) => v.id !== action.id) };
     case "SELECT_NAV":
       // Changing views is read-only navigation; drop the open detail.
       return { ...state, selection: action.selection, selectedTodoId: null };
@@ -148,4 +177,36 @@ export function useTada(): TadaContextValue {
   const ctx = useContext(TadaContext);
   if (!ctx) throw new Error("useTada must be used within a TadaProvider");
   return ctx;
+}
+
+// Inline label creation with a stable, persisted id. Returns a label SYNCHRONOUSLY
+// (existing match, or an optimistic temp) so the UI never blocks; for a new name
+// it persists via POST /api/labels and reconciles the temp id → server id in the
+// background (RELABEL). Shared by quick-add @tokens, the detail pane, and
+// enrichment's suggestedLabels so every inline label lands on a real id.
+export function useEnsureLabel(): (name: string) => TodoLabel {
+  const { state, dispatch } = useTada();
+  return (rawName: string): TodoLabel => {
+    const name = rawName.toLowerCase();
+    const existing = state.labels.find((l) => l.name === name);
+    if (existing) return existing;
+    const temp: TodoLabel = {
+      id: crypto.randomUUID(),
+      name,
+      colorHex: LABEL_ACCENT,
+    };
+    dispatch({ type: "UPSERT_LABEL", label: temp });
+    persistLabel(name)
+      .then((real) => {
+        dispatch(
+          real.id === temp.id
+            ? { type: "UPSERT_LABEL", label: real }
+            : { type: "RELABEL", fromId: temp.id, label: real },
+        );
+      })
+      .catch(() => {
+        // interim: keep the optimistic temp label until persistence is authed.
+      });
+    return temp;
+  };
 }

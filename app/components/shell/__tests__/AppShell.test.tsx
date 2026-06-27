@@ -11,7 +11,8 @@ function setup(overrides: Partial<React.ComponentProps<typeof AppShell>> = {}) {
     paletteItems: [{ kind: "todo" as const, id: "t1", label: "Email Dakota" }],
     onSelectNav: vi.fn(),
     onPaletteSelect: vi.fn(),
-    onAddView: vi.fn(),
+    onCreateView: vi.fn(),
+    onEditView: vi.fn(),
     children: <div data-testid="content">content region</div>,
     ...overrides,
   };

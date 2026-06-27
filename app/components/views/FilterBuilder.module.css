@@ -1,0 +1,106 @@
+/* Compact view filter-builder. Calm raised surfaces; the active facet reads in
+   rust accent, never a heavy black fill. */
+
+.builder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.section {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.legend {
+  padding: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--fs-caption);
+  letter-spacing: 0.02em;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: var(--hairline);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--color-surface-raised);
+  color: var(--color-ink);
+  font-size: var(--fs-caption);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-out-quart),
+    background var(--dur-fast) var(--ease-out-quart),
+    color var(--dur-fast) var(--ease-out-quart);
+}
+
+.chip[data-on="true"] {
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+  background: var(--color-surface-subtle);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.segments {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  width: fit-content;
+}
+
+.segment {
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--color-ink-muted);
+  font-size: var(--fs-caption);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out-quart),
+    color var(--dur-fast) var(--ease-out-quart);
+}
+
+.segment:hover {
+  color: var(--color-accent-text);
+}
+
+/* Active segment = soft raised pill in accent ink (no black fill). */
+.segment[data-on="true"] {
+  background: var(--color-surface-raised);
+  color: var(--color-accent);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-ink);
+  font-size: var(--fs-caption);
+  cursor: pointer;
+}
+
+.toggle input {
+  accent-color: var(--color-accent);
+}

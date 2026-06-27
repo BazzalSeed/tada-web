@@ -18,7 +18,9 @@ export interface AppShellProps {
   paletteItems: PaletteItem[];
   onSelectNav: (sel: NavSelection) => void;
   onPaletteSelect: (item: PaletteItem) => void;
-  onAddView: (name: string) => void;
+  onCreateView: () => void;
+  onEditView: (view: SavedView) => void;
+  overlay?: ReactNode; // modal layer (e.g. the view filter-builder)
   children: ReactNode;
 }
 
@@ -30,7 +32,9 @@ export function AppShell({
   paletteItems,
   onSelectNav,
   onPaletteSelect,
-  onAddView,
+  onCreateView,
+  onEditView,
+  overlay,
   children,
 }: AppShellProps) {
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -60,13 +64,16 @@ export function AppShell({
           views={views}
           labels={labels}
           onSelect={onSelectNav}
-          onAddView={onAddView}
+          onCreateView={onCreateView}
+          onEditView={onEditView}
         />
       </div>
 
       <main className={styles.content}>{children}</main>
 
       <div className={styles.detail}>{detail}</div>
+
+      {overlay}
 
       <CommandPalette
         open={paletteOpen}

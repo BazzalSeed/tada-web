@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Todo } from "@/lib/contracts";
-import { createTodo, enrichText, patchTodo, reorderTodo } from "../api";
+import {
+  createTodo,
+  ensureLabel,
+  enrichText,
+  listLabels,
+  patchTodo,
+  reorderTodo,
+} from "../api";
 
 const todo: Todo = {
   id: "t1",
@@ -68,6 +75,29 @@ describe("api client", () => {
     expect(url).toBe("/api/enrich");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body)).toEqual({ text: "Plan offsite tomorrow" });
+  });
+
+  it("listLabels GETs /api/labels and unwraps { labels }", async () => {
+    const fetchMock = mockFetch({
+      labels: [{ id: "l1", name: "work", colorHex: "#c8632e" }],
+    });
+    const result = await listLabels();
+    expect(result).toEqual([{ id: "l1", name: "work", colorHex: "#c8632e" }]);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/labels");
+    expect(init?.method ?? "GET").toBe("GET");
+  });
+
+  it("ensureLabel POSTs a name and unwraps the persisted { label } (stable id)", async () => {
+    const fetchMock = mockFetch({
+      label: { id: "l-pets", name: "pets", colorHex: "#c8632e" },
+    });
+    const result = await ensureLabel("pets");
+    expect(result.id).toBe("l-pets");
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/labels");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body)).toEqual({ name: "pets" });
   });
 
   it("throws on a non-ok response", async () => {

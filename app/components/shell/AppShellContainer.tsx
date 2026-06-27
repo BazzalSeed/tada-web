@@ -1,12 +1,20 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import type { FilterCriteria, SavedView, ViewSelection } from "@/lib/contracts";
+import { criteriaFor } from "@/lib/core";
 import { paletteItemsFor, useTada } from "@/app/lib/store";
-import { createViewFromSelection } from "@/app/lib/selectors";
 import { TodoListView } from "@/app/components/todo/TodoListView";
+import { ViewEditor } from "@/app/components/views/ViewEditor";
 import { AppShell } from "./AppShell";
 import { DetailPaneView } from "./DetailPaneView";
 import styles from "./ContentPlaceholder.module.css";
+
+const VIEW_ACCENT = "#c8632e";
+
+type EditorState =
+  | { mode: "create"; seed: FilterCriteria }
+  | { mode: "edit"; view: SavedView };
 
 // Chat is a destination, not a filter-View; its surface lands in T3.4. Until then
 // the Chat selection shows a calm placeholder.
@@ -25,6 +33,39 @@ export function AppShellContainer({ children }: { children?: ReactNode }) {
   const selectedTodo =
     state.todos.find((t) => t.id === state.selectedTodoId) ?? null;
   const isChat = state.selection.kind === "chat";
+  const [editor, setEditor] = useState<EditorState | null>(null);
+
+  // New views seed from the current selection's criteria (snapshot default),
+  // then the builder lets the user compose the full FilterCriteria.
+  function openCreate() {
+    const sel: ViewSelection =
+      state.selection.kind === "chat" ? { kind: "all" } : state.selection;
+    setEditor({ mode: "create", seed: criteriaFor(sel, state.views) });
+  }
+
+  function saveView(name: string, criteria: FilterCriteria) {
+    const view: SavedView =
+      editor?.mode === "edit"
+        ? { ...editor.view, name, criteria }
+        : {
+            id: crypto.randomUUID(),
+            name,
+            colorHex: VIEW_ACCENT,
+            icon: "filter",
+            sortIndex: state.views.length,
+            criteria,
+          };
+    dispatch({ type: "UPSERT_VIEW", view });
+    dispatch({ type: "SELECT_NAV", selection: { kind: "project", id: view.id } });
+    setEditor(null);
+  }
+
+  function deleteView() {
+    if (editor?.mode !== "edit") return;
+    dispatch({ type: "DELETE_VIEW", id: editor.view.id });
+    dispatch({ type: "SELECT_NAV", selection: { kind: "all" } });
+    setEditor(null);
+  }
 
   return (
     <AppShell
@@ -40,17 +81,33 @@ export function AppShellContainer({ children }: { children?: ReactNode }) {
           dispatch({ type: "SELECT_NAV", selection: item.selection });
         }
       }}
-      onAddView={(name) => {
-        // Save the current filter as a named View, then navigate to it.
-        const view = createViewFromSelection(
-          name,
-          state,
-          crypto.randomUUID(),
-          state.views.length,
-        );
-        dispatch({ type: "UPSERT_VIEW", view });
-        dispatch({ type: "SELECT_NAV", selection: { kind: "project", id: view.id } });
-      }}
+      onCreateView={openCreate}
+      onEditView={(view) => setEditor({ mode: "edit", view })}
+      overlay={
+        editor ? (
+          <div
+            className={styles.modalScrim}
+            role="dialog"
+            aria-modal="true"
+            aria-label={editor.mode === "create" ? "New view" : "Edit view"}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setEditor(null);
+            }}
+          >
+            <ViewEditor
+              mode={editor.mode}
+              initialName={editor.mode === "edit" ? editor.view.name : ""}
+              initialCriteria={
+                editor.mode === "edit" ? editor.view.criteria : editor.seed
+              }
+              labels={state.labels}
+              onSave={saveView}
+              onCancel={() => setEditor(null)}
+              onDelete={editor.mode === "edit" ? deleteView : undefined}
+            />
+          </div>
+        ) : null
+      }
       detail={
         selectedTodo ? (
           <DetailPaneView key={selectedTodo.id} todo={selectedTodo} />

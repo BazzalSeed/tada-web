@@ -1,4 +1,4 @@
-import type { ExtractedTodo, Todo } from "@/lib/contracts";
+import type { ExtractedTodo, Todo, TodoLabel } from "@/lib/contracts";
 
 // Typed client for the frozen front↔back todo routes. Every endpoint returns a
 // `{ todo }` envelope; these unwrap to the bare Todo. Wire keys are snake_case
@@ -62,6 +62,24 @@ export async function enrichText(text: string): Promise<ExtractedTodo[]> {
     { method: "POST", body: JSON.stringify({ text }) },
   );
   return suggestions;
+}
+
+// Labels (T1.2b). Persisted so ids are stable across the filter-builder, inline
+// label-create, and enrichment's name→id resolution.
+export async function listLabels(): Promise<TodoLabel[]> {
+  const { labels } = await send<{ labels: TodoLabel[] }>("/api/labels", {
+    method: "GET",
+  });
+  return labels;
+}
+
+// Upsert a label by name (lowercased, idempotent) → its persisted TodoLabel.
+export async function ensureLabel(name: string): Promise<TodoLabel> {
+  const { label } = await send<{ label: TodoLabel }>("/api/labels", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+  return label;
 }
 
 export async function reorderTodo(

@@ -17,3 +17,24 @@
   color: var(--color-ink-muted);
   font-size: var(--fs-meta);
 }
+
+/* Modal layer for the view filter-builder — soft scrim, never an opaque black. */
+.modalScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  background: color-mix(in srgb, var(--color-ink) 28%, transparent);
+  animation: scrimIn var(--dur-fast) var(--ease-out-quart);
+}
+
+@keyframes scrimIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

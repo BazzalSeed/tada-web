@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./MicButton.module.css";
 
 // Light voice dictate (distinct from the Chat voice agent): one-shot speech →
@@ -52,11 +52,20 @@ export function MicButton({
   onTranscript,
   getRecognition = defaultGetRecognition,
 }: MicButtonProps) {
-  const Ctor = getRecognition();
+  // Capability is window-dependent, so it can't be known during SSR. Render the
+  // unavailable state on the server + first client paint (so hydration matches),
+  // then upgrade to the live affordance after mount.
+  const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
   const recRef = useRef<RecognitionLike | null>(null);
 
-  if (!Ctor) {
+  useEffect(() => {
+    setSupported(getRecognition() != null);
+    // getRecognition is a stable capability probe; checked once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!supported) {
     return (
       <button
         type="button"
@@ -70,7 +79,9 @@ export function MicButton({
   }
 
   function start() {
-    const rec = new Ctor!();
+    const Ctor = getRecognition();
+    if (!Ctor) return;
+    const rec = new Ctor();
     rec.lang =
       (typeof navigator !== "undefined" && navigator.language) || "en-US";
     rec.interimResults = false;

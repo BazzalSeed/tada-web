@@ -1,0 +1,93 @@
+/* View create/edit sheet. Raised cream surface; primary action in rust. */
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  min-width: 320px;
+  max-width: 420px;
+  border: var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg, 0 12px 40px rgba(0, 0, 0, 0.16));
+}
+
+.nameField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  color: var(--color-ink-muted);
+  font-size: var(--fs-caption);
+  letter-spacing: 0.02em;
+}
+
+.nameInput {
+  padding: var(--space-2) var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-ink);
+  font-size: var(--fs-body);
+  font-family: var(--font-display);
+}
+
+.nameInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.cancel,
+.delete {
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink-muted);
+  font-size: var(--fs-caption);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out-quart);
+}
+
+.cancel:hover {
+  color: var(--color-ink);
+}
+
+.delete {
+  color: var(--color-danger, #b4442a);
+}
+
+.delete:hover {
+  color: var(--color-danger, #b4442a);
+  text-decoration: underline;
+}
+
+.save {
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: var(--color-on-accent, #fff);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out-quart);
+}
+
+.save:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

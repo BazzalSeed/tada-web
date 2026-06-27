@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { Todo, TodoLabel } from "@/lib/contracts";
 import { TadaProvider } from "@/app/lib/store";
 import { AppShellContainer } from "../AppShellContainer";
@@ -78,21 +78,40 @@ describe("AppShellContainer (store-wired)", () => {
     expect(screen.queryByText("Beta task")).not.toBeInTheDocument();
   });
 
-  it("saves the current filter as a View and navigates to it (criteria round-trip)", () => {
+  it("saves the current filter as a View via the builder and navigates to it (criteria round-trip)", () => {
     renderFiltered();
-    // filter to work, then save it as a view
+    // filter to work, then open the builder — it seeds from the current selection
     fireEvent.click(screen.getByRole("button", { name: "work" }));
     fireEvent.click(screen.getByRole("button", { name: /add view/i }));
-    fireEvent.change(screen.getByPlaceholderText(/view name/i), {
+    fireEvent.change(screen.getByLabelText(/view name/i), {
       target: { value: "Work" },
     });
-    fireEvent.keyDown(screen.getByPlaceholderText(/view name/i), {
-      key: "Enter",
-    });
-    // the new view is active and keeps the same filtered list
+    fireEvent.click(screen.getByRole("button", { name: /save view/i }));
+    // the new view is active and keeps the same seeded filtered list
     const viewBtn = screen.getByRole("button", { name: /^Work$/ });
     expect(viewBtn).toHaveAttribute("aria-current", "true");
     expect(screen.getByText("Alpha task")).toBeInTheDocument();
     expect(screen.queryByText("Beta task")).not.toBeInTheDocument();
+  });
+
+  it("edits an existing view's criteria via its ··· menu", () => {
+    renderFiltered();
+    // create a view seeded from @work first
+    fireEvent.click(screen.getByRole("button", { name: "work" }));
+    fireEvent.click(screen.getByRole("button", { name: /add view/i }));
+    fireEvent.change(screen.getByLabelText(/view name/i), {
+      target: { value: "Work" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /save view/i }));
+    // reopen it via ··· and widen the date window — list still shows Alpha
+    fireEvent.click(screen.getByRole("button", { name: /edit work/i }));
+    const dialog = within(screen.getByRole("dialog"));
+    expect(dialog.getByLabelText(/view name/i)).toHaveValue("Work");
+    fireEvent.click(dialog.getByRole("button", { name: "Today" }));
+    fireEvent.click(dialog.getByRole("button", { name: /save view/i }));
+    expect(screen.getByRole("button", { name: /^Work$/ })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
   });
 });

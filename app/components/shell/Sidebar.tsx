@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { SavedView, TodoLabel, ViewSelection } from "@/lib/contracts";
 import styles from "./Sidebar.module.css";
 
@@ -53,7 +52,8 @@ export interface SidebarProps {
   views: SavedView[];
   labels: TodoLabel[];
   onSelect: (sel: NavSelection) => void;
-  onAddView: (name: string) => void;
+  onCreateView: () => void;
+  onEditView: (view: SavedView) => void;
 }
 
 export function Sidebar({
@@ -61,19 +61,9 @@ export function Sidebar({
   views,
   labels,
   onSelect,
-  onAddView,
+  onCreateView,
+  onEditView,
 }: SidebarProps) {
-  const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState("");
-
-  function submitView() {
-    const name = draft.trim();
-    if (!name) return;
-    onAddView(name);
-    setDraft("");
-    setAdding(false);
-  }
-
   return (
     <nav className={styles.sidebar} aria-label="Primary">
       <p className={styles.wordmark}>Tada</p>
@@ -103,40 +93,28 @@ export function Sidebar({
             type="button"
             className={styles.add}
             aria-label="Add view"
-            onClick={() => setAdding((a) => !a)}
+            onClick={onCreateView}
           >
             +
           </button>
         </div>
-        {adding ? (
-          <input
-            className={styles.viewInput}
-            placeholder="View name…"
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                submitView();
-              } else if (e.key === "Escape") {
-                setAdding(false);
-                setDraft("");
-              }
-            }}
-            onBlur={() => {
-              if (!draft.trim()) setAdding(false);
-            }}
-          />
-        ) : null}
         {views.map((v) => (
-          <NavItem
-            key={v.id}
-            label={v.name}
-            colorHex={v.colorHex}
-            selected={sameSelection(selection, { kind: "project", id: v.id })}
-            onClick={() => onSelect({ kind: "project", id: v.id })}
-          />
+          <div key={v.id} className={styles.viewRow}>
+            <NavItem
+              label={v.name}
+              colorHex={v.colorHex}
+              selected={sameSelection(selection, { kind: "project", id: v.id })}
+              onClick={() => onSelect({ kind: "project", id: v.id })}
+            />
+            <button
+              type="button"
+              className={styles.edit}
+              aria-label={`Edit ${v.name}`}
+              onClick={() => onEditView(v)}
+            >
+              ···
+            </button>
+          </div>
         ))}
       </div>
 
