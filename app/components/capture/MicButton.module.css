@@ -1,0 +1,42 @@
+.mic {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out-quart),
+    color var(--dur-fast) var(--ease-out-quart);
+}
+
+.mic:hover:not(:disabled) {
+  background: var(--color-surface-subtle);
+  color: var(--color-accent-text);
+}
+
+.mic:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Listening — rust pulse, soft raised, never a heavy fill. */
+.mic[data-listening="true"] {
+  background: var(--color-surface-raised);
+  color: var(--color-accent);
+  animation: pulse var(--dur-breath, 1.6s) var(--ease-out-quart) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 0%, transparent);
+  }
+}

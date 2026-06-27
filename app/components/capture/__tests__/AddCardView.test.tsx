@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { TadaProvider, useTada } from "@/app/lib/store";
 import { AddCardView } from "../AddCardView";
 
@@ -11,6 +11,10 @@ function Probe() {
       <span data-testid="sel">{state.selection.kind}</span>
       <span data-testid="titles">{state.todos.map((t) => t.title).join("|")}</span>
       <span data-testid="labels">{state.labels.map((l) => l.name).join("|")}</span>
+      <span data-testid="prios">{state.todos.map((t) => t.priority).join("|")}</span>
+      <span data-testid="todolabels">
+        {state.todos.map((t) => t.labelIds.length).join("|")}
+      </span>
     </div>
   );
 }
@@ -73,6 +77,84 @@ describe("AddCardView (store-wired)", () => {
     await waitFor(() =>
       expect(screen.getByTestId("labels")).toHaveTextContent("pets"),
     );
+  });
+
+  it("dictation fills the quick-add text (same parse path)", () => {
+    globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
+    // install a fake SpeechRecognition so the mic is enabled
+    let instance: { onresult: ((e: unknown) => void) | null; start: () => void; stop: () => void } | null =
+      null;
+    (window as unknown as { SpeechRecognition: unknown }).SpeechRecognition =
+      function () {
+        instance = { onresult: null, start: vi.fn(), stop: vi.fn() };
+        return instance;
+      };
+    renderAdd();
+    fireEvent.click(screen.getByRole("button", { name: /dictate/i }));
+    act(() =>
+      instance!.onresult?.({
+        resultIndex: 0,
+        results: [[{ transcript: "call the vet" }]],
+      } as never),
+    );
+    expect(screen.getByRole("textbox")).toHaveValue("call the vet");
+    delete (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition;
+  });
+
+  it("offers AI enrichment chips after submit and applies one only on tap", async () => {
+    globalThis.fetch = vi.fn(async (url: string) => {
+      if (String(url) === "/api/enrich") {
+        return {
+          ok: true,
+          json: async () => ({
+            suggestions: [
+              { title: "Plan offsite", actionType: "none", suggestedPriority: "p1" },
+            ],
+          }),
+        };
+      }
+      return { ok: true, json: async () => ({ todo: null }) };
+    }) as never;
+    renderAdd();
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "Plan offsite" },
+    });
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+
+    // the created todo starts at priority "none"
+    await waitFor(() => expect(screen.getByTestId("prios")).toHaveTextContent("none"));
+    // suggestion surfaces as a tappable chip; nothing applied yet
+    const chip = await screen.findByRole("button", { name: /add p1/i });
+    expect(screen.getByTestId("prios")).toHaveTextContent("none");
+
+    fireEvent.click(chip);
+    await waitFor(() => expect(screen.getByTestId("prios")).toHaveTextContent("p1"));
+    // chip consumed after applying
+    expect(screen.queryByRole("button", { name: /add p1/i })).toBeNull();
+  });
+
+  it("only enriches with what the deterministic parse missed", async () => {
+    globalThis.fetch = vi.fn(async (url: string) => {
+      if (String(url) === "/api/enrich") {
+        return {
+          ok: true,
+          json: async () => ({
+            // suggests p1 — but the user already typed p1, so no chip
+            suggestions: [
+              { title: "Ship it", actionType: "none", suggestedPriority: "p1" },
+            ],
+          }),
+        };
+      }
+      return { ok: true, json: async () => ({ todo: null }) };
+    }) as never;
+    renderAdd();
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Ship it p1" } });
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+    await waitFor(() => expect(screen.getByTestId("prios")).toHaveTextContent("p1"));
+    // give the enrich promise a tick; the redundant p1 chip must not appear
+    await Promise.resolve();
+    expect(screen.queryByRole("button", { name: /add p1/i })).toBeNull();
   });
 
   it("does not submit an empty/whitespace title", () => {

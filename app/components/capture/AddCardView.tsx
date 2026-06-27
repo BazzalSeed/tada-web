@@ -3,9 +3,12 @@
 import { useMemo, useState } from "react";
 import type { Todo, TodoLabel } from "@/lib/contracts";
 import { parseQuickAdd } from "@/lib/core";
-import { createTodo } from "@/app/lib/api";
+import { createTodo, enrichText, patchTodo } from "@/app/lib/api";
+import { enrichmentChips, type EnrichmentChip } from "@/app/lib/enrich";
 import { useTada } from "@/app/lib/store";
 import { HighlightedInput } from "./HighlightedInput";
+import { MicButton } from "./MicButton";
+import { EnrichmentBar } from "./EnrichmentBar";
 import styles from "./AddCardView.module.css";
 
 const ACCENT = "#c8632e";
@@ -17,6 +20,65 @@ export function AddCardView() {
   const { state, dispatch } = useTada();
   const [text, setText] = useState("");
   const parsed = useMemo(() => parseQuickAdd(text), [text]);
+  // Async enrichment offers for the most-recently-added todo (T2.5).
+  const [enrichTarget, setEnrichTarget] = useState<Todo | null>(null);
+  const [chips, setChips] = useState<EnrichmentChip[]>([]);
+
+  // Keep only chips that ADD something the deterministic parse didn't already
+  // capture — no point re-offering a priority/label/date the user already typed.
+  function novelChips(all: EnrichmentChip[], todo: Todo): EnrichmentChip[] {
+    const labelNames = new Set(
+      todo.labelIds
+        .map((id) => state.labels.find((l) => l.id === id)?.name)
+        .filter(Boolean),
+    );
+    return all.filter((c) => {
+      switch (c.kind) {
+        case "priority":
+          return todo.priority === "none";
+        case "due":
+          return !todo.dueAt;
+        case "recurrence":
+          return !todo.recurrence;
+        case "label":
+          return !labelNames.has(c.labelName);
+        case "action":
+          return todo.actionType === "none";
+      }
+    });
+  }
+
+  // Apply one accepted suggestion: merge a concrete patch into the target todo,
+  // reflect it optimistically, persist via PATCH, and consume the chip. Nothing
+  // here runs without the explicit tap that calls it.
+  function acceptChip(chip: EnrichmentChip) {
+    if (!enrichTarget) return;
+    let patch: Partial<Todo>;
+    switch (chip.kind) {
+      case "priority":
+        patch = { priority: chip.priority };
+        break;
+      case "due":
+        patch = { dueAt: chip.dueAt };
+        break;
+      case "recurrence":
+        patch = { recurrence: chip.recurrence };
+        break;
+      case "action":
+        patch = { actionType: chip.actionType };
+        break;
+      case "label":
+        patch = { labelIds: [...enrichTarget.labelIds, ...resolveLabelIds([chip.labelName])] };
+        break;
+    }
+    const merged = { ...enrichTarget, ...patch };
+    setEnrichTarget(merged);
+    dispatch({ type: "UPSERT_TODO", todo: merged });
+    setChips((cs) => cs.filter((c) => c.key !== chip.key));
+    patchTodo(merged.id, patch).catch(() => {
+      // interim: keep the optimistic merge until persistence is authed.
+    });
+  }
 
   // Resolve @labels to ids, creating any unknown label inline (lowercased).
   function resolveLabelIds(names: string[]): string[] {
@@ -64,6 +126,10 @@ export function AddCardView() {
     };
     dispatch({ type: "UPSERT_TODO", todo: optimistic });
     dispatch({ type: "SELECT_NAV", selection: { kind: "all" } });
+    // Clear any prior suggestions; new capture, fresh offers.
+    setChips([]);
+    setEnrichTarget(null);
+    const rawText = text;
     setText("");
 
     try {
@@ -79,6 +145,21 @@ export function AddCardView() {
     } catch {
       // interim: keep the optimistic todo until persistence is authed.
     }
+
+    // Fire the async AI pass over the ORIGINAL text (full context) and fold any
+    // novel suggestions into tappable chips. Never auto-applies.
+    enrichText(rawText)
+      .then((suggestions) => {
+        const first = suggestions[0];
+        if (!first) return;
+        const offered = novelChips(enrichmentChips(first, new Date()), optimistic);
+        if (offered.length === 0) return;
+        setEnrichTarget(optimistic);
+        setChips(offered);
+      })
+      .catch(() => {
+        // enrichment is best-effort; silence failures (quota / offline / pre-auth).
+      });
   }
 
   return (
@@ -92,6 +173,19 @@ export function AddCardView() {
         onChange={setText}
         onSubmit={submit}
         placeholder="Add task — try “Plan offsite tomorrow p1 @work”"
+      />
+      <MicButton
+        onTranscript={(spoken) =>
+          setText((prev) => (prev.trim() ? `${prev} ${spoken}` : spoken))
+        }
+      />
+      <EnrichmentBar
+        chips={chips}
+        onAccept={acceptChip}
+        onDismiss={() => {
+          setChips([]);
+          setEnrichTarget(null);
+        }}
       />
     </div>
   );

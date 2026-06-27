@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Todo } from "@/lib/contracts";
-import { createTodo, patchTodo, reorderTodo } from "../api";
+import { createTodo, enrichText, patchTodo, reorderTodo } from "../api";
 
 const todo: Todo = {
   id: "t1",
@@ -56,6 +56,18 @@ describe("api client", () => {
     expect(url).toBe("/api/todos");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body)).toEqual({ title: "Email Dakota" });
+  });
+
+  it("enrichText POSTs the text and unwraps { suggestions }", async () => {
+    const fetchMock = mockFetch({
+      suggestions: [{ title: "Plan offsite", actionType: "meeting" }],
+    });
+    const result = await enrichText("Plan offsite tomorrow");
+    expect(result).toEqual([{ title: "Plan offsite", actionType: "meeting" }]);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/enrich");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body)).toEqual({ text: "Plan offsite tomorrow" });
   });
 
   it("throws on a non-ok response", async () => {

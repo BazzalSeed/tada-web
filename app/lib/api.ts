@@ -1,4 +1,4 @@
-import type { Todo } from "@/lib/contracts";
+import type { ExtractedTodo, Todo } from "@/lib/contracts";
 
 // Typed client for the frozen front↔back todo routes. Every endpoint returns a
 // `{ todo }` envelope; these unwrap to the bare Todo. Wire keys are snake_case
@@ -51,6 +51,17 @@ export async function patchTodo(
     body: JSON.stringify(patch),
   });
   return todo;
+}
+
+// Async quick-add enrichment (T2.5). Non-mutating: returns AI SUGGESTIONS for the
+// just-created todo; the UI folds them into tappable chips and applies accepted
+// ones via patchTodo. Never auto-applied.
+export async function enrichText(text: string): Promise<ExtractedTodo[]> {
+  const { suggestions } = await send<{ suggestions: ExtractedTodo[] }>(
+    "/api/enrich",
+    { method: "POST", body: JSON.stringify({ text }) },
+  );
+  return suggestions;
 }
 
 export async function reorderTodo(
