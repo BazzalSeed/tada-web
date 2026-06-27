@@ -89,6 +89,10 @@ export function Landing() {
             <Spark size={13} />
           </a>
           <div className={styles.navCta}>
+            {/* Invited users sign in with Google; the gate lives on /join (T4.2). */}
+            <a href="/join" className={styles.navSignin}>
+              Sign in
+            </a>
             <a href="#waitlist" className={`${styles.btn} ${styles.btnPrimary} ${styles.btnSm}`}>
               Join the waitlist
             </a>

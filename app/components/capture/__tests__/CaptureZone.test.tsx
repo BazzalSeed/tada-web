@@ -67,6 +67,27 @@ describe("CaptureZone (store-wired)", () => {
     expect(captureImageFile).toHaveBeenCalledTimes(1);
   });
 
+  it("surfaces a visible error (and logs) when capture fails — no silent swallow", async () => {
+    const consoleErr = vi.spyOn(console, "error").mockImplementation(() => {});
+    captureImageFile.mockRejectedValue(new Error("401 Unauthorized"));
+    render(
+      <TadaProvider>
+        <Probe />
+        <CaptureZone>
+          <div>content</div>
+        </CaptureZone>
+      </TadaProvider>,
+    );
+    fireEvent.drop(screen.getByTestId("dropzone"), {
+      dataTransfer: { files: [pngFile()], items: [] },
+    });
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(/couldn't capture|try again/i),
+    );
+    expect(consoleErr).toHaveBeenCalled();
+    expect(screen.getByTestId("todos")).toHaveTextContent("");
+  });
+
   it("captures images pasted anywhere (global paste)", async () => {
     captureImageFile.mockResolvedValue({
       capture: { id: "cap2", createdAt: "x", kind: "image", blobPath: "b" },

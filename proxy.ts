@@ -16,7 +16,12 @@ export default auth((req) => {
   if (req.auth) return; // valid session → proceed
 
   // Unauthenticated → sign-in, preserving the intended destination.
-  const signInUrl = new URL("/api/auth/signin", req.nextUrl.origin);
+  // Non-prod: go to /dev-login (the test-session entry) so the reviewer can get
+  // in on any port — real Google only works on a registered redirect URI (:3000 /
+  // app.gettada.app), so a Google-only target would dead-end on the :3939 fallback.
+  // Prod: the built-in sign-in page (Google).
+  const target = process.env.NODE_ENV === "production" ? "/api/auth/signin" : "/dev-login";
+  const signInUrl = new URL(target, req.nextUrl.origin);
   signInUrl.searchParams.set("callbackUrl", req.nextUrl.pathname + req.nextUrl.search);
   return Response.redirect(signInUrl);
 });

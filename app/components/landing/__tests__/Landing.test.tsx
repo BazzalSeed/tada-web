@@ -40,4 +40,10 @@ describe("Landing", () => {
     const cta = screen.getAllByRole("link", { name: /join the waitlist/i })[0];
     expect(cta).toHaveAttribute("href", "#waitlist");
   });
+
+  it("offers a Google sign-in CTA routing to the invite-gated /join page (T4.2)", () => {
+    render(<Landing />);
+    const signIn = screen.getByRole("link", { name: /sign in/i });
+    expect(signIn).toHaveAttribute("href", "/join");
+  });
 });

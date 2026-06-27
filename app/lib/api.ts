@@ -34,6 +34,15 @@ async function send<T>(url: string, init: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// Load the owner's full flat pool (client-side filtering stays ours). 401s until
+// auth; the app boots empty in that case rather than showing stale seed data.
+export async function listTodos(): Promise<Todo[]> {
+  const { todos } = await send<{ todos: Todo[] }>("/api/todos", {
+    method: "GET",
+  });
+  return todos;
+}
+
 export async function createTodo(draft: TodoDraft): Promise<Todo> {
   const { todo } = await send<{ todo: Todo }>("/api/todos", {
     method: "POST",
