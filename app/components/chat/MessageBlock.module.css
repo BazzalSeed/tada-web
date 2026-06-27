@@ -1,0 +1,48 @@
+/* Message row — user right (accent-tinted), assistant left (calm). */
+.row {
+  display: flex;
+  margin-bottom: var(--space-4);
+}
+
+.row[data-role="user"] {
+  justify-content: flex-end;
+}
+
+.bubble {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: min(680px, 86%);
+}
+
+.row[data-role="user"] .bubble {
+  align-items: flex-end;
+}
+
+.text {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.row[data-role="user"] .text {
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface-raised));
+  color: var(--color-ink);
+  border-bottom-right-radius: var(--radius-sm, 6px);
+}
+
+.row[data-role="assistant"] .text {
+  background: var(--color-surface-raised);
+  border: var(--hairline);
+  color: var(--color-ink);
+  border-bottom-left-radius: var(--radius-sm, 6px);
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
