@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useChat } from "@ai-sdk/react";
 import {
   DefaultChatTransport,
@@ -8,6 +9,7 @@ import {
 import { useTada } from "@/app/lib/store";
 import { messageToView } from "./messageView";
 import { MessageBlock } from "./MessageBlock";
+import { TypingIndicator } from "./TypingIndicator";
 import { SuggestionCards } from "./SuggestionCards";
 import { ChatComposer } from "./ChatComposer";
 import styles from "./ChatView.module.css";
@@ -30,6 +32,23 @@ export function ChatView({ onVoice }: ChatViewProps) {
   const views = messages.map(messageToView);
   const busy = status === "streaming" || status === "submitted";
   const now = new Date();
+  const last = views[views.length - 1];
+
+  // Show the typing indicator while the model is "thinking": after send but
+  // before the first token, OR mid-stream while the latest assistant turn is
+  // still empty (e.g. a tool is running and hasn't produced text/a tile yet).
+  const awaitingReply =
+    status === "submitted" ||
+    (status === "streaming" &&
+      last?.role === "assistant" &&
+      !last.text &&
+      last.cards.length === 0);
+
+  // Keep the newest content in view as it streams in (human chat feel).
+  const endRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: "end" });
+  }, [messages, awaitingReply]);
 
   function resolveOffer(
     view: (typeof views)[number],
@@ -57,11 +76,19 @@ export function ChatView({ onVoice }: ChatViewProps) {
               cards={v.cards}
               labels={state.labels}
               now={now}
+              streaming={
+                status === "streaming" &&
+                v.id === last?.id &&
+                v.role === "assistant" &&
+                Boolean(v.text)
+              }
               onApprove={(i) => resolveOffer(v, i, true)}
               onDeny={(i) => resolveOffer(v, i, false)}
             />
           ))
         )}
+        {awaitingReply ? <TypingIndicator /> : null}
+        <div ref={endRef} />
       </div>
       <div className={styles.composerWrap}>
         <ChatComposer

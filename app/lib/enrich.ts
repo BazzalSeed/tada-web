@@ -4,6 +4,7 @@
 // effect and applies only on an explicit tap (never auto-execute) via PATCH.
 
 import type {
+  ActionPayload,
   ActionType,
   ExtractedTodo,
   Priority,
@@ -13,13 +14,22 @@ import { parseQuickAdd } from "@/lib/core";
 import { formatDue } from "./format";
 
 // One accept-or-dismiss offer. `kind` drives how the container turns it into a
-// Todo patch; `label` is the concrete effect shown on the chip.
+// Todo patch; `label` is the concrete effect shown on the chip. The `action` chip
+// carries the classified actionPayload too (FIX4) so accepting it pre-fills the
+// "do it for me" offer (time/attendees/topic), not just the type.
 export type EnrichmentChip =
   | { key: string; kind: "priority"; label: string; priority: Priority }
   | { key: string; kind: "due"; label: string; dueAt: string }
   | { key: string; kind: "recurrence"; label: string; recurrence: RecurrenceRule }
   | { key: string; kind: "label"; label: string; labelName: string }
-  | { key: string; kind: "action"; label: string; actionType: ActionType };
+  | { key: string; kind: "note"; label: string; detail: string }
+  | {
+      key: string;
+      kind: "action";
+      label: string;
+      actionType: ActionType;
+      actionPayload?: ActionPayload | null;
+    };
 
 const ACTION_LABELS: Record<Exclude<ActionType, "none">, string> = {
   meeting: "Meeting",
@@ -82,6 +92,19 @@ export function enrichmentChips(
       kind: "action",
       label: ACTION_LABELS[s.actionType],
       actionType: s.actionType,
+      // Carry the classified payload so the offer is pre-filled on accept (FIX4).
+      actionPayload: s.actionPayload ?? null,
+    });
+  }
+
+  // Notes — fill the todo's detail from the model's extracted context (FIX4).
+  const detail = s.detail?.trim();
+  if (detail) {
+    chips.push({
+      key: `note:${detail.slice(0, 24)}`,
+      kind: "note",
+      label: "Add notes",
+      detail,
     });
   }
 

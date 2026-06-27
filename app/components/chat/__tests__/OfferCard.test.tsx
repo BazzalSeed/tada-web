@@ -38,6 +38,30 @@ describe("OfferCard (pending gated write)", () => {
     expect(screen.getByRole("button", { name: /approve & set/i })).toBeInTheDocument();
   });
 
+  it("renders the complete + reopen mutate offers (FIX9)", () => {
+    const { rerender } = render(
+      <OfferCard action={{ kind: "complete" }} onApprove={vi.fn()} onDeny={vi.fn()} />,
+    );
+    expect(screen.getByText(/mark the todo done/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /approve & complete/i })).toBeInTheDocument();
+    rerender(<OfferCard action={{ kind: "uncomplete" }} onApprove={vi.fn()} onDeny={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /approve & reopen/i })).toBeInTheDocument();
+  });
+
+  it("renders an edit offer's concrete changes (FIX9)", () => {
+    const edit: ProposedAction = {
+      kind: "edit",
+      title: "Pay the rent",
+      priority: "p1",
+      labels: ["finance"],
+    };
+    render(<OfferCard action={edit} onApprove={vi.fn()} onDeny={vi.fn()} />);
+    expect(screen.getByText(/rename to/i)).toBeInTheDocument();
+    expect(screen.getByText("P1")).toBeInTheDocument();
+    expect(screen.getByText("@finance")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /approve & update/i })).toBeInTheDocument();
+  });
+
   it("shows a non-ISO time phrase verbatim instead of an unparseable date", () => {
     // The agent sometimes emits a natural phrase ("6pm today") rather than ISO;
     // render it as-is, never "undefined NaN, NaN".

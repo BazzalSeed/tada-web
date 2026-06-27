@@ -114,6 +114,35 @@ describe("store reducer", () => {
     expect(s1.views[0].criteria.labelIds).toEqual(["l-pets"]);
   });
 
+  it("reconciles an optimistic temp todo → server todo as ONE row (FIX3)", () => {
+    const temp: Todo = { ...todo, id: "temp-abc", title: "Buy stamps" };
+    const s0 = { ...initialState, todos: [temp], selectedTodoId: "temp-abc" };
+    const saved: Todo = { ...temp, id: "cuid-server" };
+    const s1 = reducer(s0, {
+      type: "RECONCILE_TODO",
+      tempId: "temp-abc",
+      todo: saved,
+    });
+    // exactly one row, now on the server id; selection followed the swap
+    expect(s1.todos).toHaveLength(1);
+    expect(s1.todos[0].id).toBe("cuid-server");
+    expect(s1.selectedTodoId).toBe("cuid-server");
+  });
+
+  it("RECONCILE_TODO drops a stray pre-existing row with the server id (idempotent)", () => {
+    const temp: Todo = { ...todo, id: "temp-abc", title: "Buy stamps" };
+    const saved: Todo = { ...temp, id: "cuid-server" };
+    // both the temp row and an already-landed server row exist
+    const s0 = { ...initialState, todos: [temp, saved] };
+    const s1 = reducer(s0, {
+      type: "RECONCILE_TODO",
+      tempId: "temp-abc",
+      todo: saved,
+    });
+    expect(s1.todos).toHaveLength(1);
+    expect(s1.todos[0].id).toBe("cuid-server");
+  });
+
   it("deletes a saved view by id", () => {
     const s1 = reducer(initialState, { type: "UPSERT_VIEW", view });
     expect(s1.views).toHaveLength(1);

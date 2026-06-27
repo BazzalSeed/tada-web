@@ -31,6 +31,7 @@ export interface DetailPaneProps {
   onClose: () => void;
   onPatch: (patch: Partial<Todo>) => void;
   onCreateLabel: (name: string) => TodoLabel;
+  offer?: ReactNode; // the "do it for me" offer panel (FIX2)
   children?: ReactNode;
 }
 
@@ -40,6 +41,7 @@ export function DetailPane({
   onClose,
   onPatch,
   onCreateLabel,
+  offer,
   children,
 }: DetailPaneProps) {
   const [title, setTitle] = useState(todo?.title ?? "");
@@ -178,6 +180,10 @@ export function DetailPane({
           }}
         />
       </div>
+
+      {/* The "do it for me" offer (FIX2) — the concrete effect + the tap that
+          confirms it. Sits above notes so research can write into them below. */}
+      {offer ? <div className={styles.offerSlot}>{offer}</div> : null}
 
       {/* Notes (markdown) */}
       <div className={styles.notes}>

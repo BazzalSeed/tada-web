@@ -48,6 +48,20 @@ function MicIcon() {
   );
 }
 
+// Animated equalizer shown while recording — five rust bars dancing at offset
+// phases. Pure CSS; conveys "I'm listening" far more clearly than a static mic.
+function Waveform() {
+  return (
+    <span className={styles.wave} aria-hidden="true">
+      <i />
+      <i />
+      <i />
+      <i />
+      <i />
+    </span>
+  );
+}
+
 export function MicButton({
   onTranscript,
   getRecognition = defaultGetRecognition,
@@ -115,7 +129,14 @@ export function MicButton({
       aria-pressed={listening}
       onClick={() => (listening ? stop() : start())}
     >
-      <MicIcon />
+      {listening ? (
+        <>
+          <Waveform />
+          <span className={styles.listeningLabel}>Listening…</span>
+        </>
+      ) : (
+        <MicIcon />
+      )}
     </button>
   );
 }

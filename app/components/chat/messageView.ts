@@ -40,12 +40,17 @@ export interface MessageView {
   offers: OfferRef[];
 }
 
-// The side-effect tools that pause for approval (never auto-executed).
+// The side-effect tools that pause for approval (never auto-executed). Mirrors
+// the gated set in the AgentTool registry — incl. the UI-mirroring mutates (FIX9):
+// complete / uncomplete / update.
 const GATED_OFFER_TOOLS = new Set([
   "create_todo",
   "set_reminder",
   "send_meeting_invite",
   "deep_research",
+  "complete_todo",
+  "uncomplete_todo",
+  "update_todo",
 ]);
 
 const PRIORITIES = new Set<Priority>(["none", "p1", "p2", "p3"]);
@@ -91,6 +96,19 @@ function actionFromInput(toolName: string, input: unknown): ProposedAction | nul
   }
   if (toolName === "deep_research") {
     return { kind: "research", topic: str(a.topic) ?? "Research" };
+  }
+  if (toolName === "complete_todo") return { kind: "complete" };
+  if (toolName === "uncomplete_todo") return { kind: "uncomplete" };
+  if (toolName === "update_todo") {
+    return {
+      kind: "edit",
+      title: str(a.title),
+      dueAt: str(a.dueAt) ?? null,
+      priority: priorityOf(a.priority),
+      labels: Array.isArray(a.labelNames)
+        ? (a.labelNames.filter((x) => typeof x === "string") as string[])
+        : undefined,
+    };
   }
   return null;
 }

@@ -21,6 +21,9 @@ const EYEBROW: Record<ProposedAction["kind"], string> = {
   meeting: "Send meeting invite",
   reminder: "Set reminder",
   research: "Run deep research",
+  complete: "Complete todo",
+  uncomplete: "Reopen todo",
+  edit: "Update todo",
 };
 
 const APPROVE_LABEL: Record<ProposedAction["kind"], string> = {
@@ -28,6 +31,16 @@ const APPROVE_LABEL: Record<ProposedAction["kind"], string> = {
   meeting: "Approve & send",
   reminder: "Approve & set",
   research: "Approve & run",
+  complete: "Approve & complete",
+  uncomplete: "Approve & reopen",
+  edit: "Approve & update",
+};
+
+const PRIORITY_LABEL: Record<string, string> = {
+  none: "No priority",
+  p1: "P1",
+  p2: "P2",
+  p3: "P3",
 };
 
 // The agent should emit offset-less ISO, but sometimes hands back a natural
@@ -110,6 +123,42 @@ function OfferEffect({ action, now }: { action: ProposedAction; now: Date }) {
       <div className={styles.effect}>
         <p className={styles.title}>{action.text}</p>
         {when ? <p className={styles.detail}>{when}</p> : null}
+      </div>
+    );
+  }
+  if (action.kind === "complete") {
+    return (
+      <div className={styles.effect}>
+        <p className={styles.title}>Mark the todo done</p>
+      </div>
+    );
+  }
+  if (action.kind === "uncomplete") {
+    return (
+      <div className={styles.effect}>
+        <p className={styles.title}>Reopen the todo</p>
+      </div>
+    );
+  }
+  if (action.kind === "edit") {
+    const changes: string[] = [];
+    if (action.title) changes.push(`Rename to “${action.title}”`);
+    const when = whenLabel(action.dueAt, now);
+    if (action.dueAt !== undefined && action.dueAt !== null && when)
+      changes.push(`Due ${when}`);
+    if (action.priority) changes.push(PRIORITY_LABEL[action.priority] ?? action.priority);
+    if (action.labels && action.labels.length)
+      changes.push(action.labels.map((l) => `@${l}`).join(" "));
+    return (
+      <div className={styles.effect}>
+        <p className={styles.title}>
+          {changes.length ? changes[0] : "Update the todo"}
+        </p>
+        {changes.slice(1).map((c, i) => (
+          <p key={i} className={styles.detail}>
+            {c}
+          </p>
+        ))}
       </div>
     );
   }

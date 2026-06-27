@@ -117,6 +117,43 @@ describe("messageToView", () => {
     });
   });
 
+  it("maps gated complete/uncomplete/update mutates to pending offers (FIX9)", () => {
+    const complete = messageToView({
+      id: "mc1",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-complete_todo",
+          toolCallId: "cc1",
+          state: "approval-requested",
+          input: { todoId: "t1" },
+          approval: { id: "appr-c" },
+        },
+      ],
+    } as never);
+    expect(complete.cards[0]).toMatchObject({ type: "pending", toolName: "complete_todo", action: { kind: "complete" } });
+    expect(complete.offers[0].approvalId).toBe("appr-c");
+
+    const edit = messageToView({
+      id: "mc2",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-update_todo",
+          toolCallId: "cc2",
+          state: "approval-requested",
+          input: { todoId: "t1", priority: "p1", labelNames: ["finance"] },
+          approval: { id: "appr-e" },
+        },
+      ],
+    } as never);
+    expect(edit.cards[0]).toMatchObject({
+      type: "pending",
+      toolName: "update_todo",
+      action: { kind: "edit", priority: "p1", labels: ["finance"] },
+    });
+  });
+
   it("renders an executed meeting result (offer card) from output.card", () => {
     const v = messageToView({
       id: "m6",

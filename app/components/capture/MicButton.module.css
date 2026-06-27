@@ -1,15 +1,20 @@
 .mic {
   flex: none;
   display: grid;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 6px;
   place-items: center;
   width: 30px;
   height: 30px;
+  padding: 0;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-ink-muted);
   cursor: pointer;
   transition:
+    width var(--dur-fast) var(--ease-out-quart),
     background var(--dur-fast) var(--ease-out-quart),
     color var(--dur-fast) var(--ease-out-quart);
 }
@@ -24,19 +29,88 @@
   cursor: not-allowed;
 }
 
-/* Listening — rust pulse, soft raised, never a heavy fill. */
+/* Listening — the button expands into a clear rust "Listening…" pill with a
+   pulsing accent ring and a live waveform. Soft raised surface, never a heavy fill. */
 .mic[data-listening="true"] {
-  background: var(--color-surface-raised);
+  width: auto;
+  padding: 0 10px;
+  height: 30px;
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   color: var(--color-accent);
-  animation: pulse var(--dur-breath, 1.6s) var(--ease-out-quart) infinite;
+  animation: ring var(--dur-breath, 1.6s) var(--ease-out-quart) infinite;
 }
 
-@keyframes pulse {
+.listeningLabel {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* Live equalizer — five bars bouncing at staggered phases. */
+.wave {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 14px;
+}
+
+.wave i {
+  display: block;
+  width: 2px;
+  height: 100%;
+  border-radius: 1px;
+  background: currentColor;
+  transform-origin: center;
+  animation: bar 0.9s var(--ease-out-quart, ease) infinite;
+}
+
+.wave i:nth-child(1) {
+  animation-delay: 0s;
+}
+.wave i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.wave i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.wave i:nth-child(4) {
+  animation-delay: 0.45s;
+}
+.wave i:nth-child(5) {
+  animation-delay: 0.6s;
+}
+
+@keyframes bar {
   0%,
   100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 40%, transparent);
+    transform: scaleY(0.3);
+    opacity: 0.6;
   }
   50% {
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 0%, transparent);
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* Pulsing accent ring around the listening pill. */
+@keyframes ring {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 38%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 0%, transparent);
+  }
+}
+
+/* Respect reduced-motion: keep the clear color/label state, drop the motion. */
+@media (prefers-reduced-motion: reduce) {
+  .mic[data-listening="true"],
+  .wave i {
+    animation: none;
+  }
+  .wave i {
+    transform: scaleY(0.7);
   }
 }

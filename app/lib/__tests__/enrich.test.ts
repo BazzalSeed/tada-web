@@ -79,6 +79,35 @@ describe("enrichmentChips", () => {
     ]);
   });
 
+  it("carries the classified actionPayload on the action chip (FIX4)", () => {
+    const chips = enrichmentChips(
+      suggestion({
+        actionType: "meeting",
+        actionPayload: { kind: "meeting", title: "Sync", attendees: ["Marcus"], start: "2026-06-30T14:00:00" },
+      }),
+      NOW,
+    );
+    expect(chips[0]).toMatchObject({
+      kind: "action",
+      actionType: "meeting",
+      actionPayload: { kind: "meeting", title: "Sync" },
+    });
+  });
+
+  it("offers a notes chip from the extracted detail (FIX4)", () => {
+    const chips = enrichmentChips(
+      suggestion({ detail: "Bring the Q3 numbers and the deck." }),
+      NOW,
+    );
+    expect(chips).toEqual([
+      expect.objectContaining({
+        kind: "note",
+        label: "Add notes",
+        detail: "Bring the Q3 numbers and the deck.",
+      }),
+    ]);
+  });
+
   it("stacks every distinct enrichment into one ordered list", () => {
     const chips = enrichmentChips(
       suggestion({

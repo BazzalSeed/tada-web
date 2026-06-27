@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { between } from "@/lib/core";
 import { patchTodo, reorderTodo } from "@/app/lib/api";
 import {
   childrenByParentFrom,
@@ -46,11 +47,21 @@ export function TodoListView() {
     beforeId: string | null,
     afterId: string | null,
   ) {
+    const current = state.todos.find((t) => t.id === id);
+    if (!current) return;
+    // Move the row INSTANTLY (optimistic): compute the same fractional sortIndex
+    // the server will, from the drop neighbors' current indices, so the list
+    // visibly reorders on drop — not only after the round-trip. Then persist and
+    // reconcile with server truth.
+    const sortOf = (nid: string | null): number | null =>
+      nid ? (state.todos.find((t) => t.id === nid)?.sortIndex ?? null) : null;
+    const newSort = between(sortOf(beforeId), sortOf(afterId));
+    dispatch({ type: "UPSERT_TODO", todo: { ...current, sortIndex: newSort } });
     try {
       const saved = await reorderTodo(id, beforeId, afterId);
       dispatch({ type: "UPSERT_TODO", todo: saved });
     } catch {
-      // interim: reorder persists once the store route has an authed user.
+      // interim: keep the optimistic order until persistence is authed.
     }
   }
 

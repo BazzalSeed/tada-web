@@ -86,4 +86,26 @@ describe("TodoList", () => {
     fireEvent.drop(rows[2]);
     expect(onReorder).toHaveBeenCalledWith("a", "c", null);
   });
+
+  it("shows a live insertion indicator on the hovered row while dragging (FIX6)", () => {
+    render(<TodoList {...listProps()} />);
+    const rows = screen.getAllByRole("listitem");
+    // lift row a, hover over row c
+    fireEvent.dragStart(rows[0]);
+    expect(rows[0]).toHaveAttribute("data-dragging", "true");
+    fireEvent.dragOver(rows[2]);
+    // dragging DOWN → indicator sits below the hovered row
+    expect(rows[2]).toHaveAttribute("data-drop", "below");
+    // dropping clears the drag state
+    fireEvent.drop(rows[2]);
+    expect(rows[2]).not.toHaveAttribute("data-drop");
+  });
+
+  it("indicator shows above the hovered row when dragging upward (FIX6)", () => {
+    render(<TodoList {...listProps()} />);
+    const rows = screen.getAllByRole("listitem");
+    fireEvent.dragStart(rows[2]);
+    fireEvent.dragOver(rows[0]);
+    expect(rows[0]).toHaveAttribute("data-drop", "above");
+  });
 });

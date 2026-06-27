@@ -45,6 +45,7 @@ export type TadaAction =
       captures?: Capture[];
     }
   | { type: "UPSERT_TODO"; todo: Todo }
+  | { type: "RECONCILE_TODO"; tempId: string; todo: Todo }
   | { type: "UPSERT_LABEL"; label: TodoLabel }
   | { type: "RELABEL"; fromId: string; label: TodoLabel }
   | { type: "UPSERT_VIEW"; view: SavedView }
@@ -77,6 +78,25 @@ export function reducer(state: TadaState, action: TadaAction): TadaState {
         todos: exists
           ? state.todos.map((t) => (t.id === action.todo.id ? action.todo : t))
           : [...state.todos, action.todo],
+      };
+    }
+    case "RECONCILE_TODO": {
+      // Swap the optimistic temp row for the server one (matched by tempId), so a
+      // typed quick-add lands as ONE row — never the temp UUID + server cuid pair.
+      // Drops any stray pre-existing row already carrying the server id (idempotent
+      // if the same response is reconciled twice). Carries selection across the swap.
+      const { tempId, todo } = action;
+      const filtered = state.todos.filter(
+        (t) => t.id !== todo.id || t.id === tempId,
+      );
+      const exists = filtered.some((t) => t.id === tempId);
+      return {
+        ...state,
+        todos: exists
+          ? filtered.map((t) => (t.id === tempId ? todo : t))
+          : [...filtered, todo],
+        selectedTodoId:
+          state.selectedTodoId === tempId ? todo.id : state.selectedTodoId,
       };
     }
     case "UPSERT_LABEL": {

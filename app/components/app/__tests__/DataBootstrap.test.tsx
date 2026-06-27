@@ -68,8 +68,8 @@ describe("DataBootstrap", () => {
     expect(screen.getByTestId("captures")).toHaveTextContent("https://blob/shot.png");
   });
 
-  it("leaves the store empty and logs when the load fails (e.g. unauthenticated)", async () => {
-    const consoleErr = vi.spyOn(console, "error").mockImplementation(() => {});
+  it("leaves the store empty and warns when the load fails (e.g. unauthenticated)", async () => {
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
     listTodos.mockRejectedValue(new Error("401"));
     listLabels.mockRejectedValue(new Error("401"));
     listCaptures.mockRejectedValue(new Error("401"));
@@ -79,7 +79,47 @@ describe("DataBootstrap", () => {
         <DataBootstrap />
       </TadaProvider>,
     );
-    await waitFor(() => expect(consoleErr).toHaveBeenCalled());
+    await waitFor(() => expect(consoleWarn).toHaveBeenCalled());
     expect(screen.getByTestId("todos")).toHaveTextContent("");
+  });
+
+  it("still hydrates the todos when a sibling fetch fails transiently (FIX resilience)", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    listTodos.mockResolvedValue([
+      {
+        id: "t1",
+        createdAt: "x",
+        sourceCaptureId: "cap1",
+        title: "Survives a captures 500",
+        status: "open",
+        actionType: "none",
+        actionState: "none",
+        sortIndex: 0,
+        priority: "none",
+        labelIds: [],
+      },
+    ]);
+    listLabels.mockResolvedValue([{ id: "l1", name: "work", colorHex: "#c8632e" }]);
+    // captures fails on the first round, then recovers — the todos must NOT be
+    // blanked by the sibling failure (the old Promise.all behavior).
+    listCaptures
+      .mockRejectedValueOnce(new Error("57P01"))
+      .mockResolvedValue([
+        { id: "cap1", createdAt: "x", kind: "image", blobPath: "https://blob/shot.png" },
+      ]);
+    render(
+      <TadaProvider>
+        <Probe />
+        <DataBootstrap />
+      </TadaProvider>,
+    );
+    // todos appear despite the captures failure on the first attempt
+    await waitFor(() =>
+      expect(screen.getByTestId("todos")).toHaveTextContent("Survives a captures 500"),
+    );
+    // and the retry eventually fills the captures too
+    await waitFor(() =>
+      expect(screen.getByTestId("captures")).toHaveTextContent("https://blob/shot.png"),
+    );
   });
 });

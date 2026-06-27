@@ -21,7 +21,17 @@ export type ProposedAction =
       notes?: string | null;
     }
   | { kind: "reminder"; text: string; remindAt?: string | null }
-  | { kind: "research"; topic: string };
+  | { kind: "research"; topic: string }
+  // --- gated mutates that mirror the UI (FIX9): complete / reopen / edit ---
+  | { kind: "complete" }
+  | { kind: "uncomplete" }
+  | {
+      kind: "edit";
+      title?: string;
+      dueAt?: string | null;
+      priority?: Priority;
+      labels?: string[];
+    };
 
 // Presentational contract for chat/voice generative-UI tiles. Two sources:
 // (1) a tool's executed result `card` ({type, ...}) streamed back after it runs

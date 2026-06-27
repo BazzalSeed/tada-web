@@ -43,6 +43,8 @@ export function AddCardView() {
           return !labelNames.has(c.labelName);
         case "action":
           return todo.actionType === "none";
+        case "note":
+          return !todo.detail?.trim();
       }
     });
   }
@@ -64,7 +66,13 @@ export function AddCardView() {
         patch = { recurrence: chip.recurrence };
         break;
       case "action":
-        patch = { actionType: chip.actionType };
+        // Apply the type AND the pre-classified payload so the offer is ready (FIX4).
+        patch = chip.actionPayload
+          ? { actionType: chip.actionType, actionPayload: chip.actionPayload }
+          : { actionType: chip.actionType };
+        break;
+      case "note":
+        patch = { detail: chip.detail };
         break;
       case "label":
         patch = { labelIds: [...enrichTarget.labelIds, ...resolveLabelIds([chip.labelName])] };
@@ -117,6 +125,9 @@ export function AddCardView() {
     const rawText = text;
     setText("");
 
+    // The row the enrichment pass targets — the server todo once it lands (so
+    // accepted chips PATCH the real cuid), falling back to the optimistic row.
+    let persisted: Todo = optimistic;
     try {
       const saved = await createTodo({
         title,
@@ -126,7 +137,11 @@ export function AddCardView() {
         recurrence: parsed.recurrence ?? undefined,
         sortIndex: optimistic.sortIndex,
       });
-      if (saved) dispatch({ type: "UPSERT_TODO", todo: saved });
+      if (saved) {
+        persisted = saved;
+        // Replace the optimistic temp row in place — never append (FIX3: no dup row).
+        dispatch({ type: "RECONCILE_TODO", tempId: optimistic.id, todo: saved });
+      }
     } catch {
       // interim: keep the optimistic todo until persistence is authed.
     }
@@ -137,9 +152,9 @@ export function AddCardView() {
       .then((suggestions) => {
         const first = suggestions[0];
         if (!first) return;
-        const offered = novelChips(enrichmentChips(first, new Date()), optimistic);
+        const offered = novelChips(enrichmentChips(first, new Date()), persisted);
         if (offered.length === 0) return;
-        setEnrichTarget(optimistic);
+        setEnrichTarget(persisted);
         setChips(offered);
       })
       .catch(() => {

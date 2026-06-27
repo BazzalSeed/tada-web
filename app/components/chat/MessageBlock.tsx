@@ -12,6 +12,7 @@ export interface MessageBlockProps {
   cards?: ChatCard[];
   labels: TodoLabel[];
   now?: Date;
+  streaming?: boolean; // this assistant turn is actively streaming → show a caret
   onApprove?: (cardIndex: number) => void;
   onDeny?: (cardIndex: number) => void;
   offerStatuses?: Record<number, "pending" | "running" | "denied">;
@@ -23,6 +24,7 @@ export function MessageBlock({
   cards,
   labels,
   now,
+  streaming,
   onApprove,
   onDeny,
   offerStatuses,
@@ -30,7 +32,14 @@ export function MessageBlock({
   return (
     <div className={styles.row} data-role={role}>
       <div className={styles.bubble}>
-        {text ? <p className={styles.text}>{text}</p> : null}
+        {text ? (
+          <p className={styles.text}>
+            {text}
+            {streaming ? (
+              <span className={styles.cursor} aria-hidden="true" />
+            ) : null}
+          </p>
+        ) : null}
         {cards && cards.length > 0 ? (
           <div className={styles.cards}>
             {cards.map((card, i) => (

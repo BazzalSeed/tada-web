@@ -1,0 +1,172 @@
+/* The "do it for me" offer — a soft raised card with a faint rust edge (never a
+   heavy fill). Shows the concrete effect; the do-it button is the confirmation. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-accent) 7%, var(--color-surface-raised));
+  box-shadow: inset 2px 0 0 0 var(--color-accent);
+}
+
+.panel[data-state="done"] {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-surface-raised);
+  box-shadow: inset 2px 0 0 0 color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.doneMark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--color-accent);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.eyebrow {
+  font-size: var(--fs-ui-meta, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-accent-text);
+}
+
+.title {
+  font-size: var(--fs-ui-body);
+  font-weight: 600;
+  color: var(--color-ink);
+  word-break: break-word;
+}
+
+.detail {
+  font-size: var(--fs-ui-meta, 0.8rem);
+  color: var(--color-ink-muted);
+}
+
+.doIt {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: var(--color-on-accent, #fff);
+  font-size: var(--fs-ui-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    filter var(--dur-fast) var(--ease-out-quart),
+    opacity var(--dur-fast) var(--ease-out-quart);
+}
+
+.doIt:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.doIt:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Inline single-field ask (needsField) */
+.ask,
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.askLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--fs-ui-meta, 0.8rem);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.askInput {
+  padding: var(--space-2) var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--fs-ui-body);
+}
+
+/* Attendee disambiguation */
+.attendee {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.attendeeName {
+  font-size: var(--fs-ui-meta, 0.8rem);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.candidates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.candidate {
+  padding: var(--space-1) var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--fs-ui-meta, 0.8rem);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out-quart);
+}
+
+.candidate:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+}
+
+.resolved {
+  font-size: var(--fs-ui-meta, 0.8rem);
+  color: var(--color-accent-text);
+}
+
+.error {
+  margin-top: var(--space-2);
+  font-size: var(--fs-ui-meta, 0.8rem);
+  color: var(--color-danger, #b3261e);
+}
+
+.retry {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-accent-text);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.guarantee {
+  margin-top: var(--space-2);
+  font-size: var(--fs-ui-micro, 0.7rem);
+  color: var(--color-ink-faint, var(--color-ink-muted));
+}

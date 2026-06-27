@@ -191,6 +191,11 @@
   border-top: var(--hairline);
 }
 
+.offerSlot {
+  padding-top: var(--space-3);
+  border-top: var(--hairline);
+}
+
 .notesHead {
   display: flex;
   align-items: center;

@@ -58,6 +58,40 @@ describe("AddCardView (store-wired)", () => {
     expect(screen.getByRole("textbox")).toHaveValue("");
   });
 
+  it("reconciles the optimistic row with the server todo — ONE row, no dup (FIX3)", async () => {
+    globalThis.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (String(url) === "/api/todos" && init?.method === "POST") {
+        return {
+          ok: true,
+          json: async () => ({
+            todo: {
+              id: "cuid-server-1",
+              createdAt: "2026-06-27T09:00:00",
+              sourceCaptureId: "c1",
+              title: "Buy stamps",
+              status: "open",
+              actionType: "none",
+              actionState: "none",
+              sortIndex: -1,
+              priority: "none",
+              labelIds: [],
+            },
+          }),
+        };
+      }
+      return { ok: true, json: async () => ({ suggestions: [] }) };
+    }) as never;
+    renderAdd();
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "Buy stamps" },
+    });
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+    // exactly one row, titled once (not "Buy stamps|Buy stamps")
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
+    expect(screen.getByTestId("titles")).toHaveTextContent("Buy stamps");
+    expect(screen.getByTestId("titles").textContent).toBe("Buy stamps");
+  });
+
   it("snaps selection back to All on submit (capture always lands in All)", async () => {
     globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({ todo: null }) })) as never;
     renderAdd({ selection: { kind: "today" } });

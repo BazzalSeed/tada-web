@@ -41,6 +41,18 @@ describe("MessageBlock", () => {
     expect(screen.getByText("Email Dakota")).toBeInTheDocument();
   });
 
+  it("shows a streaming caret on an actively streaming assistant turn (FIX8)", () => {
+    const { container, rerender } = render(
+      <MessageBlock role="assistant" text="Looking" labels={[]} now={NOW} streaming />,
+    );
+    expect(container.querySelector("[class*='cursor']")).toBeInTheDocument();
+    // once the stream settles the caret is gone
+    rerender(
+      <MessageBlock role="assistant" text="Looking it up." labels={[]} now={NOW} />,
+    );
+    expect(container.querySelector("[class*='cursor']")).toBeNull();
+  });
+
   it("wires an offer tile's Approve to onApprove with the card index", () => {
     const onApprove = vi.fn();
     render(

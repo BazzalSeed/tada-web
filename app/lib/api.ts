@@ -1,4 +1,10 @@
-import type { Capture, ExtractedTodo, Todo, TodoLabel } from "@/lib/contracts";
+import type {
+  Attendee,
+  Capture,
+  ExtractedTodo,
+  Todo,
+  TodoLabel,
+} from "@/lib/contracts";
 
 // Typed client for the frozen front↔back todo routes. Every endpoint returns a
 // `{ todo }` envelope; these unwrap to the bare Todo. Wire keys are snake_case
@@ -107,6 +113,24 @@ export async function ensureLabel(name: string): Promise<TodoLabel> {
     body: JSON.stringify({ name }),
   });
   return label;
+}
+
+// The "do it for me" tap path (FIX2). POST /api/todos/:id/finish dispatches on
+// actionType (meeting/reminder deterministic; research via the agent) and returns
+// the ExecResult — incl. `needsField` (one inline ask) and `needsDisambiguation`
+// (attendee candidates). `markdown` is present for a finished research run. The
+// server already persisted the new actionState; the client mirrors it locally.
+export interface FinishResponse {
+  ok: boolean;
+  actionExternalId?: string;
+  error?: string;
+  needsField?: string;
+  needsDisambiguation?: Attendee[];
+  markdown?: string;
+}
+
+export async function finishTodo(id: string): Promise<FinishResponse> {
+  return send<FinishResponse>(`/api/todos/${id}/finish`, { method: "POST" });
 }
 
 export async function reorderTodo(

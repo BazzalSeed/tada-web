@@ -23,12 +23,19 @@ export interface TodoRowProps {
   onDragStart?: () => void;
   onDragOver?: (e: React.DragEvent) => void;
   onDrop?: () => void;
+  onDragEnd?: () => void;
+  dragging?: boolean; // this row is the one being dragged (dim it)
+  dropIndicator?: "above" | "below" | null; // rust insertion line
   // Optional one-level subtask affordances.
   hasChildren?: boolean;
   expanded?: boolean;
   onToggleExpand?: () => void;
   indented?: boolean;
   captureThumb?: string | null; // source-capture image url
+  // The "do it for me" offer surfaced on the row (FIX2). Tapping opens the detail
+  // pane where the concrete effect is confirmed (the tap there is the trigger).
+  offer?: { eyebrow: string; line?: string } | null;
+  offerDone?: string | null; // executed → a calm done badge ("Invite sent")
 }
 
 export function TodoRow({
@@ -44,11 +51,16 @@ export function TodoRow({
   onDragStart,
   onDragOver,
   onDrop,
+  onDragEnd,
+  dragging,
+  dropIndicator,
   hasChildren,
   expanded,
   onToggleExpand,
   indented,
   captureThumb,
+  offer,
+  offerDone,
 }: TodoRowProps) {
   const done = todo.status === "done";
   return (
@@ -57,11 +69,14 @@ export function TodoRow({
       data-selected={selected}
       data-done={done}
       data-indented={indented ? "true" : undefined}
+      data-dragging={dragging ? "true" : undefined}
+      data-drop={dropIndicator ?? undefined}
       onClick={onSelect}
       draggable={draggable}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      onDragEnd={onDragEnd}
     >
       {hasChildren ? (
         <button
@@ -95,6 +110,27 @@ export function TodoRow({
           subtaskDone={subtaskDone}
           subtaskTotal={subtaskTotal}
         />
+        {offerDone ? (
+          <span className={styles.offerDone}>✓ {offerDone}</span>
+        ) : offer ? (
+          <button
+            type="button"
+            className={styles.offerChip}
+            aria-label={`${offer.eyebrow} — open to confirm`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
+          >
+            <span className={styles.bolt} aria-hidden="true">
+              ⚡
+            </span>
+            <span className={styles.offerText}>
+              {offer.eyebrow}
+              {offer.line ? ` · ${offer.line}` : ""}
+            </span>
+          </button>
+        ) : null}
       </div>
       {captureThumb ? (
         <CaptureThumbnail src={captureThumb} alt={`Capture for ${todo.title}`} />

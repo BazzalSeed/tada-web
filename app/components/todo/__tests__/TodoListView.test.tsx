@@ -53,6 +53,33 @@ describe("TodoListView (store-wired)", () => {
     );
   });
 
+  it("optimistically reorders on drop — the row moves before the server replies (FIX6)", async () => {
+    const a: Todo = { ...open, id: "a", title: "Aaa", sortIndex: 0 };
+    const b: Todo = { ...open, id: "b", title: "Bbb", sortIndex: 1 };
+    const c: Todo = { ...open, id: "c", title: "Ccc", sortIndex: 2 };
+    // server stalls — the optimistic move must happen without waiting on it
+    globalThis.fetch = vi.fn(() => new Promise(() => {})) as never;
+    render(
+      <TadaProvider preload={{ todos: [a, b, c] }}>
+        <TodoListView />
+      </TadaProvider>,
+    );
+    let rows = screen.getAllByRole("listitem");
+    expect(rows.map((r) => r.textContent)).toEqual([
+      expect.stringContaining("Aaa"),
+      expect.stringContaining("Bbb"),
+      expect.stringContaining("Ccc"),
+    ]);
+    // drag Aaa (index 0) down onto Ccc (index 2)
+    fireEvent.dragStart(rows[0]);
+    fireEvent.drop(rows[2]);
+    // Aaa lands after Ccc immediately (sortIndex between c=2 and none → 3)
+    await waitFor(() => {
+      rows = screen.getAllByRole("listitem");
+      expect(rows[rows.length - 1].textContent).toContain("Aaa");
+    });
+  });
+
   it("keeps the optimistic state if persistence fails (pre-auth interim)", async () => {
     globalThis.fetch = vi.fn(async () => {
       throw new Error("no user");

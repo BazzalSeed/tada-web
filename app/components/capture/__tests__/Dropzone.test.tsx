@@ -44,6 +44,20 @@ describe("Dropzone", () => {
     expect(zone).toHaveAttribute("data-dragging", "false");
   });
 
+  it("ignores an in-app element drag (todo-row reorder) — no capture overlay (FIX6)", () => {
+    render(
+      <Dropzone onFiles={vi.fn()}>
+        <div>content</div>
+      </Dropzone>,
+    );
+    const zone = screen.getByTestId("dropzone");
+    // an element drag carries text/* types, never "Files"
+    fireEvent.dragEnter(zone, { dataTransfer: { types: ["text/plain"] } });
+    fireEvent.dragOver(zone, { dataTransfer: { types: ["text/plain"] } });
+    // the capture overlay must NOT activate during a row reorder
+    expect(zone).toHaveAttribute("data-dragging", "false");
+  });
+
   it("does not emit when a drop has no image", () => {
     const onFiles = vi.fn();
     render(

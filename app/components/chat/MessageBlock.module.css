@@ -40,6 +40,34 @@
   border-bottom-left-radius: var(--radius-sm, 6px);
 }
 
+/* Blinking caret on the actively-streaming assistant turn. */
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--color-accent);
+  animation: caret 1s steps(1) infinite;
+}
+
+@keyframes caret {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor {
+    animation: none;
+  }
+}
+
 .cards {
   display: flex;
   flex-direction: column;

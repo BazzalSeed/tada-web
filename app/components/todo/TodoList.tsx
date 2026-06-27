@@ -3,8 +3,15 @@
 import { useRef, useState } from "react";
 import type { Capture, Todo, TodoLabel } from "@/lib/contracts";
 import { neighborsForDrop } from "@/app/lib/reorder";
+import { hasOffer, offerEffect } from "@/app/lib/offer";
 import { TodoRow } from "./TodoRow";
 import styles from "./TodoList.module.css";
+
+const DONE_BADGE: Record<string, string> = {
+  meeting: "Invite sent",
+  reminder: "Reminder set",
+  research: "Researched",
+};
 
 export interface SubtaskCount {
   done: number;
@@ -50,6 +57,15 @@ export function TodoList({
   const [doneOpen, setDoneOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const dragFrom = useRef<number | null>(null);
+  // The slot the dragged row will land in, for the live insertion indicator.
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+
+  function clearDrag() {
+    dragFrom.current = null;
+    setDragIndex(null);
+    setOverIndex(null);
+  }
 
   function toggleExpand(id: string) {
     setExpanded((prev) => {
@@ -64,11 +80,30 @@ export function TodoList({
     todo: Todo,
     opts: { dragIndex?: number; indented?: boolean } = {},
   ) {
-    const { dragIndex, indented } = opts;
+    const { dragIndex: rowIndex, indented } = opts;
     const count = subtaskCounts[todo.id] ?? { done: 0, total: 0 };
-    const isOpenRow = dragIndex !== undefined;
+    const isOpenRow = rowIndex !== undefined;
     const kids = childrenByParent[todo.id] ?? [];
     const captureThumb = capturesById[todo.sourceCaptureId]?.blobPath ?? null;
+    // Do-it-for-me offer surfaced on the row (FIX2): the live offer for actionable
+    // todos, or a calm done badge once executed.
+    const eff = hasOffer(todo) ? offerEffect(todo, now) : null;
+    const offer = eff ? { eyebrow: eff.eyebrow, line: eff.lines[0] } : null;
+    const offerDone =
+      todo.actionType !== "none" && todo.actionState === "done"
+        ? DONE_BADGE[todo.actionType] ?? null
+        : null;
+    // Insertion indicator: while dragging, the hovered row shows a rust line on
+    // the side the dragged row would land — above when moving up, below when down.
+    const dropIndicator: "above" | "below" | null =
+      isOpenRow &&
+      dragIndex !== null &&
+      overIndex === rowIndex &&
+      dragIndex !== rowIndex
+        ? dragIndex < rowIndex
+          ? "below"
+          : "above"
+        : null;
     return (
       <TodoRow
         key={todo.id}
@@ -81,24 +116,43 @@ export function TodoList({
         selected={selectedId === todo.id}
         onSelect={() => onSelect(todo.id)}
         onToggleComplete={() => onToggleComplete(todo.id)}
+        offer={offer}
+        offerDone={offerDone}
         indented={indented}
         hasChildren={!indented && kids.length > 0}
         expanded={expanded.has(todo.id)}
         onToggleExpand={() => toggleExpand(todo.id)}
         draggable={isOpenRow}
-        onDragStart={isOpenRow ? () => (dragFrom.current = dragIndex) : undefined}
-        onDragOver={isOpenRow ? (e) => e.preventDefault() : undefined}
+        dragging={isOpenRow && dragIndex === rowIndex}
+        dropIndicator={dropIndicator}
+        onDragStart={
+          isOpenRow
+            ? () => {
+                dragFrom.current = rowIndex;
+                setDragIndex(rowIndex);
+              }
+            : undefined
+        }
+        onDragOver={
+          isOpenRow
+            ? (e) => {
+                e.preventDefault();
+                if (overIndex !== rowIndex) setOverIndex(rowIndex);
+              }
+            : undefined
+        }
+        onDragEnd={isOpenRow ? clearDrag : undefined}
         onDrop={
           isOpenRow
             ? () => {
                 const from = dragFrom.current;
-                dragFrom.current = null;
-                if (from === null || from === dragIndex) return;
+                clearDrag();
+                if (from === null || from === rowIndex) return;
                 const ids = open.map((t) => t.id);
                 const { beforeId, afterId } = neighborsForDrop(
                   ids,
                   from,
-                  dragIndex,
+                  rowIndex,
                 );
                 onReorder(open[from].id, beforeId, afterId);
               }
