@@ -161,7 +161,13 @@ export async function runCapture(
       extractor.extract(input),
     );
     fresh = dedupe(out.todos, openTitles);
-  } catch {
+  } catch (err) {
+    // Capture-first already persisted the plain todo, so the user is covered —
+    // but log so extraction reliability stays observable (quota 402 included).
+    console.error(
+      `[capture] extraction failed for capture ${capture.id} (kind=${kind}):`,
+      err,
+    );
     fresh = [];
   }
 
