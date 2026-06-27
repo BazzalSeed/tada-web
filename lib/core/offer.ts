@@ -31,31 +31,54 @@ export interface OfferDescriptor {
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-// Format an offset-less local ISO ("2026-07-01T14:00:00") for the effect line.
-// Deterministic (no locale / timezone surprises); omits the clock when midnight.
-function fmtWhen(iso: string | null | undefined): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso; // show raw rather than "NaN"
-  const date = `${MONTHS[d.getMonth()]} ${d.getDate()}`;
-  const h = d.getHours();
-  const m = d.getMinutes();
-  if (h === 0 && m === 0) return date;
-  const ampm = h < 12 ? "AM" : "PM";
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${date}, ${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+const startOfDay = (d: Date): Date =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const dayDelta = (a: Date, b: Date): number =>
+  Math.round((startOfDay(a).getTime() - startOfDay(b).getTime()) / 86_400_000);
+
+// Relative-aware date label from an offset-less local ISO ("2026-06-30T…"),
+// mirroring the app's due-chip formatting so the unified offer reads the same:
+// "Today" / "Tomorrow" / "Jun 30" / "Jun 30, 2027". `now`-injected.
+function fmtDateLabel(iso: string, now: Date): string {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  const due = new Date(y, (m || 1) - 1, d || 1);
+  const delta = dayDelta(due, now);
+  if (delta === 0) return "Today";
+  if (delta === 1) return "Tomorrow";
+  const base = `${MONTHS[due.getMonth()]} ${due.getDate()}`;
+  return due.getFullYear() === now.getFullYear() ? base : `${base}, ${due.getFullYear()}`;
 }
 
-function fmtDuration(min: number | null | undefined): string | null {
-  if (!min || min <= 0) return null;
-  if (min % 60 === 0) return `${min / 60}h`;
-  if (min > 60) return `${Math.floor(min / 60)}h${min % 60}m`;
-  return `${min}m`;
+// Compact clock from the ISO time component → "2pm" / "2:30pm"; null for a
+// date-only / midnight value (the domain's date-only encoding).
+function fmtClock(iso: string): string | null {
+  const t = iso.slice(11, 16);
+  if (!/^\d{2}:\d{2}$/.test(t)) return null;
+  const [hh, mm] = t.split(":").map(Number);
+  if (hh === 0 && mm === 0) return null;
+  const period = hh < 12 ? "am" : "pm";
+  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return mm === 0 ? `${h12}${period}` : `${h12}:${String(mm).padStart(2, "0")}${period}`;
 }
+
+// When-parts for the " · "-joined effect line: [] for no time; the raw string
+// verbatim for a non-ISO value (a stray "next tuesday" must never become NaN);
+// else [date] or [date, clock].
+function whenParts(iso: string | null | undefined, now: Date): string[] {
+  if (!iso) return [];
+  if (!/^\d{4}-\d{2}-\d{2}/.test(iso)) return [iso];
+  const date = fmtDateLabel(iso, now);
+  const clock = fmtClock(iso);
+  return clock ? [date, clock] : [date];
+}
+
+const fmtDuration = (min: number | null | undefined): string | null =>
+  !min || min <= 0 ? null : `${min} min`;
 
 // Builds the offer preview for a todo, or null when there's nothing to offer
 // (actionType none, or the action is already done / has no proposed state).
-export function describeOffer(todo: Todo): OfferDescriptor | null {
+// `now` is injected for the relative date label (defaults to the real clock).
+export function describeOffer(todo: Todo, now: Date = new Date()): OfferDescriptor | null {
   const { actionType, actionPayload, actionState } = todo;
   if (actionType === "none") return null;
   // Only surface an offer while it's actionable: proposed (armed) or blocked on
@@ -65,13 +88,15 @@ export function describeOffer(todo: Todo): OfferDescriptor | null {
 
   if (actionType === "reminder") {
     const p = actionPayload?.kind === "reminder" ? actionPayload : null;
-    const when = fmtWhen(p?.remindAt);
     const text = p?.text?.trim() || todo.title;
+    const parts = [`Remind: ${text}`, ...whenParts(p?.remindAt, now)];
     return {
       actionType: "reminder",
       verb: "Set reminder",
-      effect: when ? `Remind: ${text} · ${when}` : `Remind: ${text}`,
-      needsField: when ? null : "remindAt",
+      effect: parts.join(" · "),
+      // Mirror the executor: any truthy remindAt is enough to fire; only a
+      // missing time blocks with the single inline ask.
+      needsField: p?.remindAt ? null : "remindAt",
       state: actionState,
     };
   }
@@ -84,15 +109,13 @@ export function describeOffer(todo: Todo): OfferDescriptor | null {
       .filter((x): x is string => !!x);
     const raw = p?.attendees ?? [];
     const who = resolved.length ? resolved : raw;
-    const when = fmtWhen(p?.start);
-    const dur = fmtDuration(p?.durationMin ?? 30);
     const parts = [
       who.length ? `Invite ${who.join(", ")}` : null,
-      when,
-      dur,
+      ...whenParts(p?.start, now),
+      fmtDuration(p?.durationMin ?? 30),
     ].filter((x): x is string => !!x);
     // Essential-field gate: missing time → ask start; missing people → ask attendees.
-    const needsField: OfferNeedsField = !when
+    const needsField: OfferNeedsField = !p?.start
       ? "start"
       : who.length === 0
         ? "attendees"
