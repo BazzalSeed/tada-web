@@ -21,6 +21,21 @@ export interface DueLabel {
   overdue: boolean;
 }
 
+// Clock time from an offset-less local ISO ("…THH:mm[:ss]") → "2pm" / "2:30pm".
+// Returns null when there's no meaningful time (no time component, or midnight,
+// which the domain uses for date-only values) so callers can show just the date.
+export function formatClock(iso: string): string | null {
+  const t = iso.slice(11, 16);
+  if (!/^\d{2}:\d{2}$/.test(t)) return null;
+  const [hh, mm] = t.split(":").map((n) => Number(n));
+  if (hh === 0 && mm === 0) return null; // midnight == date-only
+  const period = hh < 12 ? "am" : "pm";
+  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return mm === 0
+    ? `${h12}${period}`
+    : `${h12}:${String(mm).padStart(2, "0")}${period}`;
+}
+
 export function formatDue(iso: string, now: Date): DueLabel {
   // Parse the leading yyyy-MM-dd as local calendar fields (offset-less).
   const [y, m, d] = iso

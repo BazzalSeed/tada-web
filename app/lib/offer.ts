@@ -8,7 +8,7 @@
 
 import type { ActionPayload, Todo } from "@/lib/contracts";
 import type { FinishResponse } from "./api";
-import { formatDue } from "./format";
+import { formatClock, formatDue } from "./format";
 
 export interface OfferEffect {
   eyebrow: string; // "Send meeting invite"
@@ -17,11 +17,16 @@ export interface OfferEffect {
   cta: string; // the do-it button label
 }
 
-// Format an ISO date for the effect; pass natural phrases through verbatim (the
-// extractor mostly emits ISO, but a stray "6pm today" must never become NaN).
+// Format an ISO datetime for the effect, INCLUDING the clock time when present
+// ("Jul 15 · 2pm"). For a "do-it-for-me" approval the user must see WHEN the
+// invite/reminder fires before tapping (spec: "…Tue 2pm · 30m"). Natural phrases
+// pass through verbatim (a stray "6pm today" must never become NaN).
 function whenLabel(iso: string | null | undefined, now: Date): string | null {
   if (!iso) return null;
-  return /^\d{4}-\d{2}-\d{2}/.test(iso) ? formatDue(iso, now).label : iso;
+  if (!/^\d{4}-\d{2}-\d{2}/.test(iso)) return iso;
+  const date = formatDue(iso, now).label;
+  const time = formatClock(iso);
+  return time ? `${date} · ${time}` : date;
 }
 
 // True when the todo carries an actionable, not-yet-done offer.

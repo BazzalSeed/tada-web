@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDue } from "../format";
+import { formatClock, formatDue } from "../format";
 
 const now = new Date(2026, 5, 26, 9, 0, 0); // Fri Jun 26 2026, local
 
@@ -33,5 +33,23 @@ describe("formatDue", () => {
 
   it("includes the year when it differs from now", () => {
     expect(formatDue("2027-01-05T00:00:00", now).label).toMatch(/Jan 5,? 2027/);
+  });
+});
+
+describe("formatClock (FIX10)", () => {
+  it("formats afternoon times in 12h with am/pm", () => {
+    expect(formatClock("2026-06-30T14:00:00")).toBe("2pm");
+    expect(formatClock("2026-06-30T14:30:00")).toBe("2:30pm");
+  });
+
+  it("formats morning, noon, and midnight-adjacent times", () => {
+    expect(formatClock("2026-06-30T09:05:00")).toBe("9:05am");
+    expect(formatClock("2026-06-30T12:00:00")).toBe("12pm");
+    expect(formatClock("2026-06-30T00:30:00")).toBe("12:30am");
+  });
+
+  it("returns null for date-only (midnight) or missing time", () => {
+    expect(formatClock("2026-06-30T00:00:00")).toBeNull();
+    expect(formatClock("2026-06-30")).toBeNull();
   });
 });

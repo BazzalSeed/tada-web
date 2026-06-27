@@ -1,6 +1,6 @@
 "use client";
 
-import { formatDue } from "@/app/lib/format";
+import { formatClock, formatDue } from "@/app/lib/format";
 import type { ProposedAction } from "../cards";
 import styles from "./OfferCard.module.css";
 
@@ -48,7 +48,11 @@ const PRIORITY_LABEL: Record<string, string> = {
 // "undefined NaN, NaN").
 function whenLabel(iso: string | null | undefined, now: Date): string | null {
   if (!iso) return null;
-  return /^\d{4}-\d{2}-\d{2}/.test(iso) ? formatDue(iso, now).label : iso;
+  if (!/^\d{4}-\d{2}-\d{2}/.test(iso)) return iso;
+  // FIX10: show the clock time too so the user sees WHEN before approving.
+  const date = formatDue(iso, now).label;
+  const time = formatClock(iso);
+  return time ? `${date} · ${time}` : date;
 }
 
 export function OfferCard({

@@ -46,6 +46,9 @@ describe("offer model (FIX2)", () => {
     expect(eff?.eyebrow).toBe("Send meeting invite");
     expect(eff?.title).toBe("Follow-up with Marcus");
     expect(eff?.lines[0]).toContain("30 min");
+    // FIX10: the start CLOCK TIME is shown before the tap, not just the date.
+    expect(eff?.lines[0]).toContain("2pm");
+    expect(eff?.lines[0]).toContain("Jun 30");
     expect(eff?.lines.some((l) => l.includes("Marcus"))).toBe(true);
     expect(eff?.cta).toBe("Send invite");
   });
