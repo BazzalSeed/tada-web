@@ -222,21 +222,32 @@ export async function runCapture(
   }
 
   // 4. First result enriches the plain todo in place; the rest become new todos.
-  const [first, ...rest] = fresh;
-  const enriched = await store.updateTodo(
-    user.userId,
-    plain.id,
-    await toTodoPatch(store, user.userId, first, capture.id),
-  );
-  const extras: Todo[] = [];
-  for (const e of rest) {
-    extras.push(
-      await store.createTodo(
-        user.userId,
-        await toTodoPatch(store, user.userId, e, capture.id),
-      ),
+  //    Wrapped in capture-first defense: the plain todo + extras are already
+  //    durable, so a DB fault here (e.g. a Neon connection dropped mid-request,
+  //    past the lib/db retry budget) must NOT 500 the whole capture — fall back
+  //    to whatever persisted rather than losing the user's capture.
+  try {
+    const [first, ...rest] = fresh;
+    const enriched = await store.updateTodo(
+      user.userId,
+      plain.id,
+      await toTodoPatch(store, user.userId, first, capture.id),
     );
+    const extras: Todo[] = [];
+    for (const e of rest) {
+      extras.push(
+        await store.createTodo(
+          user.userId,
+          await toTodoPatch(store, user.userId, e, capture.id),
+        ),
+      );
+    }
+    return { capture, todos: [enriched, ...extras] };
+  } catch (err) {
+    console.error(
+      `[capture] post-extraction persist failed for capture ${capture.id} (kind=${kind}); returning plain todo:`,
+      err,
+    );
+    return { capture, todos: [plain] };
   }
-
-  return { capture, todos: [enriched, ...extras] };
 }

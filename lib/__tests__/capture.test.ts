@@ -76,6 +76,23 @@ describe("runCapture — capture-first invariant", () => {
     expect(res.todos).toHaveLength(1);
     expect(res.todos[0].title).toBe("call mom");
   });
+
+  it("a post-extraction DB fault does NOT throw — falls back to the plain todo", async () => {
+    // Extraction succeeds, but persisting the enrichment dies (e.g. a Neon
+    // connection dropped mid-request past the retry budget). Capture-first means
+    // the request still resolves with the durable plain todo, never a 500.
+    store.updateTodo = vi.fn(async () => {
+      throw new Error("terminating connection due to administrator command (57P01)");
+    });
+    const extractor: ExtractorClient = {
+      extract: vi.fn(async (): Promise<ExtractorOutput> => ({
+        todos: [{ title: "Book dentist", actionType: "none" }],
+      })),
+    };
+    const res = await runCapture(user, { kind: "text", text: "dentist" }, { store, extractor });
+    expect(res.todos).toHaveLength(1);
+    expect(res.todos[0].title).toBe("dentist"); // the plain todo, unmodified
+  });
 });
 
 describe("runCapture — extraction results", () => {
