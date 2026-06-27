@@ -1,0 +1,72 @@
+/* Todo tile — soft raised card inside a chat message; rust open-circle mark. */
+.tile {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+.mark {
+  flex: none;
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--color-accent);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--color-ink);
+  line-height: 1.2;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chip,
+.prio,
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill, 999px);
+}
+
+.chip {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  color: var(--color-accent-text);
+}
+
+.chip[data-overdue="true"] {
+  background: color-mix(in srgb, var(--color-caution, #d98a55) 18%, transparent);
+  color: var(--color-caution-text, var(--color-accent-text));
+}
+
+.prio {
+  background: var(--color-surface-subtle);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.label {
+  background: var(--color-surface-subtle);
+  color: var(--color-ink-soft);
+}

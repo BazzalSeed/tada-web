@@ -1,0 +1,169 @@
+/* Offer tile — gated write. Calm raised card; Approve in rust, Deny ghost. The
+   meeting attendee picker reads as needs-action without a heavy fill. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-md, 0 4px 16px -8px rgba(0, 0, 0, 0.2));
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.effect {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--fs-body-lead);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.detail {
+  font-size: var(--fs-meta);
+  color: var(--color-ink-soft);
+}
+
+.attendees {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.attendee {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+}
+
+.attendee[data-resolved="false"] {
+  border-left: 2px solid var(--color-accent);
+}
+
+.aName {
+  font-size: var(--fs-meta);
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.aEmail {
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  color: var(--color-ink-soft);
+}
+
+.candidates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.candidate {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: var(--space-1) var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out-quart);
+}
+
+.candidate:hover {
+  border-color: var(--color-accent);
+}
+
+.cName {
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.cEmail {
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  color: var(--color-accent-text);
+}
+
+.cOrg {
+  font-size: var(--fs-caption);
+  color: var(--color-ink-muted);
+}
+
+.enterInput {
+  padding: var(--space-1) var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  font-size: var(--fs-caption);
+  color: var(--color-ink);
+}
+
+.enterInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.deny,
+.approve {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-meta);
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out-quart);
+}
+
+.deny {
+  border: var(--hairline);
+  background: transparent;
+  color: var(--color-ink-soft);
+}
+
+.deny:hover {
+  color: var(--color-ink);
+}
+
+.approve {
+  border: none;
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.approve:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.settled {
+  font-size: var(--fs-meta);
+  color: var(--color-ink-muted);
+  text-align: right;
+}
