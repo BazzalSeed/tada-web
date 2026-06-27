@@ -18,6 +18,7 @@ import { generateObject, NoObjectGeneratedError } from "ai";
 import {
   GeminiExtractorClient,
   buildExtractionMessages,
+  dateContextLine,
 } from "@/lib/extractor";
 import type { ExtractorInput } from "@/lib/contracts";
 
@@ -100,6 +101,18 @@ describe("GeminiExtractorClient.extract", () => {
       text: "buy milk",
     });
     expect(out.todos[0].actionPayload).toBeNull();
+  });
+
+  it("injects the current date so relative dates resolve to ISO (FIX7)", async () => {
+    genObj.mockResolvedValue({ object: { todos: [] } });
+    await new GeminiExtractorClient({
+      apiKey: "k",
+      now: () => new Date(2026, 5, 27), // Sat Jun 27 2026
+    }).extract({ ...base, text: "email priya by friday" });
+    const sys = genObj.mock.calls[0][0].system as string;
+    expect(sys).toContain("2026-06-27");
+    expect(sys).toContain("ISO-8601");
+    expect(sys).toContain("Saturday");
   });
 
   it("returns [] gracefully when the model yields no valid object", async () => {

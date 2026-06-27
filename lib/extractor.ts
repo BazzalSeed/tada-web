@@ -91,6 +91,19 @@ Rules:
 - Dedupe: if a todo matches one of the existing open titles, set duplicateOf to that exact title.
 - Auto-organize from the user's REAL taxonomy only: suggest suggestedListName / suggestedLabels from the provided existing lists/labels, plus suggestedPriority and recurrenceText (raw phrase like "every monday") when clearly implied.`;
 
+const WEEKDAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+// A dated instruction appended to the system prompt at call time so the model
+// resolves relative dates ("by Friday", "next Tuesday 3pm", "tomorrow") to
+// ABSOLUTE ISO-8601 — without this, Gemini emits the raw phrase, which is
+// unparseable downstream (and, before the store guard, collapsed the capture).
+// Pure given `now` (injected) so it's testable.
+export function dateContextLine(now: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const ymd = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  return `\n\nDATE CONTEXT: Today is ${WEEKDAY_NAMES[now.getDay()]}, ${ymd} (the user's LOCAL date). Resolve EVERY relative date/time ("today", "tomorrow", "Friday", "next Tuesday 3pm", "by the 15th", "in 3 days") to an ABSOLUTE ISO-8601 LOCAL timestamp of the form yyyy-MM-ddTHH:mm:ss (NO timezone/offset). If only a date is implied, use yyyy-MM-ddT00:00:00. NEVER output a weekday name, a relative phrase, or any non-ISO string in suggestedDueAt, remindAt, or start — those fields MUST be valid ISO-8601 or null.`;
+}
+
 // Decodes base64 → bytes for the file content part (works in the node runtime).
 function base64ToBytes(b64: string): Uint8Array {
   return new Uint8Array(Buffer.from(b64, "base64"));
@@ -207,6 +220,7 @@ export interface GeminiExtractorOptions {
   apiKey?: string;
   model?: string;
   system?: string; // override the system prompt (e.g. enrichment vs capture)
+  now?: () => Date; // injectable clock for the date-context line (tests)
 }
 
 export class GeminiExtractorClient implements ExtractorClient {
@@ -216,11 +230,15 @@ export class GeminiExtractorClient implements ExtractorClient {
     const google = createGoogleGenerativeAI({
       apiKey: this.opts.apiKey ?? process.env.GEMINI_API_KEY,
     });
+    // Append the current-date context so relative dates resolve to ISO.
+    const system =
+      (this.opts.system ?? SYSTEM_PROMPT) +
+      dateContextLine(this.opts.now?.() ?? new Date());
     try {
       const { object } = await generateObject({
         model: google(this.opts.model ?? DEFAULT_MODEL),
         schema: ExtractorOutputSchema,
-        system: this.opts.system ?? SYSTEM_PROMPT,
+        system,
         messages: buildExtractionMessages(input),
         // Deterministic decoding — extraction should be stable run-to-run, so the
         // same clearly-tasked image doesn't oscillate between N todos and 0.

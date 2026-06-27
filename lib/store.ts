@@ -30,9 +30,20 @@ type ViewRow = Prisma.SavedViewGetPayload<object>;
 const iso = (d: Date | null | undefined): string | null =>
   d == null ? null : d.toISOString();
 
-// Accepts the contract's ISO strings (or a Date) → Date for Prisma.
-const toDate = (v: string | Date | null | undefined): Date | null =>
-  v == null ? null : v instanceof Date ? v : new Date(v);
+// Accepts the contract's ISO strings (or a Date) → Date for Prisma. Guards
+// against UNPARSEABLE input: a relative/garbage date string (e.g. an extractor
+// that emitted "Friday" instead of ISO) coerces to NULL rather than producing an
+// `Invalid Date` that Prisma rejects (which would throw mid-persist and — under
+// the capture-first fallback — silently collapse the todo to a generic capture).
+// A missing/empty date is null; a real date passes through. Exported for tests.
+export const toNullableDate = (
+  v: string | Date | null | undefined,
+): Date | null => {
+  if (v == null) return null;
+  const d = v instanceof Date ? v : new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+const toDate = toNullableDate;
 
 function toTodo(r: TodoRow): Todo {
   return {

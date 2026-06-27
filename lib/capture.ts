@@ -244,8 +244,12 @@ export async function runCapture(
     }
     return { capture, todos: [enriched, ...extras] };
   } catch (err) {
+    // capture-first safety net (should be RARE now that invalid dates coerce to
+    // null in the store): we return the durable plain todo instead of 500ing.
+    // Log LOUDLY + greppably so a genuine persist failure is never invisible —
+    // a recurring "[capture] PERSIST-MASKED" means real data is being dropped.
     console.error(
-      `[capture] post-extraction persist failed for capture ${capture.id} (kind=${kind}); returning plain todo:`,
+      `[capture] PERSIST-MASKED — post-extraction persist failed for capture ${capture.id} (kind=${kind}); returning plain todo. This masks a real failure; investigate:`,
       err,
     );
     return { capture, todos: [plain] };

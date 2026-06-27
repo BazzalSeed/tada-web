@@ -60,6 +60,35 @@ describe.skipIf(!RUN)("GeminiExtractorClient (live)", () => {
       expect(out.todos.length).toBeGreaterThanOrEqual(4);
     }
   }, 90_000);
+
+  // FIX7 (reopened) — a screenshot with RELATIVE dates must extract todos with
+  // VALID ISO due dates (not collapse to a generic "Screenshot capture", and not
+  // emit an unparseable "Friday" that nulls/throws downstream).
+  it("resolves relative dates in a tasked screenshot to valid ISO (not dropped)", async () => {
+    const { default: sharp } = await import("sharp");
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="420">
+      <rect width="900" height="420" fill="#ffffff"/>
+      <text x="40" y="70" font-family="Helvetica" font-size="38" font-weight="bold" fill="#111">Reminders</text>
+      <text x="50" y="150" font-family="Helvetica" font-size="30" fill="#222">- Email Priya the budget by Friday</text>
+      <text x="50" y="210" font-family="Helvetica" font-size="30" fill="#222">- Book the dentist next Tuesday</text>
+      <text x="50" y="270" font-family="Helvetica" font-size="30" fill="#222">- Submit the report tomorrow</text>
+    </svg>`;
+    const png = await sharp(Buffer.from(svg)).png().toBuffer();
+    const out = await extractor.extract({
+      image: { base64: png.toString("base64"), mimeType: "image/png" },
+      existingOpenTitles: [],
+      existingLists: [],
+      existingLabels: [],
+    });
+    expect(out.todos.length).toBeGreaterThanOrEqual(3); // NOT collapsed to a generic row
+    const dated = out.todos.filter((t) => t.suggestedDueAt);
+    expect(dated.length).toBeGreaterThanOrEqual(2); // the relative dates resolved
+    // every emitted date is a VALID, parseable ISO timestamp (no "Friday"/NaN)
+    for (const t of dated) {
+      expect(Number.isNaN(new Date(t.suggestedDueAt!).getTime())).toBe(false);
+      expect(t.suggestedDueAt!).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    }
+  }, 60_000);
 });
 
 describe.skipIf(!RUN)("enrichExtractor (live) — FIX4 fill-all", () => {
