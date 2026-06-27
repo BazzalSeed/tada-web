@@ -63,12 +63,14 @@ export const ExtractorOutputSchema = z.object({
 type BarePayload = z.infer<typeof barePayload>;
 
 // ---- System prompt (encodes the §6 extraction contract) ----
-const SYSTEM_PROMPT = `You convert a captured input (a screenshot, a typed note, or a forwarded email) into a list of actionable to-do items for a task app.
+const SYSTEM_PROMPT = `You convert a captured input (a screenshot, a typed note, or a forwarded email) into a list of actionable to-do items for a task app. EXTRACTING tasks is your primary job — bias toward extracting, not toward an empty list.
 
 Rules:
-- Output 0..n todos. Zero is valid ONLY when there is genuinely nothing actionable (e.g. a meme, a logo, idle chatter). If the input clearly lists tasks (a to-do screenshot, "remember to X and Y", an email asking you to do things), you MUST extract them — do not return an empty list out of caution. Never invent tasks that aren't implied.
-- Each title is an imperative phrase, <= 8 words (e.g. "Email Dakota the deck", "Book dentist").
-- Ignore UI chrome (menu bars, editors, terminals, scrollbars) in screenshots.
+- Output 0..n todos. Returning ZERO is ONLY correct when the input is genuinely non-actionable: a meme, a logo, a pure photo, a decorative/empty screen, or idle chatter with no asks. Whenever the input contains tasks, you MUST extract EVERY one of them — never return an empty list "to be safe", and never collapse several tasks into one generic catch-all.
+- READ THE CONTENT. A screenshot of a notes app, a to-do/checklist, a reminders list, a chat/message thread, an email, a document, a sticky note, or any text that names things to do MUST yield one todo PER distinct task. Transcribe the user's own wording into an imperative.
+- Each title is an imperative phrase, <= 8 words (e.g. "Email Dakota the deck", "Book dentist"). Preserve concrete details (names, amounts, dates) that the user wrote.
+- Never invent tasks that aren't present. Extract what's there — no more, no less.
+- Ignore pure UI chrome (the OS menu bar, window controls, scrollbars, app navigation) — but the CONTENT shown inside the app (the actual list items, message text, email body) is exactly what you extract.
 
 - actionType marks what the app can DO FOR the user. Decide in this order; pick the FIRST that matches, else "none":
   1. "meeting" — a get-together with other people is proposed/requested: "meet", "call", "sync", "catch up", "lunch with", "schedule a 1:1", "Can we talk Tuesday 2pm?". Needs >=1 other person OR an explicit calendar event. Set actionPayload.attendees to the named people; start ONLY if an explicit time is given.
@@ -177,9 +179,34 @@ function normalize(raw: z.infer<typeof ExtractorOutputSchema>): ExtractorOutput 
   return { todos };
 }
 
+// ---- Enrichment system prompt (T2.5 / FIX4) ----
+// Quick-add / dictate sends ONE terse task the user typed or spoke. Enrichment's
+// job is to EXPAND it into a fully-specified todo — fill every field the user
+// left implicit — without inventing facts. Distinct from capture (which splits
+// arbitrary input into 0..n todos and is conservative about times); here the
+// input is already known to be a single task, so we always return exactly one
+// enriched todo and lean INTO sensible inference.
+export const ENRICH_SYSTEM_PROMPT = `You enrich a SINGLE to-do the user just typed or spoke into the quick-add box. Expand their terse phrase into one fully-specified todo for a task app.
+
+Return EXACTLY ONE todo (never zero, never split into several) — the enriched version of their input. Fill in as many fields as you reasonably can, but never fabricate specifics (names, exact times, amounts) the user didn't imply.
+
+- title: a clean imperative, <= 8 words. Fix casing/grammar; keep the user's concrete details. Do NOT keep raw tokens like "p1", "@work", "tomorrow" in the title — those become structured fields.
+- suggestedPriority: infer urgency. "urgent/asap/important/critical/by EOD" -> p1; a soft deadline or "soon" -> p2; routine -> p3; truly neutral -> none. An explicit p1/p2/p3 always wins.
+- suggestedDueAt: resolve relative/explicit dates ("today", "tomorrow", "friday", "next week", "by the 15th", "in 3 days") to an ISO local date (yyyy-MM-ddT00:00:00). If a clock time is stated, include it. If NO date is implied, null — don't invent one.
+- recurrenceText: the raw cadence phrase if the task repeats ("every monday", "daily", "weekly"); else null.
+- suggestedLabels: 0-2 tags. STRONGLY prefer reusing the user's existing labels (provided). Only propose a new lowercase label when it clearly fits and none existing match. No label is fine.
+- actionType + actionPayload — what the app can DO FOR them (pick the FIRST that matches, else "none"):
+  1. meeting — meeting/call/sync with other people. attendees = named people; start only if an explicit time.
+  2. reminder — a single time-anchored nudge for themself ("remind me…", a deadline). payload.text = the nudge.
+  3. research — open-ended look-up/compare/investigate. payload.topic set.
+  4. none — a plain task. Most todos are none; only classify when it genuinely matches.
+- detail: a SHORT (one sentence) helpful note ONLY when it adds real value (e.g. a checklist hint or the implied next step). Usually null — never pad.
+- duplicateOf: if it matches one of the user's existing open titles, set it to that exact title.`;
+
 export interface GeminiExtractorOptions {
   apiKey?: string;
   model?: string;
+  system?: string; // override the system prompt (e.g. enrichment vs capture)
 }
 
 export class GeminiExtractorClient implements ExtractorClient {
@@ -193,8 +220,11 @@ export class GeminiExtractorClient implements ExtractorClient {
       const { object } = await generateObject({
         model: google(this.opts.model ?? DEFAULT_MODEL),
         schema: ExtractorOutputSchema,
-        system: SYSTEM_PROMPT,
+        system: this.opts.system ?? SYSTEM_PROMPT,
         messages: buildExtractionMessages(input),
+        // Deterministic decoding — extraction should be stable run-to-run, so the
+        // same clearly-tasked image doesn't oscillate between N todos and 0.
+        temperature: 0,
       });
       return normalize(object);
     } catch (err) {
@@ -208,3 +238,8 @@ export class GeminiExtractorClient implements ExtractorClient {
 
 // Default singleton for the capture pipeline (T2.2).
 export const extractor = new GeminiExtractorClient();
+
+// Dedicated enrichment client (T2.5 / FIX4) — same schema, fill-all prompt.
+export const enrichExtractor = new GeminiExtractorClient({
+  system: ENRICH_SYSTEM_PROMPT,
+});

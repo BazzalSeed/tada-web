@@ -3,7 +3,7 @@
 // the default suite stays offline/deterministic. Validates the real schema
 // round-trips through Gemini structured output and classifies actionType.
 import { describe, expect, it } from "vitest";
-import { GeminiExtractorClient } from "@/lib/extractor";
+import { GeminiExtractorClient, enrichExtractor } from "@/lib/extractor";
 
 const RUN = !!process.env.RUN_LLM_TESTS && !!process.env.GEMINI_API_KEY;
 
@@ -30,5 +30,62 @@ describe.skipIf(!RUN)("GeminiExtractorClient (live)", () => {
       existingLabels: [],
     });
     expect(Array.isArray(out.todos)).toBe(true);
+  }, 30_000);
+
+  // FIX7 — a clearly-tasked screenshot must RELIABLY yield structured todos
+  // (not 0 → a generic "Screenshot capture" row). Render a to-do-list PNG and
+  // extract it 3× to assert consistency.
+  it("reliably extracts every task from a tasked screenshot (3× consistent)", async () => {
+    const { default: sharp } = await import("sharp");
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="640">
+      <rect width="900" height="640" fill="#ffffff"/>
+      <text x="40" y="70" font-family="Helvetica" font-size="40" font-weight="bold" fill="#111">Today's tasks</text>
+      <text x="50" y="160" font-family="Helvetica" font-size="32" fill="#222">☐ Email Priya the Q3 budget</text>
+      <text x="50" y="230" font-family="Helvetica" font-size="32" fill="#222">☐ Book dentist appointment</text>
+      <text x="50" y="300" font-family="Helvetica" font-size="32" fill="#222">☐ Pay the electricity bill by Friday</text>
+      <text x="50" y="370" font-family="Helvetica" font-size="32" fill="#222">☐ Pick up dry cleaning</text>
+      <text x="50" y="440" font-family="Helvetica" font-size="32" fill="#222">☐ Call Marcus to schedule a 1:1</text>
+    </svg>`;
+    const png = await sharp(Buffer.from(svg)).png().toBuffer();
+    const base64 = png.toString("base64");
+
+    for (let i = 0; i < 3; i++) {
+      const out = await extractor.extract({
+        image: { base64, mimeType: "image/png" },
+        existingOpenTitles: [],
+        existingLists: [],
+        existingLabels: [],
+      });
+      // 5 tasks on screen — must get most of them, never 0.
+      expect(out.todos.length).toBeGreaterThanOrEqual(4);
+    }
+  }, 90_000);
+});
+
+describe.skipIf(!RUN)("enrichExtractor (live) — FIX4 fill-all", () => {
+  it("expands a terse urgent task into one fully-specified todo", async () => {
+    const out = await enrichExtractor.extract({
+      text: "remind me to renew passport by friday, urgent",
+      existingOpenTitles: [],
+      existingLists: [],
+      existingLabels: ["health", "work"],
+    });
+    expect(out.todos).toHaveLength(1);
+    const t = out.todos[0];
+    expect(t.suggestedDueAt).toBeTruthy(); // "friday" resolved
+    expect(t.suggestedPriority).toBe("p1"); // "urgent"
+    expect(t.actionType).toBe("reminder"); // explicit "remind me"
+    expect(t.title.toLowerCase()).not.toContain("urgent"); // token stripped
+  }, 30_000);
+
+  it("does NOT invent a date when none is implied", async () => {
+    const out = await enrichExtractor.extract({
+      text: "buy oat milk",
+      existingOpenTitles: [],
+      existingLists: [],
+      existingLabels: [],
+    });
+    expect(out.todos).toHaveLength(1);
+    expect(out.todos[0].suggestedDueAt ?? null).toBeNull();
   }, 30_000);
 });
