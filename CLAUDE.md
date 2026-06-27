@@ -5,8 +5,8 @@ Web version of the native macOS **Tada** app (`~/projects/tada`): Todoist's to-d
 Tagline: **Not to-do. Ta-da.**
 
 ## Read first
-- Spec: `docs/superpowers/specs/2026-06-24-tada-web-v0-design.md`
-- Prep pack: `docs/superpowers/prep/` — `stack-decisions.md`, `proposed-contracts.md`, `build-decisions.md`, `native-flow-contract-reference.md`, `clawdia-port-manifest.md`
+- `README.md` — repo layout, stack, and the architecture in one paragraph
+- `docs/onboarding-for-django-devs.md` — the golden flows traced end-to-end through real files
 - Marketing landing preview: `design/landing-preview/index.html`
 
 ## Locked decisions (do not relitigate without the user)

@@ -1,6 +1,6 @@
 # Onboarding for Django developers
 
-You know Django and Python well; you don't know TypeScript or Next.js. This doc gets you productive in Tada Web by mapping every concept to its Django equivalent and walking each "golden flow" end-to-end through real files. Read `README.md` first for the layout; read the spec (`docs/superpowers/specs/2026-06-24-tada-web-v0-design.md`) for the product.
+You know Django and Python well; you don't know TypeScript or Next.js. This doc gets you productive in Tada Web by mapping every concept to its Django equivalent and walking each "golden flow" end-to-end through real files. Read `README.md` first for the layout, stack, and architecture.
 
 > One rule that overrides intuition: **there is no Python here.** Everything — the "backend," the migrations, the AI calls — is TypeScript in one repo, one deploy. Where a Django project splits into Python (server) + JS (frontend), Next.js is one TypeScript codebase that runs *some* files on the server and *some* in the browser.
 
@@ -50,7 +50,7 @@ The codebase is built around **frozen contracts** in `lib/contracts/` — pure T
 - **"Where's the AI?"** → `lib/extractor.ts` (capture extraction + quick-add enrichment), `lib/executors.ts` (reminder/meeting/research actions), `lib/research.ts` (the research agent loop), `lib/agent-tools.ts` (the chat/voice tool registry). All call Gemini via the Vercel AI SDK.
 - **"Where's the UI?"** → `app/components/` grouped by domain (`capture/`, `todo/`, `chat/`, `voice/`, `shell/`, `views/`, `landing/`). Client-only logic is in `app/lib/`.
 - **"How does the browser talk to the server?"** → `app/lib/api.ts` and `app/lib/capture.ts` are the client-side `fetch()` wrappers that hit the `app/api/**` routes.
-- **"What are the rules/decisions?"** → `CLAUDE.md` (locked decisions) + the prep pack in `docs/superpowers/prep/`.
+- **"What are the rules/decisions?"** → `CLAUDE.md` (locked decisions).
 
 The data model (`prisma/schema.prisma`): `Todo` (the one flat pool, with a self-relation `parentId` for one level of subtasks, a `sortIndex` float for drag-ordering, and `actionType`/`actionPayload`/`actionState` for "do it for me"), `Capture` (the raw input a todo came from), `TodoLabel`, `SavedView` (a stored `FilterCriteria` — views are *read-only filters*, not folders), `User`/`Account`/`Session` (Auth.js), `InviteCode`, `AiUsage` (quota), `Waitlist`.
 
@@ -136,7 +136,7 @@ The only place OpenAI is used (everything else is Gemini).
 - **Two `lib/` dirs** trip people up: `lib/` = server core, `app/lib/` = client. Server-only code (Prisma, API keys, executors) must never be imported into a `"use client"` file.
 - **`"use client"`** at the top of a `.tsx` file means it runs in the browser (can use hooks/state/events). Files without it are Server Components by default (run on the server, can hit the DB directly, can't use browser state).
 - **Wire vs TS casing:** DB/JSON keys are `snake_case`, TS fields `camelCase`. Prisma `@map` and manual mapping bridge them.
-- **Email capture (Flow 1, email source) is built but dormant** — `lib/inbound.ts` + `app/api/inbound/email/route.ts` exist and are tested against fixtures, but no live inbound-email provider is wired (the provider decision is deferred post-launch; see `docs/setup/user-setup.md`). So in practice today the live capture sources are screenshot, typed/spoken quick-add, and voice/chat — **not** forward-an-email.
+- **Email capture (Flow 1, email source) is built but dormant** — `lib/inbound.ts` + `app/api/inbound/email/route.ts` exist and are tested against fixtures, but no live inbound-email provider is wired (the provider decision is deferred post-launch). So in practice today the live capture sources are screenshot, typed/spoken quick-add, and voice/chat — **not** forward-an-email.
 - **Deep research runs synchronously** inside the finish request in v0 (no real job queue yet), though the contract and `GET /api/research/:id` leave room for one.
 - **Tests** live in `__tests__/` folders next to the code (Vitest). `.live.test.ts` files hit real providers (Gemini/Blob) and need real keys; the rest are pure/mocked. Run `npm test`.
 

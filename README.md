@@ -118,10 +118,6 @@ A **deterministic to-do spine** (the model is never in the list's hot path) with
 
 ## Docs
 
-- **Canonical spec (read first):** `docs/superpowers/specs/2026-06-24-tada-web-v0-design.md`
-- **Prep pack:** `docs/superpowers/prep/` — `stack-decisions.md`, `proposed-contracts.md`, `build-decisions.md`, `native-flow-contract-reference.md`, `clawdia-port-manifest.md`, `neon-setup.md`
 - **Agent guide:** `CLAUDE.md` (locked decisions, design system, conventions)
 - **New to TypeScript/Next.js?** `docs/onboarding-for-django-devs.md` maps everything to Django and walks each golden flow end-to-end through real files.
-- **Setup (what only the owner can provision):** `docs/setup/user-setup.md`
 - **Local Docker e2e:** `docs/DOCKER.md`
-- **Latest QA status:** `docs/qa/`
