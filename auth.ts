@@ -18,7 +18,15 @@ import { authorizeSignIn, devLoginEnabled, planForEmail } from "@/lib/auth";
 
 const providers: Provider[] = [
   Google({
-    authorization: { params: { access_type: "offline", prompt: "consent" } },
+    authorization: {
+      params: {
+        access_type: "offline",
+        prompt: "consent",
+        // calendar.events → sendMeetingInvite can create events + send invites.
+        scope:
+          "openid email profile https://www.googleapis.com/auth/calendar.events",
+      },
+    },
     allowDangerousEmailAccountLinking: true,
   }),
 ];
