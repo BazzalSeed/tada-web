@@ -86,17 +86,6 @@ export async function enrichText(text: string): Promise<ExtractedTodo[]> {
   return suggestions;
 }
 
-// Waitlist (T4.1). Public, idempotent on normalized email. `alreadyJoined`
-// lets the UI distinguish a fresh join from a repeat, though both succeed.
-export async function joinWaitlist(
-  email: string,
-): Promise<{ ok: boolean; alreadyJoined?: boolean }> {
-  return send<{ ok: boolean; alreadyJoined?: boolean }>("/api/waitlist", {
-    method: "POST",
-    body: JSON.stringify({ email }),
-  });
-}
-
 // Labels (T1.2b). Persisted so ids are stable across the filter-builder, inline
 // label-create, and enrichment's name→id resolution.
 export async function listLabels(): Promise<TodoLabel[]> {

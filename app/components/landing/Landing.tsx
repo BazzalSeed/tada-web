@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { signIn } from "next-auth/react";
-import { WaitlistForm } from "./WaitlistForm";
 import styles from "./Landing.module.css";
 
 // T4.1 — the marketing landing, ported from design/landing-preview (rust palette,
@@ -91,7 +90,7 @@ export function Landing() {
           </a>
           <div className={styles.navCta}>
             {/* Top-right = Log in for existing (invited) users → Google OAuth,
-                landing back on /app. Waitlist is a separate CTA in the close. */}
+                landing back on /app. The close section repeats it as Get started. */}
             <button
               type="button"
               className={`${styles.btn} ${styles.btnPrimary} ${styles.btnSm}`}
@@ -338,12 +337,12 @@ export function Landing() {
           </div>
         </section>
 
-        {/* CLOSE + WAITLIST */}
-        <section className={styles.close} id="waitlist">
+        {/* CLOSE + CTA */}
+        <section className={styles.close} id="get-started">
           <div className={`${styles.wrap} ${styles.reveal}`}>
             <span className={styles.eyebrow} style={{ justifyContent: "center", display: "flex" }}>
               <Spark size={11} />
-              Be first in line
+              Invite-only, for now
             </span>
             <h2>
               Stop managing your to-dos.
@@ -351,9 +350,15 @@ export function Landing() {
               Just say <em>ta-da.</em>
             </h2>
             <p className={styles.lede}>
-              Tada is opening up soon. Join the waitlist and we&apos;ll let you in early.
+              Tada is opening up soon. Got an invite? Sign in and you&apos;re in.
             </p>
-            <WaitlistForm />
+            <button
+              type="button"
+              className={`${styles.btn} ${styles.btnPrimary}`}
+              onClick={() => signIn("google", { redirectTo: "/app" })}
+            >
+              Get started
+            </button>
           </div>
         </section>
       </main>

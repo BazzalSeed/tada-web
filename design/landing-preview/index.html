@@ -213,25 +213,14 @@
   @media(max-width:680px){.versus{grid-template-columns:1fr}.vh.us,.vcell.us{border-left:none}.vh.them{border-bottom:none}
     .vcell.them{padding-bottom:6px}.vcell.us{padding-top:6px;border-bottom:1px solid var(--hair-strong)}}
 
-  /* ===== close + waitlist ===== */
+  /* ===== close + CTA ===== */
   .close{text-align:center;padding:108px 0 96px;position:relative}
   .close::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(680px 360px at 50% 0%,var(--accent-wash),transparent 62%)}
   .close .wrap{position:relative}
   .close h2{font-size:clamp(36px,5.4vw,60px)}
   .close h2 em{font-style:italic;color:var(--accent)}
   .close .lede{margin:20px auto 0;max-width:30em}
-  .wl{display:flex;gap:10px;justify-content:center;margin:32px auto 0;max-width:440px;flex-wrap:wrap}
-  .wl input{flex:1;min-width:220px;font-family:var(--body);font-size:15px;color:var(--ink);background:var(--raised);
-    border:1px solid var(--hair-strong);border-radius:999px;padding:13px 20px;outline:none;transition:border-color .2s ease, box-shadow .2s ease}
-  .wl input::placeholder{color:var(--ink-muted)}
-  .wl input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
-  .wl .btn{white-space:nowrap}
-  .wl-note{font-family:var(--mono);font-size:12px;color:var(--ink-muted);margin-top:14px;letter-spacing:.02em}
-  .wl-done{display:none;align-items:center;justify-content:center;gap:10px;margin-top:30px;font-size:17px;color:var(--ink)}
-  .wl-done .dc{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center}
-  .wl-done .dc svg{width:15px;height:15px}
-  .waitlist-done .wl,.waitlist-done .wl-note{display:none}
-  .waitlist-done .wl-done{display:flex}
+  .close .btn{margin:32px auto 0}
 
   /* footer */
   footer{border-top:1px solid var(--hair);padding:38px 0;background:var(--bg-soft)}
@@ -256,9 +245,7 @@
   <div class="wrap nav-in">
     <a class="word" href="#top" aria-label="Tada home">Tada<svg class="spark" width="13" height="13"><use href="#spk"/></svg></a>
     <div class="nav-cta">
-      <!-- Sign-in slot — enable at launch:
-      <a href="#" class="nav-signin">Sign in</a> -->
-      <a href="#waitlist" class="btn btn-primary btn-sm">Join the waitlist</a>
+      <a href="#" class="btn btn-primary btn-sm">Log in</a>
     </div>
   </div>
 </header>
@@ -386,18 +373,13 @@
     </div>
   </section>
 
-  <!-- CLOSE + WAITLIST -->
-  <section class="close" id="waitlist">
+  <!-- CLOSE + CTA -->
+  <section class="close" id="get-started">
     <div class="wrap reveal">
-      <span class="eyebrow" style="justify-content:center;display:flex"><svg class="spk" width="11" height="11"><use href="#spk"/></svg>Be first in line</span>
+      <span class="eyebrow" style="justify-content:center;display:flex"><svg class="spk" width="11" height="11"><use href="#spk"/></svg>Invite-only, for now</span>
       <h2>Stop managing your to-dos.<br>Just say <em>ta-da.</em></h2>
-      <p class="lede">Tada is opening up soon. Join the waitlist and we'll let you in early.</p>
-      <form class="wl" id="wlForm" novalidate>
-        <input type="email" id="wlEmail" required placeholder="you@email.com" aria-label="Your email address" autocomplete="email" />
-        <button type="submit" class="btn btn-primary">Join the waitlist</button>
-      </form>
-      <p class="wl-note" id="wlNote">No spam — one email when Tada opens up.</p>
-      <div class="wl-done"><span class="dc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg></span><span>You're on the list <span class="spark">✦</span> We'll be in touch.</span></div>
+      <p class="lede">Tada is opening up soon. Got an invite? Sign in and you're in.</p>
+      <a href="#" class="btn btn-primary">Get started</a>
     </div>
   </section>
 </main>
@@ -569,31 +551,6 @@
     }
   }
 
-  // waitlist form
-  var form = document.getElementById('wlForm'), email = document.getElementById('wlEmail'),
-      note = document.getElementById('wlNote'), close = document.getElementById('waitlist');
-  if(form){
-    form.addEventListener('submit', async function(e){
-      e.preventDefault();
-      var val = (email.value || '').trim();
-      if(!val || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val)){
-        note.textContent = 'Please enter a valid email address.'; note.style.color = '#a14a3e'; email.focus(); return;
-      }
-      var btn = form.querySelector('button'); btn.disabled = true; btn.textContent = 'Joining…';
-      // Preview server (8731) has no /api — simulate success. Real POST runs on Vercel.
-      var preview = location.port === '8731';
-      try {
-        if(!preview){
-          var r = await fetch('/api/waitlist', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email: val})});
-          if(!r.ok) throw new Error(r.status);
-        }
-        close.querySelector('.wrap').classList.add; document.querySelector('.close').classList.add('waitlist-done');
-      } catch(err){
-        btn.disabled = false; btn.textContent = 'Join the waitlist';
-        note.textContent = "Hmm — that didn't go through. Try again."; note.style.color = '#a14a3e';
-      }
-    });
-  }
 </script>
 </body>
 </html>

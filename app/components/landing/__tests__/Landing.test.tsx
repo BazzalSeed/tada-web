@@ -41,11 +41,6 @@ describe("Landing", () => {
     expect(screen.getByText(/03 — Ta-da/i)).toBeInTheDocument();
   });
 
-  it("mounts the waitlist form in the closing section", () => {
-    render(<Landing />);
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-  });
-
   it("top-right Log in triggers Google sign-in and lands on /app (T4.2)", () => {
     render(<Landing />);
     const login = screen.getByRole("button", { name: /log in/i });
@@ -53,12 +48,10 @@ describe("Landing", () => {
     expect(signIn).toHaveBeenCalledWith("google", { redirectTo: "/app" });
   });
 
-  it("keeps Join the waitlist as a separate CTA (not the top-right login)", () => {
+  it("closing section Get started also triggers Google sign-in", () => {
     render(<Landing />);
-    // the waitlist join lives on its own submit, distinct from Log in
-    expect(
-      screen.getByRole("button", { name: /join the waitlist/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /log in/i })).toBeInTheDocument();
+    const cta = screen.getByRole("button", { name: /get started/i });
+    fireEvent.click(cta);
+    expect(signIn).toHaveBeenCalledWith("google", { redirectTo: "/app" });
   });
 });

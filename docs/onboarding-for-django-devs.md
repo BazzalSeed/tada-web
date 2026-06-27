@@ -52,7 +52,7 @@ The codebase is built around **frozen contracts** in `lib/contracts/` — pure T
 - **"How does the browser talk to the server?"** → `app/lib/api.ts` and `app/lib/capture.ts` are the client-side `fetch()` wrappers that hit the `app/api/**` routes.
 - **"What are the rules/decisions?"** → `CLAUDE.md` (locked decisions).
 
-The data model (`prisma/schema.prisma`): `Todo` (the one flat pool, with a self-relation `parentId` for one level of subtasks, a `sortIndex` float for drag-ordering, and `actionType`/`actionPayload`/`actionState` for "do it for me"), `Capture` (the raw input a todo came from), `TodoLabel`, `SavedView` (a stored `FilterCriteria` — views are *read-only filters*, not folders), `User`/`Account`/`Session` (Auth.js), `InviteCode`, `AiUsage` (quota), `Waitlist`.
+The data model (`prisma/schema.prisma`): `Todo` (the one flat pool, with a self-relation `parentId` for one level of subtasks, a `sortIndex` float for drag-ordering, and `actionType`/`actionPayload`/`actionState` for "do it for me"), `Capture` (the raw input a todo came from), `TodoLabel`, `SavedView` (a stored `FilterCriteria` — views are *read-only filters*, not folders), `User`/`Account`/`Session` (Auth.js), `InviteCode`, `AiUsage` (quota).
 
 ---
 

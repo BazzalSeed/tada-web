@@ -4,21 +4,21 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 
-const email = `phase0-smoke+${Date.now()}@example.com`;
+const code = `phase0-smoke-${Date.now()}`;
 
-describe("prisma waitlist roundtrip", () => {
+describe("prisma invite-code roundtrip", () => {
   afterAll(async () => {
-    await prisma.waitlist.deleteMany({ where: { email } });
+    await prisma.inviteCode.deleteMany({ where: { code } });
     await prisma.$disconnect();
   });
 
-  it("creates and reads a Waitlist row", async () => {
-    const created = await prisma.waitlist.create({
-      data: { email, source: "phase0-test" },
+  it("creates and reads an InviteCode row", async () => {
+    const created = await prisma.inviteCode.create({
+      data: { code, maxUses: 1 },
     });
-    expect(created.email).toBe(email);
+    expect(created.code).toBe(code);
 
-    const found = await prisma.waitlist.findUnique({ where: { email } });
-    expect(found?.id).toBe(created.id);
+    const found = await prisma.inviteCode.findUnique({ where: { code } });
+    expect(found?.code).toBe(created.code);
   });
 });

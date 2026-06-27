@@ -161,7 +161,7 @@ model VerificationToken {
 }
 
 // ============================================================================
-// Invites, quota, waitlist
+// Invites, quota
 // ============================================================================
 
 model InviteCode {
@@ -185,13 +185,4 @@ model AiUsage {
 
   @@id([userId, period])
   @@map("ai_usage")
-}
-
-model Waitlist {
-  id        String   @id @default(cuid())
-  email     String   @unique // normalized
-  source    String?
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("waitlist")
 }

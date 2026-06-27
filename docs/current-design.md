@@ -72,5 +72,4 @@ Two `lib` directories on purpose: **`lib/`** is server-only core (DB, AI, execut
 | `POST /api/voice/{session,tool,usage}` | OpenAI Realtime relay (shared tool registry) |
 | `POST /api/contacts/{resolve,search}` | Google contact name → email |
 | `POST /api/inbound/email` | inbound-email capture webhook (built, dormant) |
-| `POST /api/waitlist` | landing waitlist capture |
 | `/api/auth/*` | Auth.js (Google OAuth + dev-login) |

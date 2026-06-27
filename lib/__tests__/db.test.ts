@@ -1,5 +1,5 @@
 // Unit test for the connection-fault retry predicate in lib/db. Pure — no DB.
-// The DB-backed waitlist roundtrip lives in db.integration.test.ts.
+// The DB-backed roundtrip smoke test lives in db.integration.test.ts.
 import { describe, expect, it } from "vitest";
 import { isRetryableConnectionError } from "@/lib/db";
 
