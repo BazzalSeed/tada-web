@@ -145,24 +145,21 @@ const DESCRIPTIONS: Record<string, string> = {
   deep_research: "Run deep research on a topic and write a report (the user must approve).",
 };
 
-// Maps the registry → AI SDK tools for a given user. Read tools include an
-// `execute` (auto-run); GATED write tools OMIT `execute` so the AI SDK pauses for
-// human-in-the-loop approval (Approve/Deny) before run() — no auto side effects.
+// Maps the registry → AI SDK tools for a given user. Both read and write tools
+// have an `execute` returning the full { output, card } (so the client renders a
+// tile from part.output.card). GATED writes add `needsApproval: true` → the AI SDK
+// pauses in `approval-requested` and runs `execute` SERVER-SIDE only after the user
+// approves (addToolApprovalResponse). The real executor runs server-side post-
+// approval — never auto-executes, and the client can't fabricate the result.
 export function toAiSdkTools(user: UserCtx): ToolSet {
   const out: ToolSet = {};
   for (const [name, t] of Object.entries(agentTools)) {
     const description = DESCRIPTIONS[name] ?? name;
     const inputSchema = t.inputSchema as ZodTypeAny;
-    // GATED write tools omit `execute` → AI SDK pauses for approval (HITL).
-    // Read tools return the FULL { output, card } so the client can render a tile
-    // from part.output.card (the model also gets the structured result).
+    const execute = async (args: unknown) => t.run(args, user);
     out[name] = t.gated
-      ? tool({ description, inputSchema })
-      : tool({
-          description,
-          inputSchema,
-          execute: async (args: unknown) => t.run(args, user),
-        });
+      ? tool({ description, inputSchema, execute, needsApproval: true })
+      : tool({ description, inputSchema, execute });
   }
   return out;
 }

@@ -87,10 +87,15 @@ describe("toAiSdkTools (chat wiring)", () => {
     expect(res.card.type).toBe("todos"); // card preserved (was previously dropped)
   });
 
-  it("gated write tools omit execute (HITL pause for approval)", () => {
+  it("gated write tools use needsApproval (HITL pause, server-side execute after approval)", () => {
     const tools = toAiSdkTools(user);
-    expect(tools.list_todos.execute).toBeTypeOf("function"); // read = auto
-    expect(tools.send_meeting_invite.execute).toBeUndefined(); // gated = paused
-    expect(tools.create_todo.execute).toBeUndefined();
+    // read = auto-run, no approval
+    expect(tools.list_todos.execute).toBeTypeOf("function");
+    expect((tools.list_todos as { needsApproval?: unknown }).needsApproval).toBeFalsy();
+    // gated = has execute (the real executor) BUT gated behind needsApproval, so the
+    // SDK only runs it after the user approves — never auto-executes.
+    expect(tools.send_meeting_invite.execute).toBeTypeOf("function");
+    expect((tools.send_meeting_invite as { needsApproval?: unknown }).needsApproval).toBe(true);
+    expect((tools.create_todo as { needsApproval?: unknown }).needsApproval).toBe(true);
   });
 });
