@@ -23,7 +23,7 @@ function makeStore(): TadaStore & { _seq: string[] } {
     _seq: seq,
     createCapture: vi.fn(async (_u, c: Partial<Capture>) => {
       seq.push("createCapture");
-      return { id: "cap1", createdAt: "now", kind: c.kind ?? "text", blobPath: null, note: c.note ?? null } as Capture;
+      return { id: "cap1", createdAt: "now", kind: c.kind ?? "text", blobPath: c.blobPath ?? null, note: c.note ?? null } as Capture;
     }),
     createTodo: vi.fn(async (_u, t: Partial<Todo>) => {
       seq.push("createTodo");
@@ -124,6 +124,51 @@ describe("runCapture — extraction results", () => {
     expect(input.image).toBeTruthy();
     expect(input.image.mimeType).toBe("image/png");
     vi.unstubAllGlobals();
+  });
+
+  it("uploads an inline image to Blob and persists its blobPath (thumbnail)", async () => {
+    const uploadImage = vi.fn(async () => "https://blob.vercel-storage.com/captures/new.png");
+    const extractor: ExtractorClient = { extract: vi.fn(async (): Promise<ExtractorOutput> => ({ todos: [] })) };
+    const res = await runCapture(
+      user,
+      { kind: "image", image: { base64: "QUJD", mimeType: "image/png" } },
+      { store, extractor, uploadImage },
+    );
+    expect(uploadImage).toHaveBeenCalledWith({ base64: "QUJD", mimeType: "image/png" });
+    expect((store.createCapture as ReturnType<typeof vi.fn>).mock.calls[0][1].blobPath).toBe(
+      "https://blob.vercel-storage.com/captures/new.png",
+    );
+    expect(res.capture.blobPath).toBe("https://blob.vercel-storage.com/captures/new.png");
+  });
+
+  it("keeps an already-uploaded blobPath (large-image path) without re-uploading", async () => {
+    const uploadImage = vi.fn();
+    const extractor: ExtractorClient = { extract: vi.fn(async (): Promise<ExtractorOutput> => ({ todos: [] })) };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(new Uint8Array([1]), { headers: { "content-type": "image/png" } })));
+    await runCapture(user, { kind: "image", blobPath: "https://blob/existing.png" }, { store, extractor, uploadImage });
+    expect(uploadImage).not.toHaveBeenCalled();
+    expect((store.createCapture as ReturnType<typeof vi.fn>).mock.calls[0][1].blobPath).toBe("https://blob/existing.png");
+    vi.unstubAllGlobals();
+  });
+
+  it("a blob-upload failure still persists the capture (capture-first, null blobPath)", async () => {
+    const uploadImage = vi.fn(async () => { throw new Error("blob down"); });
+    const extractor: ExtractorClient = { extract: vi.fn(async (): Promise<ExtractorOutput> => ({ todos: [] })) };
+    const res = await runCapture(
+      user,
+      { kind: "image", image: { base64: "QUJD", mimeType: "image/png" } },
+      { store, extractor, uploadImage },
+    );
+    expect((store.createCapture as ReturnType<typeof vi.fn>).mock.calls[0][1].blobPath).toBeNull();
+    expect(res.todos).toHaveLength(1); // plain todo still stands
+  });
+
+  it("text capture persists a null blobPath and never uploads", async () => {
+    const uploadImage = vi.fn();
+    const extractor: ExtractorClient = { extract: vi.fn(async (): Promise<ExtractorOutput> => ({ todos: [] })) };
+    await runCapture(user, { kind: "text", text: "buy milk" }, { store, extractor, uploadImage });
+    expect(uploadImage).not.toHaveBeenCalled();
+    expect((store.createCapture as ReturnType<typeof vi.fn>).mock.calls[0][1].blobPath).toBeNull();
   });
 
   it("skips extracted todos flagged duplicateOf an existing open title", async () => {

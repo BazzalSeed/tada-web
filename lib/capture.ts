@@ -6,6 +6,7 @@
 // place, the rest become new todos; dedupe drops duplicateOf matches.
 // ============================================================================
 
+import { put } from "@vercel/blob";
 import { store as defaultStore } from "./store";
 import { extractor as defaultExtractor } from "./extractor";
 import { withQuota } from "./quota";
@@ -38,6 +39,47 @@ export interface CaptureResult {
 export interface CaptureDeps {
   store?: TadaStore;
   extractor?: ExtractorClient;
+  // Server-side Blob upload of inline image bytes → public URL (injectable for tests).
+  uploadImage?: (image: { base64: string; mimeType: string }) => Promise<string>;
+}
+
+const MIME_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/heic": "heic",
+};
+
+// Default uploader: persist inline image bytes to Vercel Blob so every image
+// capture has a durable, reloadable blobPath for its thumbnail — decoupled from
+// the inline-base64 bytes handed to Gemini for extraction (latency path).
+async function defaultUploadImage(image: { base64: string; mimeType: string }): Promise<string> {
+  const ext = MIME_EXT[image.mimeType] ?? "png";
+  const { url } = await put(`captures/${crypto.randomUUID()}.${ext}`, Buffer.from(image.base64, "base64"), {
+    access: "public",
+    contentType: image.mimeType,
+  });
+  return url;
+}
+
+// Resolve the blobPath to persist on the Capture: an already-uploaded blobPath
+// (the large-image client path) passes through; an inline image is uploaded here
+// so it gets a thumbnail too. Upload failure is non-fatal — capture-first means
+// the Capture still persists (without a thumbnail) rather than failing the capture.
+async function resolveBlobPath(
+  req: CaptureRequest,
+  uploadImage: (image: { base64: string; mimeType: string }) => Promise<string>,
+): Promise<string | null> {
+  if (req.blobPath) return req.blobPath;
+  if (!req.image) return null;
+  try {
+    return await uploadImage(req.image);
+  } catch (err) {
+    console.error("[capture] blob upload failed (kind=image):", err);
+    return null;
+  }
 }
 
 // Blob-backed images arrive as a `blobPath` URL (from /api/blob/upload). Fetch
@@ -121,12 +163,16 @@ export async function runCapture(
 ): Promise<CaptureResult> {
   const store = deps.store ?? defaultStore;
   const extractor = deps.extractor ?? defaultExtractor;
+  const uploadImage = deps.uploadImage ?? defaultUploadImage;
   const kind = inferKind(req);
 
-  // 1. CAPTURE-FIRST — persist Capture + a plain Todo before extraction.
+  // 1. CAPTURE-FIRST — persist Capture + a plain Todo before extraction. Every
+  //    image capture gets a durable blobPath (inline images uploaded here) so the
+  //    thumbnail renders + survives reload, independent of the extraction bytes.
+  const blobPath = await resolveBlobPath(req, uploadImage);
   const capture = await store.createCapture(user.userId, {
     kind,
-    blobPath: req.blobPath ?? null,
+    blobPath,
     note: req.note ?? null,
   });
   const plain = await store.createTodo(user.userId, {
