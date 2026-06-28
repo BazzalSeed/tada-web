@@ -11,6 +11,7 @@ import type { Capture, SavedView, Todo, TodoLabel } from "@/lib/contracts";
 import type { NavSelection } from "@/app/components/shell/Sidebar";
 import type { PaletteItem } from "@/app/components/shell/CommandPalette";
 import { ensureLabel as persistLabel } from "./api";
+import type { EnrichmentChip } from "@/app/lib/enrich";
 
 const LABEL_ACCENT = "#c8632e";
 
@@ -26,6 +27,7 @@ export interface TadaState {
   selection: NavSelection;
   selectedTodoId: string | null;
   enrichingTodoId: string | null;
+  enrichment: { todoId: string; chips: EnrichmentChip[] } | null;
 }
 
 export const initialState: TadaState = {
@@ -36,6 +38,7 @@ export const initialState: TadaState = {
   selection: { kind: "all" },
   selectedTodoId: null,
   enrichingTodoId: null,
+  enrichment: null,
 };
 
 export type TadaAction =
@@ -58,7 +61,9 @@ export type TadaAction =
   | { type: "UPSERT_CAPTURE"; capture: Capture }
   | { type: "SELECT_NAV"; selection: NavSelection }
   | { type: "SELECT_TODO"; id: string | null }
-  | { type: "SET_ENRICHING"; id: string | null };
+  | { type: "SET_ENRICHING"; id: string | null }
+  | { type: "SET_ENRICHMENT"; todoId: string; chips: EnrichmentChip[] }
+  | { type: "CLEAR_ENRICHMENT" };
 
 export function reducer(state: TadaState, action: TadaAction): TadaState {
   switch (action.type) {
@@ -172,6 +177,10 @@ export function reducer(state: TadaState, action: TadaAction): TadaState {
       return { ...state, selectedTodoId: action.id };
     case "SET_ENRICHING":
       return { ...state, enrichingTodoId: action.id };
+    case "SET_ENRICHMENT":
+      return { ...state, enrichment: { todoId: action.todoId, chips: action.chips } };
+    case "CLEAR_ENRICHMENT":
+      return { ...state, enrichment: null };
     default:
       return state;
   }

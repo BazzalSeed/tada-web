@@ -3,13 +3,12 @@
 import { useMemo, useRef, useState } from "react";
 import type { Todo } from "@/lib/contracts";
 import { parseQuickAdd } from "@/lib/core";
-import { createTodo, enrichText, patchTodo } from "@/app/lib/api";
+import { createTodo, enrichText } from "@/app/lib/api";
 import { enrichmentChips, type EnrichmentChip } from "@/app/lib/enrich";
 import { useEnsureLabel, useTada } from "@/app/lib/store";
 import { useImageCapture } from "@/app/lib/useImageCapture";
 import { HighlightedInput } from "./HighlightedInput";
 import { MicButton } from "./MicButton";
-import { EnrichmentBar } from "./EnrichmentBar";
 import styles from "./AddCardView.module.css";
 
 // Quick-add card (rendered only in All). Deterministic parseQuickAdd drives the
@@ -22,9 +21,6 @@ export function AddCardView() {
   const parsed = useMemo(() => parseQuickAdd(text), [text]);
   const { ingest: ingestImage, error: uploadError, clearError: clearUploadError } = useImageCapture();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // Async enrichment offers for the most-recently-added todo (T2.5).
-  const [enrichTarget, setEnrichTarget] = useState<Todo | null>(null);
-  const [chips, setChips] = useState<EnrichmentChip[]>([]);
 
   // Keep only chips that ADD something the deterministic parse didn't already
   // capture — no point re-offering a priority/label/date the user already typed.
@@ -49,44 +45,6 @@ export function AddCardView() {
         case "note":
           return !todo.detail?.trim();
       }
-    });
-  }
-
-  // Apply one accepted suggestion: merge a concrete patch into the target todo,
-  // reflect it optimistically, persist via PATCH, and consume the chip. Nothing
-  // here runs without the explicit tap that calls it.
-  function acceptChip(chip: EnrichmentChip) {
-    if (!enrichTarget) return;
-    let patch: Partial<Todo>;
-    switch (chip.kind) {
-      case "priority":
-        patch = { priority: chip.priority };
-        break;
-      case "due":
-        patch = { dueAt: chip.dueAt };
-        break;
-      case "recurrence":
-        patch = { recurrence: chip.recurrence };
-        break;
-      case "action":
-        // Apply the type AND the pre-classified payload so the offer is ready (FIX4).
-        patch = chip.actionPayload
-          ? { actionType: chip.actionType, actionPayload: chip.actionPayload }
-          : { actionType: chip.actionType };
-        break;
-      case "note":
-        patch = { detail: chip.detail };
-        break;
-      case "label":
-        patch = { labelIds: [...enrichTarget.labelIds, ...resolveLabelIds([chip.labelName])] };
-        break;
-    }
-    const merged = { ...enrichTarget, ...patch };
-    setEnrichTarget(merged);
-    dispatch({ type: "UPSERT_TODO", todo: merged });
-    setChips((cs) => cs.filter((c) => c.key !== chip.key));
-    patchTodo(merged.id, patch).catch(() => {
-      // interim: keep the optimistic merge until persistence is authed.
     });
   }
 
@@ -123,8 +81,7 @@ export function AddCardView() {
     dispatch({ type: "UPSERT_TODO", todo: optimistic });
     dispatch({ type: "SELECT_NAV", selection: { kind: "all" } });
     // Clear any prior suggestions; new capture, fresh offers.
-    setChips([]);
-    setEnrichTarget(null);
+    dispatch({ type: "CLEAR_ENRICHMENT" });
     const rawText = text;
     setText("");
 
@@ -157,9 +114,7 @@ export function AddCardView() {
         const first = suggestions[0];
         if (!first) return;
         const offered = novelChips(enrichmentChips(first, new Date()), persisted);
-        if (offered.length === 0) return;
-        setEnrichTarget(persisted);
-        setChips(offered);
+        if (offered.length) dispatch({ type: "SET_ENRICHMENT", todoId: persisted.id, chips: offered });
       })
       .catch(() => {
         // enrichment is best-effort; silence failures (quota / offline / pre-auth).
@@ -223,14 +178,6 @@ export function AddCardView() {
           </button>
         </span>
       ) : null}
-      <EnrichmentBar
-        chips={chips}
-        onAccept={acceptChip}
-        onDismiss={() => {
-          setChips([]);
-          setEnrichTarget(null);
-        }}
-      />
     </div>
   );
 }

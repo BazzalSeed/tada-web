@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import type { Capture, Todo, TodoLabel } from "@/lib/contracts";
 import { neighborsForDrop } from "@/app/lib/reorder";
 import { offerEffect } from "@/app/lib/offer";
+import type { EnrichmentChip } from "@/app/lib/enrich";
 import { TodoRow } from "./TodoRow";
 import styles from "./TodoList.module.css";
 
@@ -28,9 +29,12 @@ export interface TodoListProps {
   capturesById?: Record<string, Capture>; // source captures for row thumbnails
   selectedId: string | null;
   enrichingId?: string | null;
+  enrichment?: { todoId: string; chips: EnrichmentChip[] } | null;
   onSelect: (id: string) => void;
   onToggleComplete: (id: string) => void;
   onReorder: (id: string, beforeId: string | null, afterId: string | null) => void;
+  onAcceptChip?: (chip: EnrichmentChip) => void;
+  onDismissChips?: () => void;
 }
 
 function labelsFor(
@@ -52,9 +56,12 @@ export function TodoList({
   capturesById = {},
   selectedId,
   enrichingId,
+  enrichment,
   onSelect,
   onToggleComplete,
   onReorder,
+  onAcceptChip,
+  onDismissChips,
 }: TodoListProps) {
   const [doneOpen, setDoneOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -88,9 +95,12 @@ export function TodoList({
     const kids = childrenByParent[todo.id] ?? [];
     const captureThumb = capturesById[todo.sourceCaptureId]?.blobPath ?? null;
     // Do-it-for-me offer surfaced on the row (FIX2): the live offer for actionable
-    // todos, or a calm done badge once executed.
+    // todos, or a calm done badge once executed. Compact pill: show just the CTA verb.
     const eff = offerEffect(todo);
-    const offer = eff ? { eyebrow: eff.eyebrow, line: eff.lines[0] } : null;
+    const offer = eff ? { eyebrow: eff.cta, line: undefined } : null;
+    // AI enrichment chips for the row that just got enriched.
+    const enrichChips =
+      enrichment?.todoId === todo.id ? enrichment.chips : undefined;
     const offerDone =
       todo.actionType !== "none" && todo.actionState === "done"
         ? DONE_BADGE[todo.actionType] ?? null
@@ -121,6 +131,9 @@ export function TodoList({
         onToggleComplete={() => onToggleComplete(todo.id)}
         offer={offer}
         offerDone={offerDone}
+        enrichChips={enrichChips}
+        onAcceptChip={onAcceptChip}
+        onDismissChips={onDismissChips}
         indented={indented}
         hasChildren={!indented && kids.length > 0}
         expanded={expanded.has(todo.id)}

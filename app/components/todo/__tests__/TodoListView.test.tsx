@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { Todo } from "@/lib/contracts";
-import { TadaProvider } from "@/app/lib/store";
+import { TadaProvider, useTada } from "@/app/lib/store";
+import type { EnrichmentChip } from "@/app/lib/enrich";
 import { TodoListView } from "../TodoListView";
 
 const open: Todo = {
@@ -90,5 +91,115 @@ describe("TodoListView (store-wired)", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: /done \(1\)/i })).toBeInTheDocument(),
     );
+  });
+});
+
+// Probe reads store state for chip-acceptance assertions.
+function StoreProbe() {
+  const { state } = useTada();
+  return (
+    <div>
+      <span data-testid="prios">{state.todos.map((t) => t.priority).join("|")}</span>
+      <span data-testid="selected-id">{state.selectedTodoId ?? ""}</span>
+      <span data-testid="enrichment-chip-count">
+        {state.enrichment?.chips.length ?? 0}
+      </span>
+      <span data-testid="action-type">{state.todos.map((t) => t.actionType).join("|")}</span>
+    </div>
+  );
+}
+
+const todoForChips: Todo = {
+  id: "chip-todo",
+  createdAt: "2026-06-27T09:00:00",
+  sourceCaptureId: "",
+  title: "Plan Tokyo offsite",
+  status: "open",
+  actionType: "none",
+  actionState: "none",
+  sortIndex: 0,
+  priority: "none",
+  labelIds: [],
+};
+
+const priorityChip: EnrichmentChip = {
+  key: "priority:p1",
+  kind: "priority",
+  label: "P1",
+  priority: "p1",
+};
+
+const actionChip: EnrichmentChip = {
+  key: "action:meeting",
+  kind: "action",
+  label: "Meeting",
+  actionType: "meeting",
+  actionPayload: null,
+};
+
+describe("TodoListView — enrichment chip acceptance on the row", () => {
+  it("accepting a priority chip patches the todo and clears the enrichment offer", async () => {
+    globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
+    render(
+      <TadaProvider
+        preload={{
+          todos: [todoForChips],
+          enrichment: { todoId: "chip-todo", chips: [priorityChip] },
+        }}
+      >
+        <StoreProbe />
+        <TodoListView />
+      </TadaProvider>,
+    );
+    // chip should be visible on the row
+    const chip = screen.getByRole("button", { name: /add p1/i });
+    expect(screen.getByTestId("prios")).toHaveTextContent("none");
+    fireEvent.click(chip);
+    // priority applied optimistically
+    await waitFor(() => expect(screen.getByTestId("prios")).toHaveTextContent("p1"));
+    // chip consumed — no more enrichment
+    expect(screen.getByTestId("enrichment-chip-count")).toHaveTextContent("0");
+    expect(screen.queryByRole("button", { name: /add p1/i })).toBeNull();
+  });
+
+  it("accepting an action chip patches the todo AND selects it (opens review card)", async () => {
+    globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
+    render(
+      <TadaProvider
+        preload={{
+          todos: [todoForChips],
+          enrichment: { todoId: "chip-todo", chips: [actionChip] },
+        }}
+      >
+        <StoreProbe />
+        <TodoListView />
+      </TadaProvider>,
+    );
+    const chip = screen.getByRole("button", { name: /add meeting/i });
+    fireEvent.click(chip);
+    await waitFor(() => expect(screen.getByTestId("action-type")).toHaveTextContent("meeting"));
+    // SELECT_TODO fired — todo is now selected (opens detail pane)
+    expect(screen.getByTestId("selected-id")).toHaveTextContent("chip-todo");
+  });
+
+  it("dismissing chips clears the enrichment offer without patching the todo", async () => {
+    globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
+    render(
+      <TadaProvider
+        preload={{
+          todos: [todoForChips],
+          enrichment: { todoId: "chip-todo", chips: [priorityChip] },
+        }}
+      >
+        <StoreProbe />
+        <TodoListView />
+      </TadaProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /dismiss suggestions/i }));
+    await waitFor(() =>
+      expect(screen.getByTestId("enrichment-chip-count")).toHaveTextContent("0"),
+    );
+    // priority unchanged — dismiss is non-destructive
+    expect(screen.getByTestId("prios")).toHaveTextContent("none");
   });
 });

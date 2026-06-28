@@ -143,6 +143,12 @@
   color: var(--color-accent-text);
 }
 
+/* AI enrichment chips rendered on the row after enrichment lands. Sits neatly
+   below the title/meta/offer block inside the body column. */
+.enrichmentBar {
+  margin-top: var(--space-1);
+}
+
 /* AI-enriching indicator: shown on the row being enriched in the background. */
 .enhancing {
   display: inline-flex;

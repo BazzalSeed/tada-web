@@ -15,6 +15,10 @@ function Probe() {
       <span data-testid="todolabels">
         {state.todos.map((t) => t.labelIds.length).join("|")}
       </span>
+      <span data-testid="enrichment-todo-id">{state.enrichment?.todoId ?? ""}</span>
+      <span data-testid="enrichment-chip-count">
+        {state.enrichment?.chips.length ?? 0}
+      </span>
     </div>
   );
 }
@@ -135,7 +139,7 @@ describe("AddCardView (store-wired)", () => {
     delete (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition;
   });
 
-  it("offers AI enrichment chips after submit and applies one only on tap", async () => {
+  it("dispatches SET_ENRICHMENT to the store after submit — no chip in the add card itself", async () => {
     globalThis.fetch = vi.fn(async (url: string) => {
       if (String(url) === "/api/enrich") {
         return {
@@ -155,19 +159,17 @@ describe("AddCardView (store-wired)", () => {
     });
     fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
 
-    // the created todo starts at priority "none"
-    await waitFor(() => expect(screen.getByTestId("prios")).toHaveTextContent("none"));
-    // suggestion surfaces as a tappable chip; nothing applied yet
-    const chip = await screen.findByRole("button", { name: /add p1/i });
-    expect(screen.getByTestId("prios")).toHaveTextContent("none");
-
-    fireEvent.click(chip);
-    await waitFor(() => expect(screen.getByTestId("prios")).toHaveTextContent("p1"));
-    // chip consumed after applying
+    // enrichment lands in the store (chip count > 0)
+    await waitFor(() =>
+      expect(screen.getByTestId("enrichment-chip-count")).toHaveTextContent("1"),
+    );
+    // the add card itself must NOT render any chip button — chips are on the row
     expect(screen.queryByRole("button", { name: /add p1/i })).toBeNull();
+    // priority unchanged — no auto-apply
+    expect(screen.getByTestId("prios")).toHaveTextContent("none");
   });
 
-  it("only enriches with what the deterministic parse missed", async () => {
+  it("only enriches with what the deterministic parse missed — no store enrichment for redundant chips", async () => {
     globalThis.fetch = vi.fn(async (url: string) => {
       if (String(url) === "/api/enrich") {
         return {
@@ -186,9 +188,9 @@ describe("AddCardView (store-wired)", () => {
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Ship it p1" } });
     fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
     await waitFor(() => expect(screen.getByTestId("prios")).toHaveTextContent("p1"));
-    // give the enrich promise a tick; the redundant p1 chip must not appear
+    // give the enrich promise a tick; the redundant p1 chip must not appear in the store
     await Promise.resolve();
-    expect(screen.queryByRole("button", { name: /add p1/i })).toBeNull();
+    expect(screen.getByTestId("enrichment-chip-count")).toHaveTextContent("0");
   });
 
   it("does not submit an empty/whitespace title", () => {

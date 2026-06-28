@@ -5,6 +5,8 @@ import { Spark } from "@/app/components/brand/Spark";
 import { PriorityCircle } from "./PriorityCircle";
 import { MetaChips } from "./MetaChips";
 import { CaptureThumbnail } from "@/app/components/capture/CaptureThumbnail";
+import { EnrichmentBar } from "@/app/components/capture/EnrichmentBar";
+import type { EnrichmentChip } from "@/app/lib/enrich";
 import styles from "./TodoRow.module.css";
 
 // A single list row: priority/complete circle · title · meta chips. Selecting
@@ -38,6 +40,10 @@ export interface TodoRowProps {
   offer?: { eyebrow: string; line?: string } | null;
   offerDone?: string | null; // executed → a calm done badge ("Invite sent")
   enriching?: boolean; // this row's todo is being AI-enriched right now
+  // AI enrichment suggestion chips rendered on this row after enrichment lands.
+  enrichChips?: EnrichmentChip[];
+  onAcceptChip?: (chip: EnrichmentChip) => void;
+  onDismissChips?: () => void;
 }
 
 export function TodoRow({
@@ -64,6 +70,9 @@ export function TodoRow({
   offer,
   offerDone,
   enriching,
+  enrichChips,
+  onAcceptChip,
+  onDismissChips,
 }: TodoRowProps) {
   const done = todo.status === "done";
   return (
@@ -139,6 +148,15 @@ export function TodoRow({
               {offer.line ? ` · ${offer.line}` : ""}
             </span>
           </button>
+        ) : null}
+        {enrichChips?.length ? (
+          <div className={styles.enrichmentBar} onClick={(e) => e.stopPropagation()}>
+            <EnrichmentBar
+              chips={enrichChips}
+              onAccept={onAcceptChip!}
+              onDismiss={onDismissChips!}
+            />
+          </div>
         ) : null}
       </div>
       {captureThumb ? (

@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { between } from "@/lib/core";
 import { patchTodo, reorderTodo } from "@/app/lib/api";
+import type { Todo } from "@/lib/contracts";
 import {
   childrenByParentFrom,
   labelsByIdFrom,
   subtaskCountsFor,
   visibleTodos,
 } from "@/app/lib/selectors";
-import { useTada } from "@/app/lib/store";
+import { useEnsureLabel, useTada } from "@/app/lib/store";
+import type { EnrichmentChip } from "@/app/lib/enrich";
 import { AddCardView } from "@/app/components/capture/AddCardView";
 import { TodoList } from "./TodoList";
 import styles from "./TodoListView.module.css";
@@ -21,6 +23,7 @@ import styles from "./TodoListView.module.css";
 // and a reload reflects server truth once auth (T3.6) + live load land.
 export function TodoListView() {
   const { state, dispatch } = useTada();
+  const ensureLabel = useEnsureLabel();
   // Stable per-mount clock for due-chip labels.
   const [now] = useState(() => new Date());
 
@@ -65,6 +68,55 @@ export function TodoListView() {
     }
   }
 
+  // Accept one AI enrichment chip on the row: build the patch, optimistically
+  // apply it, persist via PATCH, consume the chip, and open the detail pane
+  // if it's an action chip (so the user can confirm before execution).
+  function acceptChip(chip: EnrichmentChip) {
+    const target = state.todos.find((t) => t.id === state.enrichment?.todoId);
+    if (!target) return;
+    let patch: Partial<Todo>;
+    switch (chip.kind) {
+      case "priority":
+        patch = { priority: chip.priority };
+        break;
+      case "due":
+        patch = { dueAt: chip.dueAt };
+        break;
+      case "recurrence":
+        patch = { recurrence: chip.recurrence };
+        break;
+      case "action":
+        // Apply the type AND the pre-classified payload so the offer is ready (FIX4).
+        patch = chip.actionPayload
+          ? { actionType: chip.actionType, actionPayload: chip.actionPayload }
+          : { actionType: chip.actionType };
+        break;
+      case "note":
+        patch = { detail: chip.detail };
+        break;
+      case "label":
+        patch = { labelIds: [...target.labelIds, ensureLabel(chip.labelName).id] };
+        break;
+    }
+    dispatch({ type: "UPSERT_TODO", todo: { ...target, ...patch } });
+    patchTodo(target.id, patch).catch(() => {
+      // interim: keep the optimistic merge until persistence is authed.
+    });
+    const remaining = state.enrichment!.chips.filter((c) => c.key !== chip.key);
+    dispatch(
+      remaining.length
+        ? { type: "SET_ENRICHMENT", todoId: target.id, chips: remaining }
+        : { type: "CLEAR_ENRICHMENT" },
+    );
+    if (chip.kind === "action") {
+      dispatch({ type: "SELECT_TODO", id: target.id });
+    }
+  }
+
+  function dismissChips() {
+    dispatch({ type: "CLEAR_ENRICHMENT" });
+  }
+
   // The add card renders ONLY in All — the single add surface (native invariant).
   const isAll = state.selection.kind === "all";
 
@@ -81,9 +133,12 @@ export function TodoListView() {
         capturesById={state.captures}
         selectedId={state.selectedTodoId}
         enrichingId={state.enrichingTodoId}
+        enrichment={state.enrichment}
         onSelect={(id) => dispatch({ type: "SELECT_TODO", id })}
         onToggleComplete={toggleComplete}
         onReorder={reorder}
+        onAcceptChip={acceptChip}
+        onDismissChips={dismissChips}
       />
     </div>
   );
