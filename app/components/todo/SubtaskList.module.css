@@ -97,3 +97,24 @@
 .add:focus {
   border-bottom-color: var(--color-accent);
 }
+
+/* Subtle inline nudge shown when a subtask's action finished but it's still open. */
+.markDone {
+  flex: none;
+  margin-left: auto;
+  padding: 0 var(--space-1);
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: var(--fs-meta);
+  color: var(--color-accent-text, var(--color-accent));
+  opacity: 0.7;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.markDone:hover {
+  opacity: 1;
+  color: var(--color-accent);
+  text-decoration: underline;
+}

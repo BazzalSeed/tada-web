@@ -75,6 +75,19 @@ export function SubtaskList({
             ) : (
               <span className={styles.title}>{s.title}</span>
             )}
+            {s.actionState === "done" && s.status === "open" ? (
+              <button
+                type="button"
+                className={styles.markDone}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggle(s.id);
+                }}
+                aria-label={`Mark ${s.title} done`}
+              >
+                Mark done
+              </button>
+            ) : null}
           </li>
         ))}
       </ul>

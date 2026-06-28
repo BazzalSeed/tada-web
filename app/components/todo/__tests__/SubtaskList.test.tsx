@@ -84,4 +84,42 @@ describe("SubtaskList", () => {
     render(<SubtaskList subtasks={[]} onAdd={vi.fn()} onToggle={vi.fn()} onReorder={vi.fn()} />);
     expect(screen.queryByTestId("subtasks-all-done")).not.toBeInTheDocument();
   });
+
+  describe("Mark done nudge", () => {
+    it("shows 'Mark done' for a subtask with actionState=done and status=open", () => {
+      const subtask = child("x", { actionState: "done" as const, status: "open" as const });
+      render(<SubtaskList subtasks={[subtask]} onAdd={vi.fn()} onToggle={vi.fn()} onReorder={vi.fn()} />);
+      expect(screen.getByText("Mark done")).toBeInTheDocument();
+    });
+
+    it("clicking 'Mark done' calls onToggle with the subtask id and does not call onOpen", () => {
+      const onToggle = vi.fn();
+      const onOpen = vi.fn();
+      const subtask = child("x", { actionState: "done" as const, status: "open" as const });
+      render(
+        <SubtaskList
+          subtasks={[subtask]}
+          onAdd={vi.fn()}
+          onToggle={onToggle}
+          onReorder={vi.fn()}
+          onOpen={onOpen}
+        />,
+      );
+      fireEvent.click(screen.getByText("Mark done"));
+      expect(onToggle).toHaveBeenCalledWith("x");
+      expect(onOpen).not.toHaveBeenCalled();
+    });
+
+    it("does not show 'Mark done' when status is already done", () => {
+      const subtask = child("x", { actionState: "done" as const, status: "done" as const });
+      render(<SubtaskList subtasks={[subtask]} onAdd={vi.fn()} onToggle={vi.fn()} onReorder={vi.fn()} />);
+      expect(screen.queryByText(/mark done/i)).not.toBeInTheDocument();
+    });
+
+    it("does not show 'Mark done' when actionState is none", () => {
+      const subtask = child("x", { actionState: "none" as const, status: "open" as const });
+      render(<SubtaskList subtasks={[subtask]} onAdd={vi.fn()} onToggle={vi.fn()} onReorder={vi.fn()} />);
+      expect(screen.queryByText(/mark done/i)).not.toBeInTheDocument();
+    });
+  });
 });
