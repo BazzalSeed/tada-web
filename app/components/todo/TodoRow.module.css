@@ -83,6 +83,7 @@
 .body {
   display: flex;
   flex-direction: column;
+  flex: 1;
   gap: var(--space-1);
   min-width: 0;
   padding-top: 1px;
@@ -179,4 +180,28 @@
     animation: none;
     opacity: 1;
   }
+}
+
+/* Soft-delete button — hidden until the row is hovered or the button is focused. */
+.delete {
+  opacity: 0;
+  flex: none;
+  transition: opacity var(--dur-fast) var(--ease-out-quart);
+  color: var(--color-ink-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+
+.row:hover .delete,
+.delete:focus-visible {
+  opacity: 1;
+}
+
+.delete:hover {
+  color: var(--color-accent);
 }

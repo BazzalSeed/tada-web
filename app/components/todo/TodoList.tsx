@@ -35,6 +35,7 @@ export interface TodoListProps {
   onReorder: (id: string, beforeId: string | null, afterId: string | null) => void;
   onAcceptChip?: (chip: EnrichmentChip) => void;
   onDismissChips?: () => void;
+  onDelete?: (id: string) => void;
 }
 
 function labelsFor(
@@ -62,6 +63,7 @@ export function TodoList({
   onReorder,
   onAcceptChip,
   onDismissChips,
+  onDelete,
 }: TodoListProps) {
   const [doneOpen, setDoneOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -134,6 +136,7 @@ export function TodoList({
         enrichChips={enrichChips}
         onAcceptChip={onAcceptChip}
         onDismissChips={onDismissChips}
+        onDelete={onDelete ? () => onDelete(todo.id) : undefined}
         indented={indented}
         hasChildren={!indented && kids.length > 0}
         expanded={expanded.has(todo.id)}

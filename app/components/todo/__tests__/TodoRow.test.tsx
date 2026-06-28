@@ -77,4 +77,29 @@ describe("TodoRow", () => {
     expect(screen.getByRole("listitem")).toHaveAttribute("data-done", "true");
     expect(screen.getByRole("checkbox")).toHaveAttribute("aria-checked", "true");
   });
+
+  describe("delete button", () => {
+    it("does NOT render when onDelete is omitted", () => {
+      render(<TodoRow {...rowProps()} />);
+      expect(
+        screen.queryByRole("button", { name: /delete email dakota/i }),
+      ).toBeNull();
+    });
+
+    it("renders with the correct aria-label when onDelete is provided", () => {
+      render(<TodoRow {...rowProps({ onDelete: vi.fn() })} />);
+      expect(
+        screen.getByRole("button", { name: /delete email dakota/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("calls onDelete and does NOT call onSelect when the delete button is clicked", () => {
+      const onDelete = vi.fn();
+      const onSelect = vi.fn();
+      render(<TodoRow {...rowProps({ onDelete, onSelect })} />);
+      fireEvent.click(screen.getByRole("button", { name: /delete email dakota/i }));
+      expect(onDelete).toHaveBeenCalledTimes(1);
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+  });
 });

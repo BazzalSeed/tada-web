@@ -203,3 +203,77 @@ describe("TodoListView — enrichment chip acceptance on the row", () => {
     expect(screen.getByTestId("prios")).toHaveTextContent("none");
   });
 });
+
+// StoreProbe variant that exposes todo statuses and selected id for delete assertions.
+function DeleteProbe() {
+  const { state } = useTada();
+  return (
+    <div>
+      <span data-testid="statuses">{state.todos.map((t) => t.status).join("|")}</span>
+      <span data-testid="selected-id">{state.selectedTodoId ?? ""}</span>
+    </div>
+  );
+}
+
+describe("TodoListView — soft delete (dismiss)", () => {
+  it("optimistically sets todo status to dismissed, removing it from the open list", async () => {
+    globalThis.fetch = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ todo: { ...open, status: "dismissed" } }),
+    })) as never;
+    render(
+      <TadaProvider preload={{ todos: [open] }}>
+        <DeleteProbe />
+        <TodoListView />
+      </TadaProvider>,
+    );
+    // sanity: todo is visible
+    expect(screen.getByText("Email Dakota")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /delete email dakota/i }));
+    // todo vanishes from the open list (dismissed is filtered out by applyFilter)
+    await waitFor(() =>
+      expect(screen.queryByText("Email Dakota")).toBeNull(),
+    );
+    // store status updated to dismissed
+    expect(screen.getByTestId("statuses")).toHaveTextContent("dismissed");
+  });
+
+  it("clears the selection when the selected todo is deleted", async () => {
+    globalThis.fetch = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ todo: { ...open, status: "dismissed" } }),
+    })) as never;
+    render(
+      <TadaProvider preload={{ todos: [open], selectedTodoId: "t1" }}>
+        <DeleteProbe />
+        <TodoListView />
+      </TadaProvider>,
+    );
+    // verify it starts selected
+    expect(screen.getByTestId("selected-id")).toHaveTextContent("t1");
+    fireEvent.click(screen.getByRole("button", { name: /delete email dakota/i }));
+    await waitFor(() =>
+      expect(screen.getByTestId("statuses")).toHaveTextContent("dismissed"),
+    );
+    // selection cleared
+    expect(screen.getByTestId("selected-id")).toHaveTextContent("");
+  });
+
+  it("keeps the optimistic dismissal when persistence fails (pre-auth interim)", async () => {
+    globalThis.fetch = vi.fn(async () => {
+      throw new Error("no user");
+    }) as never;
+    render(
+      <TadaProvider preload={{ todos: [open] }}>
+        <DeleteProbe />
+        <TodoListView />
+      </TadaProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /delete email dakota/i }));
+    await waitFor(() =>
+      expect(screen.getByTestId("statuses")).toHaveTextContent("dismissed"),
+    );
+    // row is gone from the visible list
+    expect(screen.queryByText("Email Dakota")).toBeNull();
+  });
+});

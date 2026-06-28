@@ -35,6 +35,7 @@ export interface TodoRowProps {
   onToggleExpand?: () => void;
   indented?: boolean;
   captureThumb?: string | null; // source-capture image url
+  onDelete?: () => void; // soft-delete (status → dismissed); hidden until row hover/focus
   // The "do it for me" offer surfaced on the row (FIX2). Tapping opens the detail
   // pane where the concrete effect is confirmed (the tap there is the trigger).
   offer?: { eyebrow: string; line?: string } | null;
@@ -73,6 +74,7 @@ export function TodoRow({
   enrichChips,
   onAcceptChip,
   onDismissChips,
+  onDelete,
 }: TodoRowProps) {
   const done = todo.status === "done";
   return (
@@ -161,6 +163,35 @@ export function TodoRow({
       </div>
       {captureThumb ? (
         <CaptureThumbnail src={captureThumb} alt={`Capture for ${todo.title}`} />
+      ) : null}
+      {onDelete ? (
+        <button
+          type="button"
+          className={styles.delete}
+          aria-label={`Delete ${todo.title}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="3 4 4 4 13 4" />
+            <path d="M5.5 4V3a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1" />
+            <path d="M12 4l-.867 8.857A1 1 0 0 1 10.14 14H5.86a1 1 0 0 1-.994-.857L4 4" />
+            <line x1="6.5" y1="7" x2="6.5" y2="11" />
+            <line x1="9.5" y1="7" x2="9.5" y2="11" />
+          </svg>
+        </button>
       ) : null}
     </li>
   );

@@ -117,6 +117,19 @@ export function TodoListView() {
     dispatch({ type: "CLEAR_ENRICHMENT" });
   }
 
+  async function deleteTodo(id: string) {
+    const current = state.todos.find((t) => t.id === id);
+    if (!current) return;
+    dispatch({ type: "UPSERT_TODO", todo: { ...current, status: "dismissed" } });
+    if (state.selectedTodoId === id) dispatch({ type: "SELECT_TODO", id: null });
+    try {
+      const saved = await patchTodo(id, { status: "dismissed" });
+      dispatch({ type: "UPSERT_TODO", todo: saved });
+    } catch {
+      // interim: keep the optimistic dismissal until persistence is authed.
+    }
+  }
+
   // The add card renders ONLY in All — the single add surface (native invariant).
   const isAll = state.selection.kind === "all";
 
@@ -139,6 +152,7 @@ export function TodoListView() {
         onReorder={reorder}
         onAcceptChip={acceptChip}
         onDismissChips={dismissChips}
+        onDelete={deleteTodo}
       />
     </div>
   );
