@@ -209,7 +209,7 @@ Return EXACTLY ONE todo (never zero, never split into several) — the enriched 
 - recurrenceText: the raw cadence phrase if the task repeats ("every monday", "daily", "weekly"); else null.
 - suggestedLabels: 0-2 tags. STRONGLY prefer reusing the user's existing labels (provided). Only propose a new lowercase label when it clearly fits and none existing match. No label is fine.
 - actionType + actionPayload — what the app can DO FOR them (pick the FIRST that matches, else "none"):
-  1. meeting — meeting/call/sync with other people. attendees = named people; start only if an explicit time.
+  1. meeting — meeting/call/sync with other people. Set payload.title to a short event title (≤6 words, e.g. "Follow up on Claudia"). attendees = named people. start: include ONLY when the user gives a time. If they give a clock time but NO day, anchor start's DATE to suggestedDueAt if you set one, else today — never invent a different weekday.
   2. reminder — a single time-anchored nudge for themself ("remind me…", a deadline). payload.text = the nudge.
   3. research — open-ended look-up/compare/investigate. payload.topic set.
   4. none — a plain task. Most todos are none; only classify when it genuinely matches.
