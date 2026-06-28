@@ -68,7 +68,7 @@ export function enrichmentChips(
     chips.push({
       key: `label:${name}`,
       kind: "label",
-      label: `@${name}`,
+      label: `#${name}`,
       labelName: name,
     });
   }

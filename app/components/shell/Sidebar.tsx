@@ -307,7 +307,7 @@ export function Sidebar({
               key={l.id}
               label={l.name}
               icon={<IconLabel />}
-              prefix="@"
+              prefix="#"
               selected={sameSelection(selection, { kind: "label", id: l.id })}
               onClick={() => onSelect({ kind: "label", id: l.id })}
             />

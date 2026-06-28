@@ -56,7 +56,7 @@ export function FilterBuilder({ value, labels, onChange }: FilterBuilderProps) {
                   key={l.id}
                   type="button"
                   className={styles.chip}
-                  aria-label={`@${l.name}`}
+                  aria-label={`#${l.name}`}
                   aria-pressed={on}
                   data-on={on}
                   onClick={() => toggleLabel(l.id)}
@@ -66,7 +66,7 @@ export function FilterBuilder({ value, labels, onChange }: FilterBuilderProps) {
                     style={{ background: l.colorHex }}
                     aria-hidden="true"
                   />
-                  @{l.name}
+                  #{l.name}
                 </button>
               );
             })}

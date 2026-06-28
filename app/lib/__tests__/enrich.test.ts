@@ -42,12 +42,12 @@ describe("enrichmentChips", () => {
     ]);
   });
 
-  it("offers one label chip per suggested label, prefixed with @", () => {
+  it("offers one label chip per suggested label, prefixed with #", () => {
     const chips = enrichmentChips(
       suggestion({ suggestedLabels: ["work", "urgent"] }),
       NOW,
     );
-    expect(chips.map((c) => c.label)).toEqual(["@work", "@urgent"]);
+    expect(chips.map((c) => c.label)).toEqual(["#work", "#urgent"]);
     expect(chips.every((c) => c.kind === "label")).toBe(true);
   });
 

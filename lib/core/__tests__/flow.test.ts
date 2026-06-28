@@ -138,10 +138,10 @@ describe("parseQuickAdd", () => {
     expect("call dentist p0".slice(tok.start, tok.start + tok.length)).toBe("p0");
   });
 
-  it("extracts @labels and #list, leaving a clean title", () => {
-    const p = parseQuickAdd("email @work @urgent #inbox the deck", NOW);
+  it("extracts #labels, leaving a clean title", () => {
+    const p = parseQuickAdd("email #work #urgent the deck", NOW);
     expect(p.labelNames.sort()).toEqual(["urgent", "work"]);
-    expect(p.listName).toBe("inbox");
+    expect(p.listName).toBe(null);
     expect(p.title).toBe("email the deck");
     expect(p.tokens.filter((t) => t.kind === "label")).toHaveLength(2);
   });

@@ -58,7 +58,7 @@ describe("OfferCard (pending gated write)", () => {
     render(<OfferCard action={edit} onApprove={vi.fn()} onDeny={vi.fn()} />);
     expect(screen.getByText(/rename to/i)).toBeInTheDocument();
     expect(screen.getByText("P1")).toBeInTheDocument();
-    expect(screen.getByText("@finance")).toBeInTheDocument();
+    expect(screen.getByText("#finance")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /approve & update/i })).toBeInTheDocument();
   });
 

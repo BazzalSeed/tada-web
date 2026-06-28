@@ -48,7 +48,7 @@ export function MetaChips({
 
       {labels.map((l) => (
         <span key={l.id} className={`${styles.chip} ${styles.label}`}>
-          <span className={styles.dot} style={{ background: l.colorHex }} />
+          <span style={{ color: l.colorHex }}>#</span>
           {l.name}
         </span>
       ))}

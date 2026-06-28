@@ -5,10 +5,10 @@ import { HighlightedInput } from "../HighlightedInput";
 
 describe("HighlightedInput", () => {
   it("renders token spans at the correct offsets with their kind", () => {
-    const value = "Plan offsite p1 @home";
+    const value = "Plan offsite p1 #home";
     const tokens: ParseToken[] = [
       { kind: "priority", start: 13, length: 2 }, // "p1"
-      { kind: "label", start: 16, length: 5 }, // "@home"
+      { kind: "label", start: 16, length: 5 }, // "#home"
     ];
     render(
       <HighlightedInput
@@ -20,7 +20,7 @@ describe("HighlightedInput", () => {
     );
     const prio = screen.getByText("p1");
     expect(prio).toHaveAttribute("data-kind", "priority");
-    const label = screen.getByText("@home");
+    const label = screen.getByText("#home");
     expect(label).toHaveAttribute("data-kind", "label");
   });
 

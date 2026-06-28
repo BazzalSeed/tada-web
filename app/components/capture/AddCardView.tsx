@@ -48,7 +48,7 @@ export function AddCardView() {
     });
   }
 
-  // Resolve @labels to persisted ids, creating unknown labels inline via
+  // Resolve #labels to persisted ids, creating unknown labels inline via
   // /api/labels (optimistic id now, reconciled in the background).
   function resolveLabelIds(names: string[]): string[] {
     return names.map((name) => ensureLabel(name).id);
@@ -132,7 +132,7 @@ export function AddCardView() {
         tokens={parsed.tokens}
         onChange={setText}
         onSubmit={submit}
-        placeholder="Add task — try “Plan offsite tomorrow p1 @work”"
+        placeholder="Add task — try “Plan offsite tomorrow p1 #work”"
       />
       <MicButton
         onTranscript={(spoken) =>

@@ -28,8 +28,8 @@ describe("MetaChips", () => {
     render(
       <MetaChips dueAt={null} now={now} labels={labels} subtaskDone={0} subtaskTotal={0} />,
     );
-    expect(screen.getByText("work")).toBeInTheDocument();
-    expect(screen.getByText("urgent")).toBeInTheDocument();
+    expect(screen.getByText((_, el) => el?.textContent === "#work")).toBeInTheDocument();
+    expect(screen.getByText((_, el) => el?.textContent === "#urgent")).toBeInTheDocument();
   });
 
   it("shows a subtask rollup chip when there are subtasks", () => {

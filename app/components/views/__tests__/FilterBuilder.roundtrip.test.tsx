@@ -30,7 +30,7 @@ function todo(over: Partial<Todo>): Todo {
   } as Todo;
 }
 
-// A todo due 3 days out (inside next7), p1, labelled @work → the target.
+// A todo due 3 days out (inside next7), p1, labelled #work → the target.
 const match = todo({
   id: "match",
   priority: "p1",
@@ -73,10 +73,10 @@ function Harness() {
 }
 
 describe("FilterBuilder → applyFilter round-trip", () => {
-  it("composes @work ANY @urgent + P1+ + next7 down to exactly the matching todo", () => {
+  it("composes #work ANY #urgent + P1+ + next7 down to exactly the matching todo", () => {
     render(<Harness />);
-    fireEvent.click(screen.getByRole("button", { name: /@work/i }));
-    fireEvent.click(screen.getByRole("button", { name: /@urgent/i }));
+    fireEvent.click(screen.getByRole("button", { name: /#work/i }));
+    fireEvent.click(screen.getByRole("button", { name: /#urgent/i }));
     fireEvent.click(screen.getByRole("button", { name: "P1+" }));
     fireEvent.click(screen.getByRole("button", { name: "Next 7" }));
     // Only `match` survives all four facets.

@@ -30,7 +30,7 @@ function setup(value: Partial<FilterCriteria> = {}) {
 describe("FilterBuilder", () => {
   it("renders a toggle chip per label and adds one to labelIds (ANY-of)", () => {
     const onChange = setup();
-    fireEvent.click(screen.getByRole("button", { name: /@work/i }));
+    fireEvent.click(screen.getByRole("button", { name: /#work/i }));
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ labelIds: ["l-work"] }),
     );
@@ -38,7 +38,7 @@ describe("FilterBuilder", () => {
 
   it("removes an already-selected label chip", () => {
     const onChange = setup({ labelIds: ["l-work"] });
-    fireEvent.click(screen.getByRole("button", { name: /@work/i }));
+    fireEvent.click(screen.getByRole("button", { name: /#work/i }));
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ labelIds: [] }),
     );
@@ -46,11 +46,11 @@ describe("FilterBuilder", () => {
 
   it("reflects the selected label as pressed (accent, not a fill prop)", () => {
     setup({ labelIds: ["l-urgent"] });
-    expect(screen.getByRole("button", { name: /@urgent/i })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /#urgent/i })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    expect(screen.getByRole("button", { name: /@work/i })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /#work/i })).toHaveAttribute(
       "aria-pressed",
       "false",
     );

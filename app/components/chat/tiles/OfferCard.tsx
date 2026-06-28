@@ -152,7 +152,7 @@ function OfferEffect({ action, now }: { action: ProposedAction; now: Date }) {
       changes.push(`Due ${when}`);
     if (action.priority) changes.push(PRIORITY_LABEL[action.priority] ?? action.priority);
     if (action.labels && action.labels.length)
-      changes.push(action.labels.map((l) => `@${l}`).join(" "));
+      changes.push(action.labels.map((l) => `#${l}`).join(" "));
     return (
       <div className={styles.effect}>
         <p className={styles.title}>

@@ -39,10 +39,10 @@ describe("AddCardView (store-wired)", () => {
     globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
     renderAdd();
     fireEvent.change(screen.getByRole("textbox"), {
-      target: { value: "Plan offsite p1 @home" },
+      target: { value: "Plan offsite p1 #home" },
     });
     expect(screen.getByText("p1")).toHaveAttribute("data-kind", "priority");
-    expect(screen.getByText("@home")).toHaveAttribute("data-kind", "label");
+    expect(screen.getByText("#home")).toHaveAttribute("data-kind", "label");
   });
 
   it("submitting creates a plain todo instantly with the parsed title + priority", async () => {
@@ -105,11 +105,11 @@ describe("AddCardView (store-wired)", () => {
     await waitFor(() => expect(screen.getByTestId("sel")).toHaveTextContent("all"));
   });
 
-  it("creates an inline label from an @token on submit", async () => {
+  it("creates an inline label from a #token on submit", async () => {
     globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({ todo: null }) })) as never;
     renderAdd();
     fireEvent.change(screen.getByRole("textbox"), {
-      target: { value: "Call vet @pets" },
+      target: { value: "Call vet #pets" },
     });
     fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
     await waitFor(() =>

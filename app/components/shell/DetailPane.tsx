@@ -188,7 +188,7 @@ export function DetailPane({
             aria-label={`Toggle label ${l.name}`}
             onClick={() => toggleLabel(l.id)}
           >
-            <span className={styles.dot} style={{ background: l.colorHex }} />
+            <span className={styles.hash} style={{ color: l.colorHex }}>#</span>
             {l.name}
           </button>
         ))}

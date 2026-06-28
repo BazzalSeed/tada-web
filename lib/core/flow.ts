@@ -187,8 +187,8 @@ export const parseQuickAdd: ParseQuickAdd = (text, now = new Date()) => {
     consumed.push({ start: pm.index, length: pm[0].length });
   }
 
-  // 3. @labels.
-  const labelRe = /@(\w+)/g;
+  // 3. #labels.
+  const labelRe = /#(\w+)/g;
   let lm: RegExpExecArray | null;
   while ((lm = labelRe.exec(text)) !== null) {
     if (overlaps(lm.index, lm[0].length, consumed)) continue;
