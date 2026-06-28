@@ -103,6 +103,13 @@ describe("GeminiExtractorClient.extract", () => {
     expect(out.todos[0].actionPayload).toBeNull();
   });
 
+  it("dateContextLine respects the user's IANA timezone (FIX-TZ)", () => {
+    // An instant that is June 28 in UTC but still June 27 in Los Angeles.
+    const instant = new Date("2026-06-28T03:00:00.000Z");
+    expect(dateContextLine(instant, "America/Los_Angeles")).toContain("2026-06-27");
+    expect(dateContextLine(instant, "UTC")).toContain("2026-06-28");
+  });
+
   it("injects the current date so relative dates resolve to ISO (FIX7)", async () => {
     genObj.mockResolvedValue({ object: { todos: [] } });
     await new GeminiExtractorClient({

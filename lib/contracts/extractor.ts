@@ -8,6 +8,8 @@
 import type { ActionPayload, ActionType, Priority } from "./types";
 
 export interface ExtractorInput {
+  /** User's IANA timezone (e.g. "America/New_York"), so relative dates resolve to the user's local day. */
+  timeZone?: string | null;
   image?: { base64: string; mimeType: string } | null;
   text?: string | null;
   note?: string | null;

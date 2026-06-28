@@ -110,7 +110,7 @@ export async function POST(req: Request): Promise<Response> {
     const result = await withQuota(user, "chatTurn", async () =>
       streamText({
         model: google("gemini-2.5-flash"),
-        system: composeSystem(SYSTEM + dateContextLine(new Date()), meta.summary),
+        system: composeSystem(SYSTEM + dateContextLine(new Date(), user.timezone), meta.summary),
         messages: modelMessages,
         tools: toAiSdkTools(user),
         stopWhen: stepCountIs(6),

@@ -45,9 +45,10 @@ describe("registry gating", () => {
 
 describe("query_todos (read, mirrors the app's Views via applyFilter)", () => {
   const now = new Date();
-  const iso = (d: Date) => d.toISOString();
-  const today = iso(now);
-  const yesterday = iso(new Date(now.getTime() - 864e5));
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const localDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T00:00:00`;
+  const today = localDay(now);
+  const yesterday = localDay(new Date(now.getTime() - 864e5));
   const pool = [
     { id: "t1", title: "Due today", status: "open", dueAt: today, priority: "p1", labelIds: ["lw"], actionType: "none", detail: null },
     { id: "t2", title: "Overdue thing", status: "open", dueAt: yesterday, priority: "none", labelIds: [], actionType: "none", detail: null },

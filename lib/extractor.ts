@@ -98,10 +98,29 @@ const WEEKDAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Frida
 // ABSOLUTE ISO-8601 — without this, Gemini emits the raw phrase, which is
 // unparseable downstream (and, before the store guard, collapsed the capture).
 // Pure given `now` (injected) so it's testable.
-export function dateContextLine(now: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const ymd = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-  return `\n\nDATE CONTEXT: Today is ${WEEKDAY_NAMES[now.getDay()]}, ${ymd} (the user's LOCAL date). Resolve EVERY relative date/time ("today", "tomorrow", "Friday", "next Tuesday 3pm", "by the 15th", "in 3 days") to an ABSOLUTE ISO-8601 LOCAL timestamp of the form yyyy-MM-ddTHH:mm:ss (NO timezone/offset). If only a date is implied, use yyyy-MM-ddT00:00:00. NEVER output a weekday name, a relative phrase, or any non-ISO string in suggestedDueAt, remindAt, or start — those fields MUST be valid ISO-8601 or null.`;
+export function dateContextLine(now: Date, timeZone?: string | null): string {
+  let weekday: string;
+  let ymd: string;
+  if (timeZone) {
+    const parts = Object.fromEntries(
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        weekday: "long",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+        .formatToParts(now)
+        .map((p) => [p.type, p.value]),
+    );
+    weekday = parts.weekday;
+    ymd = `${parts.year}-${parts.month}-${parts.day}`;
+  } else {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    ymd = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    weekday = WEEKDAY_NAMES[now.getDay()];
+  }
+  return `\n\nDATE CONTEXT: Today is ${weekday}, ${ymd} (the user's LOCAL date). Resolve EVERY relative date/time ("today", "tomorrow", "Friday", "next Tuesday 3pm", "by the 15th", "in 3 days") to an ABSOLUTE ISO-8601 LOCAL timestamp of the form yyyy-MM-ddTHH:mm:ss (NO timezone/offset). If only a date is implied, use yyyy-MM-ddT00:00:00. NEVER output a weekday name, a relative phrase, or any non-ISO string in suggestedDueAt, remindAt, or start — those fields MUST be valid ISO-8601 or null.`;
 }
 
 // Decodes base64 → bytes for the file content part (works in the node runtime).
@@ -233,7 +252,7 @@ export class GeminiExtractorClient implements ExtractorClient {
     // Append the current-date context so relative dates resolve to ISO.
     const system =
       (this.opts.system ?? SYSTEM_PROMPT) +
-      dateContextLine(this.opts.now?.() ?? new Date());
+      dateContextLine(this.opts.now?.() ?? new Date(), input.timeZone);
     try {
       const { object } = await generateObject({
         model: google(this.opts.model ?? DEFAULT_MODEL),

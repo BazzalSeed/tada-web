@@ -199,6 +199,7 @@ export async function runCapture(
       text: req.text ?? null,
       note: req.note ?? null,
       email: req.email ?? null,
+      timeZone: user.timezone,
       existingOpenTitles: openTitles,
       existingLists: [],
       existingLabels: labelRows.map((l) => l.name),

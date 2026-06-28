@@ -44,6 +44,7 @@ export async function runEnrich(
   const out = await withQuota(user, "extractTodos", () =>
     extractor.extract({
       text,
+      timeZone: user.timezone,
       existingOpenTitles,
       existingLists: [],
       existingLabels: labelRows.map((l) => l.name),
