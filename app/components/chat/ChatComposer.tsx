@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./ChatComposer.module.css";
 
 // Chat input: type + Enter/Send, plus an optional voice-mode entry (→ the full
@@ -19,6 +19,13 @@ export function ChatComposer({
   placeholder = "Ask Tada to do something…",
 }: ChatComposerProps) {
   const [text, setText] = useState("");
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [text]);
 
   function send() {
     const value = text.trim();
@@ -30,6 +37,7 @@ export function ChatComposer({
   return (
     <div className={styles.composer}>
       <textarea
+        ref={taRef}
         className={styles.input}
         value={text}
         rows={1}

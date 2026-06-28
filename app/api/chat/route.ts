@@ -14,6 +14,7 @@ import { currentUser } from "@/lib/auth";
 import { withQuota } from "@/lib/quota";
 import { toAiSdkTools } from "@/lib/agent-tools";
 import { handleApiError, readJson, badRequest, json } from "@/lib/http";
+import { dateContextLine } from "@/lib/extractor";
 import {
   buildModelMessages,
   composeSystem,
@@ -92,7 +93,7 @@ export async function POST(req: Request): Promise<Response> {
     const result = await withQuota(user, "chatTurn", async () =>
       streamText({
         model: google("gemini-2.5-flash"),
-        system: composeSystem(SYSTEM, meta.summary),
+        system: composeSystem(SYSTEM + dateContextLine(new Date()), meta.summary),
         messages: modelMessages,
         tools: toAiSdkTools(user),
         stopWhen: stepCountIs(6),
