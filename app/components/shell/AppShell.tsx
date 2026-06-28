@@ -40,12 +40,25 @@ export function AppShell({
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [detailWidth, setDetailWidth] = useState<number | null>(null);
   const [resizing, setResizing] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Load persisted detail-pane width on mount (SSR-safe).
   useEffect(() => {
     const v = Number(window.localStorage.getItem("tada:detailWidth"));
     if (v) setDetailWidth(v);
   }, []);
+
+  // Load persisted sidebar-collapsed state on mount (SSR-safe).
+  useEffect(() => {
+    setSidebarCollapsed(window.localStorage.getItem("tada:sidebarCollapsed") === "1");
+  }, []);
+
+  const toggleSidebar = () =>
+    setSidebarCollapsed((c) => {
+      const next = !c;
+      window.localStorage.setItem("tada:sidebarCollapsed", next ? "1" : "0");
+      return next;
+    });
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -66,8 +79,19 @@ export function AppShell({
       data-testid="shell-root"
       data-detail-open={detailOpen}
       data-resizing={resizing || undefined}
+      data-sidebar-collapsed={sidebarCollapsed || undefined}
       style={{ ["--detail-width" as string]: detailWidth ? `${detailWidth}px` : undefined }}
     >
+      <button
+        className={styles.sidebarToggle}
+        aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-expanded={!sidebarCollapsed}
+        onClick={toggleSidebar}
+        type="button"
+      >
+        {sidebarCollapsed ? "»" : "«"}
+      </button>
+
       <div className={styles.sidebar}>
         <Sidebar
           selection={selection}

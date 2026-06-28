@@ -72,4 +72,19 @@ describe("AppShell", () => {
       screen.queryByRole("separator", { name: /resize detail panel/i }),
     ).not.toBeInTheDocument();
   });
+
+  it("renders the sidebar toggle with aria-label 'Collapse sidebar' by default", () => {
+    setup();
+    const toggle = screen.getByRole("button", { name: "Collapse sidebar" });
+    expect(toggle).toBeInTheDocument();
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("clicking the toggle flips data-sidebar-collapsed and aria-label", () => {
+    setup();
+    const toggle = screen.getByRole("button", { name: "Collapse sidebar" });
+    fireEvent.click(toggle);
+    expect(screen.getByTestId("shell-root")).toHaveAttribute("data-sidebar-collapsed", "true");
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
+  });
 });

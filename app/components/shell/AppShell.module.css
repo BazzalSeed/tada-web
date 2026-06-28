@@ -2,8 +2,9 @@
    Sidebar fixed width · content fluid · detail revealed on demand. */
 
 .shell {
+  position: relative;
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 0;
+  grid-template-columns: var(--sidebar-width, 260px) minmax(0, 1fr) 0;
   height: 100dvh;
   background: var(--color-surface);
   color: var(--color-ink);
@@ -11,7 +12,11 @@
 }
 
 .detailOpen {
-  grid-template-columns: 260px minmax(0, 1fr) var(--detail-width, clamp(340px, 32vw, 440px));
+  grid-template-columns: var(--sidebar-width, 260px) minmax(0, 1fr) var(--detail-width, clamp(340px, 32vw, 440px));
+}
+
+.shell[data-sidebar-collapsed] {
+  --sidebar-width: 0px;
 }
 
 .shell[data-resizing] {
@@ -55,6 +60,38 @@
   opacity: 0.35;
 }
 
+.sidebarToggle {
+  position: absolute;
+  top: 8px;
+  left: calc(var(--sidebar-width, 260px) - 28px);
+  z-index: 10;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-ink-muted, #888);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    left var(--dur-base) var(--ease-out-quart),
+    color 120ms ease,
+    background 120ms ease;
+}
+
+.sidebarToggle:hover {
+  color: var(--color-accent, #c8632e);
+  background: var(--color-surface-raised, rgba(0, 0, 0, 0.06));
+}
+
+.shell[data-sidebar-collapsed] .sidebarToggle {
+  left: 4px;
+}
+
 @media (max-width: 720px) {
   .shell,
   .detailOpen {
@@ -65,6 +102,9 @@
     display: none;
   }
   .resizer {
+    display: none;
+  }
+  .sidebarToggle {
     display: none;
   }
 }
