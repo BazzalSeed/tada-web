@@ -100,6 +100,7 @@ export function AppShell({
           onSelect={onSelectNav}
           onCreateView={onCreateView}
           onEditView={onEditView}
+          collapsed={sidebarCollapsed}
         />
       </div>
 

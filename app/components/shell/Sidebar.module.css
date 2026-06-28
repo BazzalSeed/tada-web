@@ -136,6 +136,14 @@
   color: var(--color-accent-text);
 }
 
+.itemIcon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+
 .itemLabel {
   display: inline-flex;
   align-items: baseline;
@@ -155,4 +163,98 @@
   width: 8px;
   height: 8px;
   border-radius: var(--radius-pill);
+}
+
+/* ============================================================
+   COLLAPSED RAIL MODE  (data-collapsed on the <nav>)
+   56 px wide: icons/dots centered, labels as hover tooltips.
+   ============================================================ */
+
+/* Rail container — allow tooltip to escape the scrollable region */
+.sidebar[data-collapsed] {
+  padding: var(--space-5) var(--space-2);
+  align-items: center;
+  overflow: visible;
+}
+
+/* Hide the wordmark text in rail */
+.sidebar[data-collapsed] .wordmark {
+  display: none;
+}
+
+/* Groups stretch to full rail width */
+.sidebar[data-collapsed] .group {
+  width: 100%;
+  align-items: center;
+}
+
+/* Section head: hide title, center the + button */
+.sidebar[data-collapsed] .sectionHead {
+  justify-content: center;
+  padding: var(--space-1) 0;
+}
+
+.sidebar[data-collapsed] .sectionTitle {
+  display: none;
+}
+
+/* Each item: center icon/dot, make room for the tooltip */
+.sidebar[data-collapsed] .item {
+  justify-content: center;
+  padding: var(--space-2);
+  position: relative;
+  overflow: visible;
+}
+
+/* In viewRow, remove right padding needed for the hidden edit button */
+.sidebar[data-collapsed] .viewRow .item {
+  padding-right: var(--space-2);
+}
+
+/* Hide the ··· edit button in rail */
+.sidebar[data-collapsed] .edit {
+  display: none;
+}
+
+/* Label → visually hidden inline; reappears as a tooltip on hover/focus */
+.sidebar[data-collapsed] .itemLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  pointer-events: none;
+}
+
+/* Tooltip bubble — floats to the right of the rail item */
+.sidebar[data-collapsed] .item:hover .itemLabel,
+.sidebar[data-collapsed] .item:focus-visible .itemLabel {
+  /* reset the clip/size trick */
+  position: absolute;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  margin: 0;
+  /* placement: right of the item */
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: var(--space-2);
+  white-space: nowrap;
+  pointer-events: none;
+  /* cream bubble */
+  background: var(--color-surface-raised);
+  border: var(--hairline);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  padding: 4px 10px;
+  font-size: var(--fs-ui-body);
+  font-weight: normal;
+  color: var(--color-ink);
+  z-index: 200;
 }

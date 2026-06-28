@@ -81,4 +81,50 @@ describe("Sidebar", () => {
     fireEvent.click(screen.getByRole("button", { name: /edit work/i }));
     expect(onEditView).toHaveBeenCalledWith(view);
   });
+
+  // ── Icon rail ──────────────────────────────────────────────────────────
+
+  it("renders an SVG icon inside each primary nav item (All, Chat, Today)", () => {
+    renderSidebar();
+    const all = screen.getByRole("button", { name: /^all$/i });
+    const chat = screen.getByRole("button", { name: /^chat$/i });
+    const today = screen.getByRole("button", { name: /^today$/i });
+    expect(all.querySelector("svg")).toBeTruthy();
+    expect(chat.querySelector("svg")).toBeTruthy();
+    expect(today.querySelector("svg")).toBeTruthy();
+  });
+
+  it("keeps label text in the DOM for each primary item (tooltip + aria)", () => {
+    const { container } = renderSidebar();
+    // aria-label on the button covers screen readers; itemLabel span holds
+    // the visible/tooltip text — both must be present.
+    expect(screen.getByRole("button", { name: /^all$/i })).toBeInTheDocument();
+    // The label text node exists somewhere inside the button
+    const allBtn = screen.getByRole("button", { name: /^all$/i });
+    expect(allBtn.textContent).toContain("All");
+    // Suppress unused-variable warning for container
+    void container;
+  });
+
+  it("sets data-collapsed on the nav when collapsed=true", () => {
+    renderSidebar({ collapsed: true });
+    const nav = screen.getByRole("navigation", { name: /primary/i });
+    expect(nav).toHaveAttribute("data-collapsed", "true");
+  });
+
+  it("does NOT set data-collapsed on the nav when collapsed=false (expanded)", () => {
+    renderSidebar({ collapsed: false });
+    const nav = screen.getByRole("navigation", { name: /primary/i });
+    expect(nav).not.toHaveAttribute("data-collapsed");
+  });
+
+  it("keeps all items accessible by aria-label when collapsed", () => {
+    renderSidebar({ collapsed: true, views: [view], labels: [label] });
+    // Items must still exist in the DOM for tooltip text and screen-reader access
+    expect(screen.getByRole("button", { name: /^all$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^chat$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^today$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^work$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /errand/i })).toBeInTheDocument();
+  });
 });

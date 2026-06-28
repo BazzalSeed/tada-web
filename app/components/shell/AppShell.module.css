@@ -16,7 +16,12 @@
 }
 
 .shell[data-sidebar-collapsed] {
-  --sidebar-width: 0px;
+  --sidebar-width: 56px;
+}
+
+/* Allow tooltip bubbles to escape the clipped sidebar wrapper in rail mode */
+.shell[data-sidebar-collapsed] .sidebar {
+  overflow: visible;
 }
 
 .shell[data-resizing] {
