@@ -9,6 +9,7 @@ import {
   parseQuickAdd,
   between,
   nextOccurrence,
+  dueLocalDate,
 } from "@/lib/core";
 import type { FilterCriteria, SavedView, Todo } from "@/lib/contracts";
 
@@ -41,6 +42,23 @@ const crit = (c: Partial<FilterCriteria> = {}): FilterCriteria => ({
   dateWindow: "any",
   includeCompleted: false,
   ...c,
+});
+
+// ============================== dueLocalDate ==============================
+describe("dueLocalDate", () => {
+  it("parses Z-suffixed ISO as local calendar date (not UTC shift)", () => {
+    const d = dueLocalDate("2026-06-27T00:00:00.000Z");
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(5); // 0-indexed, June
+    expect(d.getDate()).toBe(27);
+  });
+
+  it("parses date-only string as local calendar date", () => {
+    const d = dueLocalDate("2026-06-27");
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(5);
+    expect(d.getDate()).toBe(27);
+  });
 });
 
 // ============================== applyFilter ==============================
@@ -89,6 +107,12 @@ describe("applyFilter", () => {
     it("overdue keeps before start-of-today", () => expect(ids("overdue")).toEqual(["yest"]));
     it("next7 keeps [startOfToday, +7d): today + in3, not in10, not yesterday", () =>
       expect(ids("next7")).toEqual(["in3", "today"]));
+
+    it("includes a Z-suffixed dueAt in today filter (timezone-independent)", () => {
+      const now = new Date(2026, 5, 27, 10, 0, 0); // Jun 27
+      const todayWithZ = [todo({ id: "tzTest", dueAt: "2026-06-27T00:00:00.000Z" })];
+      expect(applyFilter(crit({ dateWindow: "today" }), todayWithZ, now).map((t) => t.id)).toEqual(["tzTest"]);
+    });
   });
 });
 

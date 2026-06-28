@@ -32,6 +32,15 @@ const sameDay = (a: Date, b: Date): boolean =>
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
 
+// Parse the DATE PORTION of a dueAt ISO as a LOCAL calendar date (matching the
+// due-chip in app/lib/format.ts). Using `new Date(iso)` directly would read a
+// date-only or Z-suffixed value as UTC and shift the day in negative-offset
+// zones, dropping "due today" todos out of the Today filter.
+export const dueLocalDate = (iso: string): Date => {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+};
+
 // ============================== applyFilter ==============================
 export const applyFilter: ApplyFilter = (c, todos, now) => {
   const startToday = startOfDay(now);
@@ -52,7 +61,7 @@ export const applyFilter: ApplyFilter = (c, todos, now) => {
       if (!t.labelIds.some((id) => set.has(id))) return false;
     }
     // 5. date window
-    const due = t.dueAt ? new Date(t.dueAt) : null;
+    const due = t.dueAt ? dueLocalDate(t.dueAt) : null;
     switch (c.dateWindow) {
       case "any":
         return true;
