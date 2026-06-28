@@ -11,7 +11,12 @@
 }
 
 .detailOpen {
-  grid-template-columns: 260px minmax(0, 1fr) clamp(340px, 32vw, 440px);
+  grid-template-columns: 260px minmax(0, 1fr) var(--detail-width, clamp(340px, 32vw, 440px));
+}
+
+.shell[data-resizing] {
+  transition: none;
+  user-select: none;
 }
 
 .sidebar {
@@ -27,9 +32,27 @@
 }
 
 .detail {
+  position: relative;
   min-width: 0;
   height: 100%;
   overflow: hidden;
+}
+
+.resizer {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 5;
+  touch-action: none;
+}
+
+.resizer:hover,
+.shell[data-resizing] .resizer {
+  background: var(--color-accent);
+  opacity: 0.35;
 }
 
 @media (max-width: 720px) {
@@ -39,6 +62,9 @@
   }
   .sidebar,
   .detail {
+    display: none;
+  }
+  .resizer {
     display: none;
   }
 }

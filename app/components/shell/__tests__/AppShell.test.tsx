@@ -58,4 +58,18 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: /^today$/i }));
     expect(props.onSelectNav).toHaveBeenCalledWith({ kind: "today" });
   });
+
+  it("renders the drag resizer when a detail node is provided", () => {
+    setup({ detail: <div data-testid="detail">detail body</div> });
+    const resizer = screen.getByRole("separator", { name: /resize detail panel/i });
+    expect(resizer).toBeInTheDocument();
+    expect(resizer).toHaveAttribute("aria-orientation", "vertical");
+  });
+
+  it("does not render the drag resizer when detail is null", () => {
+    setup({ detail: null });
+    expect(
+      screen.queryByRole("separator", { name: /resize detail panel/i }),
+    ).not.toBeInTheDocument();
+  });
 });
