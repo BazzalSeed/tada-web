@@ -171,14 +171,11 @@ interface NavItemProps {
   label: string;
   selected: boolean;
   onClick: () => void;
-  /** When set, tints the leading icon with this color (inline style → overrides
-   *  inherited `currentColor`, keeping the item's own hue at all times). */
-  colorHex?: string;
   prefix?: string;
   icon?: ReactNode;
 }
 
-function NavItem({ label, selected, onClick, colorHex, prefix, icon }: NavItemProps) {
+function NavItem({ label, selected, onClick, prefix, icon }: NavItemProps) {
   return (
     <button
       type="button"
@@ -189,10 +186,7 @@ function NavItem({ label, selected, onClick, colorHex, prefix, icon }: NavItemPr
     >
       {/* Fixed-width leading slot — keeps all labels at the same x regardless
           of whether the item has an SVG icon or is a colored view/label. */}
-      <span
-        className={styles.itemIcon}
-        style={colorHex ? { color: colorHex } : undefined}
-      >
+      <span className={styles.itemIcon}>
         {icon}
       </span>
       <span className={styles.itemLabel}>
@@ -288,7 +282,6 @@ export function Sidebar({
             <NavItem
               label={v.name}
               icon={<IconView />}
-              colorHex={v.colorHex}
               selected={sameSelection(selection, { kind: "project", id: v.id })}
               onClick={() => onSelect({ kind: "project", id: v.id })}
             />
@@ -315,7 +308,6 @@ export function Sidebar({
               label={l.name}
               icon={<IconLabel />}
               prefix="@"
-              colorHex={l.colorHex}
               selected={sameSelection(selection, { kind: "label", id: l.id })}
               onClick={() => onSelect({ kind: "label", id: l.id })}
             />

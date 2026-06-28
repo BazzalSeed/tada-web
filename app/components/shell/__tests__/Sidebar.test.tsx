@@ -101,12 +101,11 @@ describe("Sidebar", () => {
     // Both must have an SVG icon so the leading column aligns with All/Chat/Today
     expect(workBtn.querySelector("svg")).toBeTruthy();
     expect(errandBtn.querySelector("svg")).toBeTruthy();
-    // The icon slot must have a non-empty inline color (JSDOM normalises hex → rgb,
-    // so just assert the style is set rather than matching the exact hex string).
+    // Icons inherit the standard color treatment (no per-item inline color)
     const workIcon = workBtn.querySelector("[class*='itemIcon']") as HTMLElement | null;
-    expect(workIcon?.style.color).toBeTruthy();
+    expect(workIcon?.style.color).toBeFalsy();
     const errandIcon = errandBtn.querySelector("[class*='itemIcon']") as HTMLElement | null;
-    expect(errandIcon?.style.color).toBeTruthy();
+    expect(errandIcon?.style.color).toBeFalsy();
   });
 
   it("keeps label text in the DOM for each primary item (tooltip + aria)", () => {
