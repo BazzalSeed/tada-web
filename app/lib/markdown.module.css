@@ -14,6 +14,10 @@
 .md h5 { font-size: 0.95em; font-weight: 600; margin: 0.4em 0 0.15em; line-height: 1.35; }
 .md h6 { font-size: 0.85em; font-weight: 600; margin: 0.4em 0 0.15em; line-height: 1.35; color: var(--color-ink-muted); }
 
+/* Bold and italic */
+.md strong { font-weight: 700; }
+.md em     { font-style: italic; }
+
 /* Inline code */
 .md code {
   font-family: var(--font-mono, monospace);
@@ -54,13 +58,28 @@
   margin: 0.15em 0;
 }
 
-/* Lists */
+/* Unordered lists */
 .md ul {
   margin: 0.4em 0;
   padding-left: 1.4em;
+  list-style: disc;
 }
 
 .md ul ul {
+  margin-left: 1em;
+  margin-top: 0.15em;
+  margin-bottom: 0;
+  list-style: circle;
+}
+
+/* Ordered lists */
+.md ol {
+  margin: 0.4em 0;
+  padding-left: 1.4em;
+  list-style: decimal;
+}
+
+.md ol ol {
   margin-left: 1em;
   margin-top: 0.15em;
   margin-bottom: 0;
@@ -68,6 +87,33 @@
 
 .md li {
   margin: 0.15em 0;
+}
+
+/* GFM task list checkboxes (react-markdown renders them as disabled inputs) */
+.md li input[type="checkbox"] {
+  margin-right: 0.4em;
+  accent-color: var(--color-accent);
+  cursor: default;
+}
+
+/* GFM tables */
+.md table {
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  font-size: 0.9em;
+  width: 100%;
+}
+
+.md th,
+.md td {
+  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.15));
+  padding: 0.3em 0.6em;
+  text-align: left;
+}
+
+.md th {
+  background: var(--color-surface-subtle);
+  font-weight: 600;
 }
 
 /* Horizontal rule */
