@@ -2,21 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { signIn } from "next-auth/react";
+import { Spark } from "@/app/components/brand/Spark";
 import styles from "./Landing.module.css";
 
 // T4.1 — the marketing landing, ported from design/landing-preview (rust palette,
 // already on-brand). Static-first: content is visible without JS; a mount effect
 // layers the entrance reveal, the frosted-on-scroll nav, and the beats spine.
-function Spark({ size = 12 }: { size?: number }) {
-  return (
-    <svg className={styles.spark} width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M12 0c.6 5.7 3.3 8.4 9 9-5.7.6-8.4 3.3-9 9-.6-5.7-3.3-8.4-9-9 5.7-.6 8.4-3.3 9-9Z"
-      />
-    </svg>
-  );
-}
 
 const Check = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
