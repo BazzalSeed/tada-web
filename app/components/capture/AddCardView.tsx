@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { Todo } from "@/lib/contracts";
 import { parseQuickAdd } from "@/lib/core";
 import { createTodo, enrichText, patchTodo } from "@/app/lib/api";
 import { enrichmentChips, type EnrichmentChip } from "@/app/lib/enrich";
 import { useEnsureLabel, useTada } from "@/app/lib/store";
+import { useImageCapture } from "@/app/lib/useImageCapture";
 import { HighlightedInput } from "./HighlightedInput";
 import { MicButton } from "./MicButton";
 import { EnrichmentBar } from "./EnrichmentBar";
@@ -19,6 +20,8 @@ export function AddCardView() {
   const ensureLabel = useEnsureLabel();
   const [text, setText] = useState("");
   const parsed = useMemo(() => parseQuickAdd(text), [text]);
+  const { ingest: ingestImage, error: uploadError, clearError: clearUploadError } = useImageCapture();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   // Async enrichment offers for the most-recently-added todo (T2.5).
   const [enrichTarget, setEnrichTarget] = useState<Todo | null>(null);
   const [chips, setChips] = useState<EnrichmentChip[]>([]);
@@ -181,6 +184,45 @@ export function AddCardView() {
           setText((prev) => (prev.trim() ? `${prev} ${spoken}` : spoken))
         }
       />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className={styles.screenshotInput}
+        aria-hidden="true"
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? []).filter((f) =>
+            f.type.startsWith("image/"),
+          );
+          if (files.length) void ingestImage(files);
+          e.target.value = "";
+        }}
+      />
+      <button
+        type="button"
+        className={styles.screenshotBtn}
+        aria-label="Upload screenshot"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 16V4M7 9l5-5 5 5" />
+          <path d="M5 20h14" />
+        </svg>
+      </button>
+      {uploadError ? (
+        <span className={styles.uploadError} role="alert">
+          {uploadError}{" "}
+          <button
+            type="button"
+            className={styles.uploadErrorDismiss}
+            aria-label="Dismiss"
+            onClick={clearUploadError}
+          >
+            ×
+          </button>
+        </span>
+      ) : null}
       <EnrichmentBar
         chips={chips}
         onAccept={acceptChip}

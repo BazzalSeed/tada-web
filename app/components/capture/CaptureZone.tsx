@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { captureImageFile } from "@/app/lib/capture";
+import { useEffect, type ReactNode } from "react";
 import { imageFilesFrom } from "@/app/lib/capture-files";
-import { useTada } from "@/app/lib/store";
+import { useImageCapture } from "@/app/lib/useImageCapture";
 import { Dropzone } from "./Dropzone";
 import styles from "./CaptureZone.module.css";
 
@@ -12,26 +11,7 @@ import styles from "./CaptureZone.module.css";
 // + Todos. The first returned todo is the capture-first plain todo; extras are
 // extracted ones. Failures surface visibly (capture is the hero — never silent).
 export function CaptureZone({ children }: { children: ReactNode }) {
-  const { dispatch } = useTada();
-  const [error, setError] = useState<string | null>(null);
-
-  const ingest = useCallback(
-    async (files: File[]) => {
-      for (const file of files) {
-        try {
-          const { capture, todos } = await captureImageFile(file);
-          dispatch({ type: "UPSERT_CAPTURE", capture });
-          for (const todo of todos) dispatch({ type: "UPSERT_TODO", todo });
-          setError(null);
-        } catch (err) {
-          // Surface, don't swallow — capture is the hero flow.
-          console.error("[capture] failed to ingest", file.name, err);
-          setError("Couldn't capture that image. Please sign in and try again.");
-        }
-      }
-    },
-    [dispatch],
-  );
+  const { ingest, error, clearError } = useImageCapture();
 
   // Global paste — capture images from the clipboard anywhere in the app.
   useEffect(() => {
@@ -58,7 +38,7 @@ export function CaptureZone({ children }: { children: ReactNode }) {
             type="button"
             className={styles.dismiss}
             aria-label="Dismiss"
-            onClick={() => setError(null)}
+            onClick={clearError}
           >
             ×
           </button>

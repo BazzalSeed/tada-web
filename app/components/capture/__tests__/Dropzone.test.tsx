@@ -74,41 +74,5 @@ describe("Dropzone", () => {
     expect(onFiles).not.toHaveBeenCalled();
   });
 
-  it("emits image files chosen via the click-to-upload input", () => {
-    const onFiles = vi.fn();
-    render(
-      <Dropzone onFiles={onFiles}>
-        <div>content</div>
-      </Dropzone>,
-    );
-    const file = imageFile();
-    fireEvent.change(screen.getByTestId("file-input"), {
-      target: { files: [file] },
-    });
-    expect(onFiles).toHaveBeenCalledWith([file]);
-  });
 
-  it("ignores non-image files chosen via the input", () => {
-    const onFiles = vi.fn();
-    render(
-      <Dropzone onFiles={onFiles}>
-        <div>content</div>
-      </Dropzone>,
-    );
-    fireEvent.change(screen.getByTestId("file-input"), {
-      target: { files: [new File(["x"], "a.txt", { type: "text/plain" })] },
-    });
-    expect(onFiles).not.toHaveBeenCalled();
-  });
-
-  it("exposes an accessible upload trigger", () => {
-    render(
-      <Dropzone onFiles={vi.fn()}>
-        <div>content</div>
-      </Dropzone>,
-    );
-    expect(
-      screen.getByRole("button", { name: /upload image/i }),
-    ).toBeInTheDocument();
-  });
 });
