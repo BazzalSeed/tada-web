@@ -16,9 +16,12 @@
 }
 
 .plus {
+  /* Match the input's first-line metrics (same font-size + line-height + top
+     padding as .input) so the glyph sits on the placeholder's baseline rather
+     than dropping below it. */
   padding-top: var(--space-3);
   color: var(--color-accent);
-  font-size: var(--fs-body-lead);
+  font-size: var(--fs-ui-body);
   line-height: 1.4;
 }
 
