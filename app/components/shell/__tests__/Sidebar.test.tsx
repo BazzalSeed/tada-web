@@ -133,6 +133,34 @@ describe("Sidebar", () => {
     expect(nav).not.toHaveAttribute("data-collapsed");
   });
 
+  // ── Toggle button ──────────────────────────────────────────────────────
+
+  it("renders the toggle with aria-label 'Collapse sidebar' when expanded", () => {
+    renderSidebar({ collapsed: false, onToggle: vi.fn() });
+    const btn = screen.getByRole("button", { name: "Collapse sidebar" });
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("renders the toggle with aria-label 'Expand sidebar' when collapsed", () => {
+    renderSidebar({ collapsed: true, onToggle: vi.fn() });
+    const btn = screen.getByRole("button", { name: "Expand sidebar" });
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("calls onToggle when the toggle button is clicked", () => {
+    const onToggle = vi.fn();
+    renderSidebar({ collapsed: false, onToggle });
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+    expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not render the toggle button when onToggle is not provided", () => {
+    renderSidebar({ collapsed: false });
+    expect(screen.queryByRole("button", { name: /collapse sidebar/i })).not.toBeInTheDocument();
+  });
+
   it("keeps all items accessible by aria-label when collapsed", () => {
     renderSidebar({ collapsed: true, views: [view], labels: [label] });
     // Items must still exist in the DOM for tooltip text and screen-reader access

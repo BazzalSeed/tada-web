@@ -4,6 +4,50 @@ import type { ReactNode } from "react";
 import type { SavedView, TodoLabel, ViewSelection } from "@/lib/contracts";
 import styles from "./Sidebar.module.css";
 
+// ── Sidebar toggle icons ───────────────────────────────────────────────────
+
+/** Collapse icon — sidebar panel with left divider. Shown when sidebar is expanded. */
+function IconCollapse() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <line x1="10" y1="4" x2="10" y2="20" />
+    </svg>
+  );
+}
+
+/** Expand icon — panel with right-pointing arrow. Shown when sidebar is collapsed. */
+function IconExpand() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <line x1="14" y1="4" x2="14" y2="20" />
+      <path d="M6.5 12h5" />
+      <path d="M9 9.5l2.5 2.5L9 14.5" />
+    </svg>
+  );
+}
+
 // The sidebar selects a read-only filter-View (ViewSelection) OR the Chat
 // destination. Chat is a destination, not a filter-View (spec §3/§7), so the
 // nav model is broader than ViewSelection.
@@ -170,6 +214,8 @@ export interface SidebarProps {
   onEditView: (view: SavedView) => void;
   /** When true, renders a narrow icon rail instead of the full sidebar. */
   collapsed?: boolean;
+  /** Called when the user clicks the collapse/expand toggle button. */
+  onToggle?: () => void;
 }
 
 export function Sidebar({
@@ -180,6 +226,7 @@ export function Sidebar({
   onCreateView,
   onEditView,
   collapsed,
+  onToggle,
 }: SidebarProps) {
   return (
     <nav
@@ -187,7 +234,21 @@ export function Sidebar({
       aria-label="Primary"
       data-collapsed={collapsed || undefined}
     >
-      <p className={styles.wordmark}>Tada</p>
+      {/* Header row: wordmark + collapse/expand toggle */}
+      <div className={styles.header}>
+        <p className={styles.wordmark}>Tada</p>
+        {onToggle !== undefined && (
+          <button
+            type="button"
+            className={styles.toggleBtn}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
+            onClick={onToggle}
+          >
+            {collapsed ? <IconExpand /> : <IconCollapse />}
+          </button>
+        )}
+      </div>
 
       <div className={styles.group}>
         <NavItem

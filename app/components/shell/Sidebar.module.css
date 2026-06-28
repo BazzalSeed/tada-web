@@ -13,12 +13,43 @@
   overflow-y: auto;
 }
 
+/* Header row: wordmark + toggle sit on the same flex row, right-aligned */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-2);
+}
+
 .wordmark {
   font-family: var(--font-wordmark);
   font-size: var(--fs-section);
   line-height: 1;
   color: var(--color-accent);
-  padding: 0 var(--space-2);
+}
+
+/* Collapse/expand toggle button */
+.toggleBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background 120ms ease;
+}
+
+.toggleBtn:hover {
+  color: var(--color-accent);
+  background: var(--color-surface-raised);
 }
 
 .group {
@@ -173,17 +204,29 @@
    56 px wide: icons/dots centered, labels as hover tooltips.
    ============================================================ */
 
-/* Rail container — allow tooltip to escape the scrollable region.
-   Top padding clears the 40px toggle button (top: 8px + 40px + 4px gap = 52px). */
+/* Rail container — allow tooltip to escape the scrollable region. */
 .sidebar[data-collapsed] {
-  padding: 52px 0 var(--space-5);
+  padding: 0 0 var(--space-5);
   align-items: center;
   overflow: visible;
+}
+
+/* In rail mode, header centers the toggle at the top; wordmark is hidden. */
+.sidebar[data-collapsed] .header {
+  width: 100%;
+  justify-content: center;
+  padding: 8px 0 4px;
 }
 
 /* Hide the wordmark text in rail */
 .sidebar[data-collapsed] .wordmark {
   display: none;
+}
+
+/* Toggle grows to 40×40 centered square in rail (consistent with nav items) */
+.sidebar[data-collapsed] .toggleBtn {
+  width: 40px;
+  height: 40px;
 }
 
 /* Groups stretch to full rail width */
@@ -226,6 +269,13 @@
   background: var(--accent-tint);
   box-shadow: none;
   color: var(--color-accent-text);
+}
+
+/* Non-active items in the rail: subtle tint contained to the 40px square.
+   Overrides the expanded hover's surface-raised (which can read too bright). */
+.sidebar[data-collapsed] .item:not(.active):hover {
+  background: var(--color-surface-subtle, rgba(0, 0, 0, 0.04));
+  color: var(--color-ink);
 }
 
 /* In viewRow, remove right padding used in expanded (edit button hidden in rail) */

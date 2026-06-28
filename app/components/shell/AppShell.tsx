@@ -1,31 +1,6 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-
-// Panel/sidebar toggle icon — a rounded rect with a vertical divider ~1/3 in.
-// Mirrors horizontally when the sidebar is collapsed so the visual direction
-// always suggests "open this panel."
-function IconSidebarToggle({ collapsed }: { collapsed: boolean }) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      style={collapsed ? { transform: "scaleX(-1)" } : undefined}
-    >
-      {/* Outer panel border */}
-      <rect x="2" y="2" width="20" height="20" rx="3" />
-      {/* Vertical divider at ~1/3 from the left */}
-      <line x1="8" y1="2" x2="8" y2="22" />
-    </svg>
-  );
-}
 import type { SavedView, TodoLabel } from "@/lib/contracts";
 import { Sidebar, type NavSelection } from "./Sidebar";
 import { CommandPalette, type PaletteItem } from "./CommandPalette";
@@ -107,16 +82,6 @@ export function AppShell({
       data-sidebar-collapsed={sidebarCollapsed || undefined}
       style={{ ["--detail-width" as string]: detailWidth ? `${detailWidth}px` : undefined }}
     >
-      <button
-        className={styles.sidebarToggle}
-        aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        aria-expanded={!sidebarCollapsed}
-        onClick={toggleSidebar}
-        type="button"
-      >
-        <IconSidebarToggle collapsed={sidebarCollapsed} />
-      </button>
-
       <div className={styles.sidebar}>
         <Sidebar
           selection={selection}
@@ -126,6 +91,7 @@ export function AppShell({
           onCreateView={onCreateView}
           onEditView={onEditView}
           collapsed={sidebarCollapsed}
+          onToggle={toggleSidebar}
         />
       </div>
 
