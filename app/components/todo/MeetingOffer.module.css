@@ -101,6 +101,11 @@
   color: var(--color-ink-muted);
 }
 
+.looking {
+  font-size: var(--fs-ui-meta, 0.75rem);
+  color: var(--color-ink-faint, var(--color-ink-muted));
+}
+
 .emailInput {
   font: inherit;
   padding: var(--space-2);

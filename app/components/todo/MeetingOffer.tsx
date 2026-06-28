@@ -24,6 +24,7 @@ export function MeetingOffer({ todo, onFinish, onPatchPayload, onPatch }: OfferP
   const p = (todo.actionPayload?.kind === "meeting" ? todo.actionPayload : null) as Meeting | null;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resolving, setResolving] = useState(false);
   const resolvedOnce = useRef(false);
 
   // Always-confirm contact: resolve raw names on mount so the user SEES the email
@@ -33,9 +34,16 @@ export function MeetingOffer({ todo, onFinish, onPatchPayload, onPatch }: OfferP
     const raw = p.attendees ?? [];
     if (raw.length && !(p.resolvedAttendees?.length)) {
       resolvedOnce.current = true;
+      setResolving(true);
       resolveContacts(raw)
-        .then((attendees) => onPatchPayload({ ...p, resolvedAttendees: attendees }))
-        .catch(() => undefined);
+        .then((attendees) => {
+          setResolving(false);
+          onPatchPayload({ ...p, resolvedAttendees: attendees });
+        })
+        .catch(() => {
+          setResolving(false);
+          setError("Couldn't look up contacts. Reload to try again.");
+        });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -94,6 +102,11 @@ export function MeetingOffer({ todo, onFinish, onPatchPayload, onPatch }: OfferP
     const next = [...attendees];
     next[index] = { ...next[index], email, name: name ?? next[index].name, status: "resolved" };
     patchPayload({ resolvedAttendees: next });
+  }
+
+  function commitEmail(i: number, el: HTMLInputElement) {
+    const v = el.value.trim();
+    if (v) void pickCandidate(i, v);
   }
 
   async function send() {
@@ -155,16 +168,16 @@ export function MeetingOffer({ todo, onFinish, onPatchPayload, onPatch }: OfferP
                   </button>
                 ))}
                 {(a.candidates ?? []).length === 0 ? (
-                  <>
-                    <span className={styles.noMatch}>No match — type their email</span>
-                    <input className={styles.emailInput} type="email" placeholder="name@email.com"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          const v = (e.target as HTMLInputElement).value.trim();
-                          if (v) void pickCandidate(i, v);
-                        }
-                      }} />
-                  </>
+                  resolving ? (
+                    <span className={styles.looking}>Looking up…</span>
+                  ) : (
+                    <>
+                      <span className={styles.noMatch}>No match — type their email</span>
+                      <input className={styles.emailInput} type="email" placeholder="name@email.com"
+                        onKeyDown={(e) => { if (e.key === "Enter") commitEmail(i, e.currentTarget); }}
+                        onBlur={(e) => commitEmail(i, e.currentTarget)} />
+                    </>
+                  )
                 ) : null}
               </div>
             </div>
