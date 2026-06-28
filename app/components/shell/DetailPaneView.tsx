@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ActionPayload, Todo } from "@/lib/contracts";
-import { finishTodo as finishTodoApi, patchTodo } from "@/app/lib/api";
+import { finishTodo as finishTodoApi, listTodos, patchTodo } from "@/app/lib/api";
 import { reflectFinish } from "@/app/lib/offer";
 import { useEnsureLabel, useTada } from "@/app/lib/store";
 import { OfferPanel } from "@/app/components/todo/OfferPanel";
@@ -36,6 +36,12 @@ export function DetailPaneView({ todo }: { todo: Todo }) {
     const res = await finishTodoApi(todo.id);
     const reflected = reflectFinish(todo, res);
     if (reflected) dispatch({ type: "UPSERT_TODO", todo: { ...todo, ...reflected } });
+    // Re-fetch the parent so its notes (appended by the subtask finish) update immediately.
+    if (todo.parentId) {
+      const all = await listTodos().catch(() => null);
+      const parent = all?.find((t) => t.id === todo.parentId);
+      if (parent) dispatch({ type: "UPSERT_TODO", todo: parent });
+    }
     return res;
   }
 

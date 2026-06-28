@@ -200,6 +200,23 @@ describe("DetailPane (editable)", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  // ── FIX1: notes preview reads live todo.detail prop ──────────────────────
+  it("notes preview reflects an updated todo.detail prop without a remount", () => {
+    const { rerender } = render(
+      <DetailPane {...paneProps({ todo: { ...todo, detail: "old notes" } })} />,
+    );
+    // Default mode is preview; initial notes are visible.
+    expect(screen.getByText("old notes")).toBeInTheDocument();
+
+    // Simulate external update (e.g. research append, poll) — same key, new prop.
+    rerender(
+      <DetailPane
+        {...paneProps({ todo: { ...todo, detail: "new report appended" } })}
+      />,
+    );
+    expect(screen.getByText("new report appended")).toBeInTheDocument();
+  });
+
   it("renders 'No report yet.' when inlineReport.todo.detail is empty", () => {
     const childTodo: Todo = {
       id: "c1",

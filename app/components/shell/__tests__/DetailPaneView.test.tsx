@@ -179,4 +179,74 @@ describe("DetailPaneView (store-wired)", () => {
     fireEvent.click(screen.getByRole("button", { name: /← big project/i }));
     expect(screen.getByTestId("sel")).toHaveTextContent("p1");
   });
+
+  // ── FIX2: parent re-fetch after subtask finishOffer ───────────────────────
+  it("upserts the parent into the store after a subtask finishOffer resolves", async () => {
+    const parent: Todo = {
+      id: "p1",
+      createdAt: "2026-06-26T08:00:00",
+      sourceCaptureId: "",
+      title: "Parent Task",
+      detail: "",
+      status: "open",
+      actionType: "none",
+      actionState: "none",
+      sortIndex: 0,
+      priority: "none",
+      labelIds: [],
+    };
+    const updatedParent: Todo = {
+      ...parent,
+      detail: "## Summary\nSubtask research done.",
+    };
+    const subtask: Todo = {
+      id: "s1",
+      createdAt: "2026-06-26T09:00:00",
+      sourceCaptureId: "",
+      title: "Market research",
+      detail: "",
+      status: "open",
+      actionType: "research",
+      actionState: "none",
+      sortIndex: 1,
+      priority: "none",
+      labelIds: [],
+      parentId: "p1",
+    };
+
+    globalThis.fetch = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      const u = String(url);
+      if (method === "POST" && u.includes("/finish")) {
+        return { ok: true, json: async () => ({ ok: true, markdown: "Research done." }) };
+      }
+      // listTodos re-fetch — returns the updated parent
+      if (method === "GET" && u.includes("/api/todos")) {
+        return { ok: true, json: async () => ({ todos: [updatedParent, subtask] }) };
+      }
+      return { ok: true, json: async () => ({}) };
+    }) as never;
+
+    // Local probe to observe the parent's detail field
+    function ParentProbe() {
+      const { state } = useTada();
+      const p = state.todos.find((x) => x.id === "p1");
+      return <span data-testid="parent-detail">{p?.detail ?? ""}</span>;
+    }
+
+    render(
+      <TadaProvider preload={{ todos: [parent, subtask], selectedTodoId: "s1" }}>
+        <ParentProbe />
+        <DetailPaneView todo={subtask} />
+      </TadaProvider>,
+    );
+
+    // The OfferPanel renders a "Research" CTA for a research-type todo
+    fireEvent.click(screen.getByRole("button", { name: /^research$/i }));
+
+    // After finishOffer resolves, listTodos is called and the parent is upserted
+    await waitFor(() => {
+      expect(screen.getByTestId("parent-detail")).toHaveTextContent("## Summary");
+    });
+  });
 });

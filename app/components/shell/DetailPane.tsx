@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { Priority, RecurFreq, Todo, TodoLabel } from "@/lib/contracts";
 import { Markdown } from "@/app/lib/markdown";
 import styles from "./DetailPane.module.css";
@@ -56,6 +56,12 @@ export function DetailPane({
   const [detail, setDetail] = useState(todo?.detail ?? "");
   const [notesMode, setNotesMode] = useState<"preview" | "write">("preview");
   const [newLabel, setNewLabel] = useState("");
+
+  // Keep local `detail` in sync with external updates (e.g. research append, 5s poll)
+  // while NOT actively editing, so switching to write shows the freshest text.
+  useEffect(() => {
+    if (notesMode === "preview") setDetail(todo?.detail ?? "");
+  }, [todo?.detail, notesMode]);
 
   if (!todo) return null;
 
@@ -230,8 +236,8 @@ export function DetailPane({
           />
         ) : (
           <div className={styles.notesPreview}>
-            {detail.trim() ? (
-              <Markdown source={detail} onTodoLink={onTodoLink} />
+            {(todo.detail ?? "").trim() ? (
+              <Markdown source={todo.detail ?? ""} onTodoLink={onTodoLink} />
             ) : (
               <p className={styles.empty}>No notes yet.</p>
             )}
