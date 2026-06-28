@@ -45,4 +45,30 @@ describe("MetaChips", () => {
     );
     expect(screen.queryByTestId("subtask-chip")).not.toBeInTheDocument();
   });
+
+  it("marks the subtask chip complete when all subtasks are done", () => {
+    render(
+      <MetaChips dueAt={null} now={now} labels={[]} subtaskDone={3} subtaskTotal={3} />,
+    );
+    const chip = screen.getByTestId("subtask-chip");
+    expect(chip).toHaveAttribute("data-complete", "true");
+    // ✓ prefix visible
+    expect(chip.textContent).toMatch(/✓/);
+  });
+
+  it("does NOT mark the subtask chip complete when some subtasks are undone", () => {
+    render(
+      <MetaChips dueAt={null} now={now} labels={[]} subtaskDone={2} subtaskTotal={3} />,
+    );
+    const chip = screen.getByTestId("subtask-chip");
+    expect(chip).not.toHaveAttribute("data-complete", "true");
+    expect(chip.textContent).not.toMatch(/✓/);
+  });
+
+  it("does NOT mark the subtask chip complete when subtaskTotal is 0", () => {
+    render(
+      <MetaChips dueAt={null} now={now} labels={[]} subtaskDone={0} subtaskTotal={0} />,
+    );
+    expect(screen.queryByTestId("subtask-chip")).not.toBeInTheDocument();
+  });
 });

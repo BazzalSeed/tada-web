@@ -64,4 +64,24 @@ describe("SubtaskList", () => {
     fireEvent.click(screen.getAllByRole("checkbox")[0]);
     expect(onToggle).toHaveBeenCalledWith("a");
   });
+
+  it("shows the all-done cue when every subtask is complete", () => {
+    const allDone = [
+      child("a", { status: "done" as const }),
+      child("b", { status: "done" as const }),
+    ];
+    render(<SubtaskList subtasks={allDone} onAdd={vi.fn()} onToggle={vi.fn()} onReorder={vi.fn()} />);
+    expect(screen.getByTestId("subtasks-all-done")).toBeInTheDocument();
+    expect(screen.getByTestId("subtasks-all-done").textContent).toMatch(/all steps done/i);
+  });
+
+  it("hides the all-done cue when some subtasks are still open", () => {
+    render(<SubtaskList {...props()} />);
+    expect(screen.queryByTestId("subtasks-all-done")).not.toBeInTheDocument();
+  });
+
+  it("hides the all-done cue when there are no subtasks", () => {
+    render(<SubtaskList subtasks={[]} onAdd={vi.fn()} onToggle={vi.fn()} onReorder={vi.fn()} />);
+    expect(screen.queryByTestId("subtasks-all-done")).not.toBeInTheDocument();
+  });
 });

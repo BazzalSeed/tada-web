@@ -40,8 +40,9 @@ export function MetaChips({
         <span
           className={styles.chip}
           data-testid="subtask-chip"
+          data-complete={subtaskDone === subtaskTotal ? "true" : undefined}
         >
-          {subtaskDone}/{subtaskTotal}
+          {subtaskDone === subtaskTotal ? "✓ " : null}{subtaskDone}/{subtaskTotal}
         </span>
       ) : null}
 

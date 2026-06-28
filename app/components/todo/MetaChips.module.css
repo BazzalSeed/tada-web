@@ -22,6 +22,11 @@
   color: var(--color-accent-text);
 }
 
+.chip[data-complete="true"] {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  color: var(--color-accent);
+}
+
 .label {
   background: transparent;
   color: var(--color-ink-muted);

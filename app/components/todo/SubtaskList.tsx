@@ -24,6 +24,7 @@ export function SubtaskList({
 }: SubtaskListProps) {
   const [draft, setDraft] = useState("");
   const dragFrom = useRef<number | null>(null);
+  const allDone = subtasks.length > 0 && subtasks.every((s) => s.status === "done");
 
   function submit() {
     const title = draft.trim();
@@ -77,6 +78,11 @@ export function SubtaskList({
           </li>
         ))}
       </ul>
+      {allDone ? (
+        <p className={styles.allDoneCue} data-testid="subtasks-all-done">
+          ✓ All steps done — ready to wrap up.
+        </p>
+      ) : null}
       <input
         className={styles.add}
         placeholder="Add subtask…"
