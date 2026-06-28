@@ -12,6 +12,7 @@ import type { UserCtx } from "./auth";
 export interface ExecResult {
   ok: boolean;
   actionExternalId?: string;
+  actionLink?: string; // created event's calendar URL (meeting), surfaced after send
   error?: string;
   needsField?: string; // single missing essential field -> one inline ask
   needsDisambiguation?: Attendee[]; // unresolved attendees (each w/ candidates) -> OfferView picker; blocks Send

@@ -83,10 +83,13 @@ export function reflectFinish(
   }
   if (res.ok) {
     if (todo.actionType === "research") {
+      return { actionState: "done", actionExternalId: "research", detail: res.markdown ?? todo.detail };
+    }
+    if (todo.actionType === "meeting" && todo.actionPayload?.kind === "meeting" && res.actionLink) {
       return {
         actionState: "done",
-        actionExternalId: "research",
-        detail: res.markdown ?? todo.detail,
+        actionExternalId: res.actionExternalId ?? null,
+        actionPayload: { ...todo.actionPayload, htmlLink: res.actionLink },
       };
     }
     return { actionState: "done", actionExternalId: res.actionExternalId ?? null };

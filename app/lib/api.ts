@@ -112,6 +112,7 @@ export async function ensureLabel(name: string): Promise<TodoLabel> {
 export interface FinishResponse {
   ok: boolean;
   actionExternalId?: string;
+  actionLink?: string;
   error?: string;
   needsField?: string;
   needsDisambiguation?: Attendee[];

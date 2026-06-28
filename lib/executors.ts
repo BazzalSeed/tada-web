@@ -94,7 +94,7 @@ async function sendMeetingInvite(p: Meeting, user: UserCtx): Promise<ExecResult>
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          summary: p.title,
+          summary: p.title?.trim() || "Meeting",
           description: p.notes ?? undefined,
           start: { dateTime: p.start, timeZone: tz },
           end: { dateTime: addMinutesIso(p.start, durationMin), timeZone: tz },
@@ -105,8 +105,8 @@ async function sendMeetingInvite(p: Meeting, user: UserCtx): Promise<ExecResult>
     if (!res.ok) {
       return { ok: false, error: `calendar event failed (${res.status})` };
     }
-    const event = (await res.json()) as { id?: string };
-    return { ok: true, actionExternalId: event.id };
+    const event = (await res.json()) as { id?: string; htmlLink?: string };
+    return { ok: true, actionExternalId: event.id, actionLink: event.htmlLink };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "meeting failed" };
   }

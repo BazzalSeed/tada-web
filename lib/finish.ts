@@ -112,11 +112,15 @@ export async function applyFinishResult(
     return;
   }
   if (result.ok) {
+    const actionPayload =
+      todo.actionType === "meeting" && todo.actionPayload?.kind === "meeting" && result.actionLink
+        ? { ...todo.actionPayload, htmlLink: result.actionLink }
+        : todo.actionPayload;
     await store.updateTodo(user.userId, todo.id, {
       actionState: "done",
       actionExternalId: result.actionExternalId ?? null,
+      ...(actionPayload !== todo.actionPayload ? { actionPayload } : {}),
     });
-    // A finished subtask reports its outcome up to the parent goal's notes.
     if (todo.parentId) {
       const line = resultLine(todo, result);
       if (line) await appendNote(store, user.userId, todo.parentId, line);

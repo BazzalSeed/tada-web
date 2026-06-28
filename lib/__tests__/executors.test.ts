@@ -11,6 +11,7 @@ vi.mock("ai", async (orig) => ({
 vi.mock("@ai-sdk/google", () => ({
   createGoogleGenerativeAI: () => (model: string) => ({ __model: model }),
 }));
+vi.mock("../google", () => ({ getGoogleAccessToken: vi.fn(async () => "tok") }));
 
 import { generateText } from "ai";
 import { executors } from "@/lib/executors";
@@ -118,5 +119,23 @@ describe("sendMeetingInvite", () => {
     const r = await executors.sendMeetingInvite(meeting(), { ...user, googleRefreshToken: null });
     expect(r.ok).toBe(false);
     expect(r.error).toBeTruthy();
+  });
+
+  it("uses a non-empty summary and returns the event htmlLink", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ id: "evt_1", htmlLink: "https://cal/evt_1" }), { status: 200 }),
+    );
+    const res = await executors.sendMeetingInvite(
+      {
+        kind: "meeting", title: "",
+        start: "2026-06-30T14:00:00", durationMin: 30,
+        resolvedAttendees: [{ name: "Hansen", email: "hansen@acme.com", status: "resolved" }],
+      },
+      user,
+    );
+    expect(res.ok).toBe(true);
+    expect(res.actionLink).toBe("https://cal/evt_1");
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.summary.length).toBeGreaterThan(0);
   });
 });

@@ -67,6 +67,7 @@ export type ActionPayload =
       start?: string | null; // ISO8601 local, offset-less
       durationMin?: number; // default 30
       notes?: string | null;
+      htmlLink?: string | null; // created Google Calendar event URL (set after send)
     }
   | { kind: "reminder"; text: string; remindAt?: string | null }
   | { kind: "research"; topic: string };
