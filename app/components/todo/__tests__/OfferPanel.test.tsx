@@ -43,4 +43,43 @@ describe("OfferPanel (FIX2 — do it for me; FIX11 unified on describeOffer)", (
     await waitFor(() => expect(onFinish).toHaveBeenCalledTimes(1));
   });
 
+  describe("Mark done nudge (done state)", () => {
+    it("renders 'Mark done' and calls onComplete when action is done and todo is open", () => {
+      const onComplete = vi.fn();
+      render(
+        <OfferPanel
+          todo={todo({
+            actionType: "research",
+            actionState: "done",
+            status: "open",
+            actionPayload: { kind: "research", topic: "market trends" },
+          })}
+          onFinish={vi.fn()}
+          onPatchPayload={vi.fn()}
+          onComplete={onComplete}
+        />,
+      );
+      const btn = screen.getByRole("button", { name: /mark done/i });
+      expect(btn).toBeInTheDocument();
+      fireEvent.click(btn);
+      expect(onComplete).toHaveBeenCalledTimes(1);
+    });
+
+    it("does NOT render 'Mark done' when the todo is already done", () => {
+      render(
+        <OfferPanel
+          todo={todo({
+            actionType: "research",
+            actionState: "done",
+            status: "done",
+            actionPayload: { kind: "research", topic: "market trends" },
+          })}
+          onFinish={vi.fn()}
+          onPatchPayload={vi.fn()}
+          onComplete={vi.fn()}
+        />,
+      );
+      expect(screen.queryByRole("button", { name: /mark done/i })).not.toBeInTheDocument();
+    });
+  });
 });

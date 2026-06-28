@@ -82,6 +82,13 @@ export function ChatActionTodo({ parent, subtasks, labels, now }: ChatActionTodo
             dispatch({ type: "UPSERT_TODO", todo: saved });
           }
         }}
+        onComplete={async () => {
+          const saved = await patchTodo(todo.id, { status: "done" });
+          if (saved) {
+            setTodos((p) => ({ ...p, [todo.id]: saved }));
+            dispatch({ type: "UPSERT_TODO", todo: saved });
+          }
+        }}
       />
     );
   }

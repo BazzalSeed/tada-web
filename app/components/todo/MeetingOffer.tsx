@@ -20,7 +20,7 @@ function joinStart(date: string, time: string): string | null {
   return `${date}T${time || "00:00"}:00`;
 }
 
-export function MeetingOffer({ todo, onFinish, onPatchPayload, onPatch }: OfferPanelProps) {
+export function MeetingOffer({ todo, onFinish, onPatchPayload, onPatch, onComplete }: OfferPanelProps) {
   const p = (todo.actionPayload?.kind === "meeting" ? todo.actionPayload : null) as Meeting | null;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +96,11 @@ export function MeetingOffer({ todo, onFinish, onPatchPayload, onPatch }: OfferP
           <a className={styles.calLink} href={p.htmlLink} target="_blank" rel="noreferrer">
             View in Google Calendar →
           </a>
+        ) : null}
+        {todo.status !== "done" ? (
+          <button type="button" className={styles.markDone} onClick={() => onComplete?.()}>
+            Mark done
+          </button>
         ) : null}
       </div>
     );

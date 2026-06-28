@@ -23,13 +23,16 @@ export interface OfferPanelProps {
   onPatchPayload: (payload: ActionPayload) => Promise<void>;
   // todo-level patch (meeting due-date sync)
   onPatch?: (patch: Partial<Todo>) => void;
+  // One-tap nudge fired when the user explicitly taps "Mark done" after the action
+  // has finished — never auto-called; the todo stays open until the user confirms.
+  onComplete?: () => void;
 }
 
 // datetime-local needs ISO without the trailing seconds/zone; our payloads are
 // offset-less local already. "attendees" is a free-text name.
 const DATE_FIELDS = new Set(["start", "remindAt"]);
 
-export function OfferPanel({ todo, onFinish, onPatchPayload, onPatch }: OfferPanelProps) {
+export function OfferPanel({ todo, onFinish, onPatchPayload, onPatch, onComplete }: OfferPanelProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsField, setNeedsField] = useState<string | null>(null);
@@ -39,7 +42,7 @@ export function OfferPanel({ todo, onFinish, onPatchPayload, onPatch }: OfferPan
   // the done-state check so meetings get their own done rendering too).
   if (todo.actionType === "meeting") {
     return (
-      <MeetingOffer todo={todo} onFinish={onFinish} onPatchPayload={onPatchPayload} onPatch={onPatch} />
+      <MeetingOffer todo={todo} onFinish={onFinish} onPatchPayload={onPatchPayload} onPatch={onPatch} onComplete={onComplete} />
     );
   }
 
@@ -55,6 +58,11 @@ export function OfferPanel({ todo, onFinish, onPatchPayload, onPatch }: OfferPan
           <p className={styles.eyebrow}>{doneEyebrow(todo)}</p>
           <p className={styles.title}>{offerSubject(todo)}</p>
         </div>
+        {todo.status !== "done" ? (
+          <button type="button" className={styles.markDone} onClick={() => onComplete?.()}>
+            Mark done
+          </button>
+        ) : null}
       </div>
     );
   }

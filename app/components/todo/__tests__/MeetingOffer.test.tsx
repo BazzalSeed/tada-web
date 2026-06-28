@@ -91,4 +91,38 @@ describe("MeetingOffer", () => {
     expect(screen.getByText(/hansen@acme\.com/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /google calendar/i })).toHaveAttribute("href", "https://cal/evt_1");
   });
+
+  describe("Mark done nudge (done state)", () => {
+    it("renders 'Mark done' and calls onComplete when meeting is done and todo is open", () => {
+      const onComplete = vi.fn();
+      render(
+        <MeetingOffer
+          todo={mtg(
+            { title: "Follow up on Claudia", start: "2026-06-30T09:00:00",
+              resolvedAttendees: [{ name: "Hansen", email: "hansen@acme.com", status: "resolved" }] },
+            { actionState: "done", status: "open" },
+          )}
+          onFinish={vi.fn()} onPatchPayload={vi.fn()} onComplete={onComplete}
+        />,
+      );
+      const btn = screen.getByRole("button", { name: /mark done/i });
+      expect(btn).toBeInTheDocument();
+      fireEvent.click(btn);
+      expect(onComplete).toHaveBeenCalledTimes(1);
+    });
+
+    it("does NOT render 'Mark done' when the todo is already done", () => {
+      render(
+        <MeetingOffer
+          todo={mtg(
+            { title: "Follow up on Claudia", start: "2026-06-30T09:00:00",
+              resolvedAttendees: [{ name: "Hansen", email: "hansen@acme.com", status: "resolved" }] },
+            { actionState: "done", status: "done" },
+          )}
+          onFinish={vi.fn()} onPatchPayload={vi.fn()} onComplete={vi.fn()}
+        />,
+      );
+      expect(screen.queryByRole("button", { name: /mark done/i })).not.toBeInTheDocument();
+    });
+  });
 });

@@ -173,6 +173,25 @@
   color: var(--color-ink-faint, var(--color-ink-muted));
 }
 
+/* "Mark done" nudge — outline-rust button shown after the booked confirmation. */
+.markDone {
+  font: inherit;
+  cursor: pointer;
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-3);
+  border: 1.5px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-accent-text);
+  font-size: var(--fs-ui-meta, 0.8rem);
+  font-weight: 600;
+  transition: background var(--dur-fast) var(--ease-out-quart);
+}
+
+.markDone:hover {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
 .error {
   margin: 0;
   font-size: var(--fs-ui-meta, 0.8rem);

@@ -64,6 +64,7 @@ export function DetailPaneView({ todo }: { todo: Todo }) {
         onFinish={finishOffer}
         onPatchPayload={(payload: ActionPayload) => patch({ actionPayload: payload })}
         onPatch={patch}
+        onComplete={() => patch({ status: "done" })}
       />
     ) : undefined;
 
