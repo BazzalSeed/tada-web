@@ -8,6 +8,8 @@ import {
   type UIMessage,
 } from "ai";
 import { useTada } from "@/app/lib/store";
+import { clearChat } from "@/app/lib/api";
+import { ConfirmDialog } from "@/app/components/ui/ConfirmDialog";
 import { messageToView } from "./messageView";
 import { MessageBlock } from "./MessageBlock";
 import { TypingIndicator } from "./TypingIndicator";
@@ -66,6 +68,14 @@ export function ChatView({ onVoice }: ChatViewProps) {
     };
   }, []);
 
+  function resetSession() {
+    setSession({
+      conversationId: crypto.randomUUID(),
+      initialMessages: [],
+      summaryThroughId: null,
+    });
+  }
+
   if (!session) {
     return (
       <div className={styles.chat}>
@@ -74,18 +84,32 @@ export function ChatView({ onVoice }: ChatViewProps) {
     );
   }
 
-  return <ChatThread key={session.conversationId} session={session} onVoice={onVoice} />;
+  return (
+    <ChatThread
+      key={session.conversationId}
+      session={session}
+      onVoice={onVoice}
+      onClearChat={async () => {
+        await clearChat(session.conversationId);
+        resetSession();
+      }}
+    />
+  );
 }
 
 function ChatThread({
   session,
   onVoice,
+  onClearChat,
 }: {
   session: Session;
   onVoice?: () => void;
+  onClearChat: () => Promise<void>;
 }) {
   const { state } = useTada();
   const [showEarlier, setShowEarlier] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const { messages, sendMessage, status, addToolApprovalResponse } = useChat({
     id: session.conversationId,
     messages: session.initialMessages,
@@ -126,6 +150,16 @@ function ChatThread({
     endRef.current?.scrollIntoView({ block: "end" });
   }, [messages, awaitingReply, showEarlier]);
 
+  async function handleConfirmClear() {
+    setClearing(true);
+    try {
+      await onClearChat();
+    } finally {
+      setClearing(false);
+      setConfirmClear(false);
+    }
+  }
+
   function resolveOffer(
     view: (typeof views)[number],
     cardIndex: number,
@@ -161,6 +195,31 @@ function ChatThread({
 
   return (
     <div className={styles.chat}>
+      {/* Thread header: right-aligned thread-level actions (clear chat). */}
+      {messages.length > 0 ? (
+        <div className={styles.threadHeader}>
+          <button
+            type="button"
+            className={styles.clearButton}
+            onClick={() => setConfirmClear(true)}
+            disabled={busy || clearing}
+            title="Clear chat"
+          >
+            Clear chat
+          </button>
+        </div>
+      ) : null}
+      {confirmClear ? (
+        <ConfirmDialog
+          title="Clear this chat?"
+          message="This permanently removes all messages in this conversation. You can't undo this."
+          confirmLabel={clearing ? "Clearing…" : "Clear"}
+          cancelLabel="Cancel"
+          destructive
+          onConfirm={() => void handleConfirmClear()}
+          onCancel={() => setConfirmClear(false)}
+        />
+      ) : null}
       <div className={styles.thread}>
         {views.length === 0 ? (
           <SuggestionCards onPick={(p) => void sendMessage({ text: p })} />

@@ -1,0 +1,91 @@
+/* ConfirmDialog — matches the app's modal pattern:
+   soft scrim (same formula as .modalScrim in ContentPlaceholder.module.css),
+   raised cream card with hairline border and rust accent on the primary action. */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60; /* above the ViewEditor scrim (z-index 50) */
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  background: color-mix(in srgb, var(--color-ink) 28%, transparent);
+  animation: scrimIn var(--dur-fast) var(--ease-out-quart);
+}
+
+@keyframes scrimIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  min-width: 280px;
+  max-width: 380px;
+  border: var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-lg, 0 12px 40px rgba(0, 0, 0, 0.16));
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-heading, 1.0625rem);
+  font-weight: 600;
+  color: var(--color-ink);
+  line-height: 1.25;
+}
+
+.message {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--color-ink-muted);
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.cancel {
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink-muted);
+  font-size: var(--fs-caption);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out-quart);
+}
+
+.cancel:hover {
+  color: var(--color-ink);
+}
+
+.confirm {
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-accent);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out-quart);
+}
+
+.confirm:hover {
+  opacity: 0.8;
+}

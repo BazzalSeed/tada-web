@@ -76,3 +76,35 @@
   flex: none;
   padding: var(--space-3) var(--space-5) var(--space-5);
 }
+
+/* Thread header: sits above the scroll area; right-aligns thread-level actions. */
+.threadHeader {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-2) var(--space-5) 0;
+}
+
+/* "Clear chat" text button — subdued ink-muted, rust on hover. Matches the
+   .earlierToggle hover style used elsewhere in this thread. */
+.clearButton {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--ink-muted, #6b6257);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: color var(--dur-fast, 0.15s) ease;
+}
+
+.clearButton:hover:not(:disabled) {
+  color: var(--accent, #c8632e);
+}
+
+.clearButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

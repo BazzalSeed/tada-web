@@ -142,6 +142,15 @@ export async function setTimezone(timezone: string): Promise<void> {
   });
 }
 
+// Clear a conversation's message history (DELETE /api/chat). The caller is
+// responsible for remounting the chat with a fresh conversationId afterwards.
+export async function clearChat(conversationId: string): Promise<void> {
+  await send<{ ok: boolean }>(
+    `/api/chat?conversationId=${encodeURIComponent(conversationId)}`,
+    { method: "DELETE" },
+  );
+}
+
 export async function reorderTodo(
   id: string,
   beforeId: string | null,

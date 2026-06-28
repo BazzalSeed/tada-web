@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import type { UIMessage } from "ai";
 import {
+  clearConversation,
   getOrCreateConversation,
   loadConversation,
   loadLatestConversation,
@@ -99,6 +100,39 @@ describe("chat store", () => {
     await persistMessages(newer, [text(`n1-${stamp}`, "user", "newer")]);
     const latest = await loadLatestConversation(userId);
     expect(latest?.id).toBe(newer);
+  });
+
+  it("clearConversation deletes all messages and resets summary", async () => {
+    const id = `c-clear-${stamp}`;
+    await getOrCreateConversation(userId, id);
+    await persistMessages(id, [
+      text(`cl1-${stamp}`, "user", "hello"),
+      text(`cl2-${stamp}`, "assistant", "hi there"),
+    ]);
+    // Advance the summary watermark so we can verify it resets.
+    await saveSummary(id, "User greeted assistant.", `cl1-${stamp}`);
+
+    // Clear should wipe messages and reset the compaction state.
+    await clearConversation(userId, id);
+
+    const loaded = await loadConversation(userId, id);
+    // Row is still there (soft clear), but history is empty.
+    expect(loaded).not.toBeNull();
+    expect(loaded?.messages).toHaveLength(0);
+    expect(loaded?.summary).toBeNull();
+    expect(loaded?.summaryThroughId).toBeNull();
+  });
+
+  it("clearConversation is a no-op for a conversation owned by another user", async () => {
+    const id = `c-clear-other-${stamp}`;
+    await getOrCreateConversation(userId, id);
+    await persistMessages(id, [text(`co1-${stamp}`, "user", "keep me")]);
+
+    // Clearing with the wrong userId should be a no-op (ownership guard).
+    await clearConversation(otherUserId, id);
+
+    const loaded = await loadConversation(userId, id);
+    expect(loaded?.messages).toHaveLength(1);
   });
 
   it("saveSummary advances the rolling-summary watermark", async () => {

@@ -144,6 +144,26 @@ export async function persistMessages(
   ]);
 }
 
+// Clear a conversation's history (ownership-checked): delete its messages and
+// reset the rolling summary. Keeps the row; the client starts a fresh thread.
+export async function clearConversation(
+  userId: string,
+  conversationId: string,
+): Promise<void> {
+  const convo = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    select: { userId: true },
+  });
+  if (!convo || convo.userId !== userId) return; // not found / not owned → no-op
+  await prisma.$transaction([
+    prisma.message.deleteMany({ where: { conversationId } }),
+    prisma.conversation.update({
+      where: { id: conversationId },
+      data: { summary: null, summaryThroughId: null },
+    }),
+  ]);
+}
+
 // Advance the rolling-summary state after a Layer-2 fold (see context.ts).
 export async function saveSummary(
   conversationId: string,

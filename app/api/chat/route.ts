@@ -21,6 +21,7 @@ import {
   messagesAfterWatermark,
 } from "@/lib/chat/context";
 import {
+  clearConversation,
   getOrCreateConversation,
   loadLatestConversation,
   persistMessages,
@@ -46,6 +47,22 @@ export async function GET(): Promise<Response> {
       });
     }
     return json({ conversationId: crypto.randomUUID(), messages: [], summaryThroughId: null });
+  } catch (err) {
+    return handleApiError(err);
+  }
+}
+
+// DELETE /api/chat?conversationId=<id> — clear all messages and reset the
+// rolling summary for the given conversation. Ownership-checked; missing or
+// unowned ids are silently no-ops (clearConversation handles that). The client
+// remounts the thread with a fresh conversationId after this succeeds.
+export async function DELETE(req: Request): Promise<Response> {
+  try {
+    const user = await currentUser();
+    const conversationId = new URL(req.url).searchParams.get("conversationId");
+    if (!conversationId) throw badRequest("conversationId is required");
+    await clearConversation(user.userId, conversationId);
+    return json({ ok: true });
   } catch (err) {
     return handleApiError(err);
   }
