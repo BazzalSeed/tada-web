@@ -88,4 +88,81 @@ describe("Markdown (minimal renderer)", () => {
     expect(strong.tagName).toBe("STRONG");
     expect(strong.closest("blockquote")).not.toBeNull();
   });
+
+  // --- Nested lists ---
+
+  it("renders a nested list: outer <ul> contains a <li> with the top text and an inner <ul>", () => {
+    render(<Markdown source={"* Top\n    * Nested"} />);
+    const uls = document.querySelectorAll("ul");
+    expect(uls).toHaveLength(2);
+    // The outer li should contain text "Top"
+    const outerLi = uls[0].children[0] as HTMLElement;
+    expect(outerLi.textContent).toContain("Top");
+    // The inner ul should be inside that outer li
+    const innerUl = outerLi.querySelector("ul");
+    expect(innerUl).not.toBeNull();
+    // The inner li should contain "Nested"
+    expect(innerUl!.textContent).toContain("Nested");
+  });
+
+  it("indented bullet does NOT render a literal '*' character as visible text", () => {
+    const { container } = render(<Markdown source={"* Top\n    * Nested"} />);
+    // No stray asterisk should appear in the rendered output
+    expect(container.textContent).not.toMatch(/^\s*\*\s*$/m);
+    // More directly: the text content should not contain a bare '*'
+    const text = container.textContent ?? "";
+    expect(text).not.toContain("*");
+  });
+
+  it("multi-level nested list: 3 depth levels render correctly", () => {
+    const src = "- A\n  - B\n    - C";
+    render(<Markdown source={src} />);
+    const uls = document.querySelectorAll("ul");
+    // Should have 3 nested <ul> elements
+    expect(uls.length).toBeGreaterThanOrEqual(2);
+    expect(document.body.textContent).toContain("A");
+    expect(document.body.textContent).toContain("B");
+    expect(document.body.textContent).toContain("C");
+  });
+
+  it("inline markup inside nested list items still works", () => {
+    render(<Markdown source={"* Top **bold** item\n    * Nested `code`"} />);
+    expect(document.querySelector("strong")).not.toBeNull();
+    expect(document.querySelector("code")).not.toBeNull();
+  });
+
+  // --- Horizontal rule ---
+
+  it('renders "---" as an <hr>', () => {
+    render(<Markdown source="---" />);
+    expect(document.querySelector("hr")).not.toBeNull();
+  });
+
+  it('renders "***" as an <hr>', () => {
+    render(<Markdown source="***" />);
+    expect(document.querySelector("hr")).not.toBeNull();
+  });
+
+  it('renders "___" as an <hr>', () => {
+    render(<Markdown source="___" />);
+    expect(document.querySelector("hr")).not.toBeNull();
+  });
+
+  it('"- item" still renders as a list item, not an <hr>', () => {
+    render(<Markdown source="- item" />);
+    expect(document.querySelector("hr")).toBeNull();
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+  });
+
+  it('"* item" still renders as a list item, not an <hr>', () => {
+    render(<Markdown source="* item" />);
+    expect(document.querySelector("hr")).toBeNull();
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+  });
+
+  it('"---" does not render as a paragraph with literal dashes', () => {
+    render(<Markdown source="---" />);
+    expect(document.querySelector("p")).toBeNull();
+    expect(document.querySelector("hr")).not.toBeNull();
+  });
 });

@@ -1,9 +1,10 @@
-import { Fragment, type CSSProperties, type ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 import styles from "./markdown.module.css";
 
 // Minimal, dependency-free Markdown for notes preview + research reports:
-// headings (#1-#6 ramp), unordered lists (-/*), bold (**x**), inline code (`x`),
-// fenced code blocks (```), blockquotes (> ), links [t](href), and paragraphs.
+// headings (#1-#6 ramp), unordered lists (-/*) with nesting, bold (**x**),
+// inline code (`x`), fenced code blocks (```), blockquotes (> ),
+// links [t](href), horizontal rules (---/***/__), and paragraphs.
 // Deliberately small — a fuller GFM renderer can swap in behind this.
 
 // In-note link to another todo (e.g. a prep summary → its full research report).
@@ -69,6 +70,52 @@ function inline(
   return out;
 }
 
+/** Build a nested <ul>/<li> tree from a flat list of {depth, text} items. */
+function buildNestedList(
+  items: { depth: number; text: string }[],
+  keyBase: string,
+  onTodoLink?: (id: string) => void,
+): ReactNode {
+  if (items.length === 0) return null;
+  let c = 0;
+
+  // Recursively build from `start`, consuming items whose depth >= minDepth.
+  function buildFrom(start: number, minDepth: number): { node: ReactNode; end: number } {
+    const liNodes: ReactNode[] = [];
+    let i = start;
+    while (i < items.length && items[i].depth >= minDepth) {
+      const item = items[i];
+      if (item.depth !== minDepth) {
+        // Orphaned deeper item without a parent at this level — skip.
+        i++;
+        continue;
+      }
+      i++;
+      // Look ahead: if the next items are deeper, nest them inside this <li>.
+      let child: ReactNode | null = null;
+      if (i < items.length && items[i].depth > minDepth) {
+        const r = buildFrom(i, items[i].depth);
+        child = r.node;
+        i = r.end;
+      }
+      const lk = `${keyBase}-li${c++}`;
+      liNodes.push(
+        <li key={lk}>
+          {inline(item.text, lk, onTodoLink)}
+          {child}
+        </li>,
+      );
+    }
+    return {
+      node: <ul key={`${keyBase}-ul${c++}`}>{liNodes}</ul>,
+      end: i,
+    };
+  }
+
+  const minDepth = Math.min(...items.map((it) => it.depth));
+  return buildFrom(0, minDepth).node;
+}
+
 export function Markdown({
   source,
   onTodoLink,
@@ -78,7 +125,7 @@ export function Markdown({
 }) {
   const lines = source.replace(/\r\n/g, "\n").split("\n");
   const blocks: ReactNode[] = [];
-  let list: string[] | null = null;
+  let list: { depth: number; text: string }[] | null = null;
   let blockquote: string[] | null = null;
   let fence: string[] | null = null; // null = not in fence; string[] = collecting lines
   let key = 0;
@@ -86,23 +133,17 @@ export function Markdown({
   const flushList = () => {
     if (list) {
       const items = list;
-      blocks.push(
-        <ul key={`ul${key++}`}>
-          {items.map((li, i) => (
-            <li key={i}>{inline(li, `li${key}-${i}`, onTodoLink)}</li>
-          ))}
-        </ul>,
-      );
+      blocks.push(buildNestedList(items, `ul${key++}`, onTodoLink));
       list = null;
     }
   };
 
   const flushBlockquote = () => {
     if (blockquote) {
-      const lines = blockquote;
+      const bqLines = blockquote;
       blocks.push(
         <blockquote key={`bq${key++}`}>
-          {lines.map((l, i) => (
+          {bqLines.map((l, i) => (
             <p key={i}>{inline(l, `bq${key}-${i}`, onTodoLink)}</p>
           ))}
         </blockquote>,
@@ -155,11 +196,26 @@ export function Markdown({
     // Anything else ends an open blockquote
     flushBlockquote();
 
-    const heading = /^(#{1,6})\s+(.*)$/.exec(line);
-    const bullet = /^[-*]\s+(.*)$/.exec(line);
+    // Horizontal rule: 3+ of the same -/*/_, nothing else (checked BEFORE bullet
+    // so that *** / --- / ___ are caught here, not as bullets or paragraphs).
+    if (/^\s*([-*_])\1{2,}\s*$/.test(line)) {
+      flushList();
+      blocks.push(<hr key={`hr${key++}`} />);
+      continue;
+    }
 
-    if (bullet) {
-      (list ??= []).push(bullet[1]);
+    const heading = /^(#{1,6})\s+(.*)$/.exec(line);
+    // Capture leading whitespace to determine nesting depth.
+    const bulletMatch = /^(\s*)[-*]\s+(.*)$/.exec(line);
+
+    if (bulletMatch) {
+      const indent = bulletMatch[1];
+      // Tabs count as 2 spaces for depth calculation.
+      const tabCount = (indent.match(/\t/g) ?? []).length;
+      const spaceCount = indent.replace(/\t/g, "").length;
+      const leadingSpaces = tabCount * 2 + spaceCount;
+      const depth = Math.floor(leadingSpaces / 2);
+      (list ??= []).push({ depth, text: bulletMatch[2] });
       continue;
     }
 
