@@ -136,11 +136,14 @@
   color: var(--color-accent-text);
 }
 
+/* Fixed-width leading slot — identical for every NavItem so all labels start
+   at the same x and every icon is vertically centered with its label. */
 .itemIcon {
   flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
   color: inherit;
 }
 

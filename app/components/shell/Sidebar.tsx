@@ -20,14 +20,14 @@ function sameSelection(a: NavSelection, b: NavSelection): boolean {
   return true;
 }
 
-// ── Inline SVG icons (16px, currentColor) ─────────────────────────────────
+// ── Inline SVG icons — all 24×24 viewBox, rendered at 16px ────────────────
 
 function IconAll() {
   return (
     <svg
       width="16"
       height="16"
-      viewBox="0 0 16 16"
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
@@ -35,9 +35,9 @@ function IconAll() {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <line x1="3" y1="5" x2="13" y2="5" />
-      <line x1="3" y1="8" x2="13" y2="8" />
-      <line x1="3" y1="11" x2="13" y2="11" />
+      <line x1="4" y1="7" x2="20" y2="7" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="17" x2="20" y2="17" />
     </svg>
   );
 }
@@ -47,7 +47,7 @@ function IconChat() {
     <svg
       width="16"
       height="16"
-      viewBox="0 0 16 16"
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
@@ -55,7 +55,7 @@ function IconChat() {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M13 3H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2v2l3-2h5a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1z" />
+      <path d="M20 4H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3v3l4-3h9a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
     </svg>
   );
 }
@@ -65,7 +65,7 @@ function IconToday() {
     <svg
       width="16"
       height="16"
-      viewBox="0 0 16 16"
+      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
@@ -73,11 +73,50 @@ function IconToday() {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <rect x="2" y="3" width="12" height="11" rx="1.5" />
-      <line x1="5" y1="1.5" x2="5" y2="5" />
-      <line x1="11" y1="1.5" x2="11" y2="5" />
-      <line x1="2" y1="7" x2="14" y2="7" />
-      <circle cx="8" cy="10.5" r="1.2" fill="currentColor" stroke="none" />
+      <rect x="3" y="4" width="18" height="17" rx="2" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+      <circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/** Funnel / filter — used for saved Views. Tinted by the view's colorHex. */
+function IconView() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 4h16l-6 8v6l-4-2v-4L4 4z" />
+    </svg>
+  );
+}
+
+/** Tag glyph — used for Labels. Tinted by the label's colorHex. */
+function IconLabel() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12.5 2H5a2 2 0 0 0-2 2v7.5a2 2 0 0 0 .59 1.41l8.5 8.5a2 2 0 0 0 2.82 0l7-7a2 2 0 0 0 0-2.83l-8.5-8.5A2 2 0 0 0 12.5 2z" />
+      <circle cx="8" cy="9" r="1.2" fill="currentColor" stroke="none" />
     </svg>
   );
 }
@@ -88,6 +127,8 @@ interface NavItemProps {
   label: string;
   selected: boolean;
   onClick: () => void;
+  /** When set, tints the leading icon with this color (inline style → overrides
+   *  inherited `currentColor`, keeping the item's own hue at all times). */
   colorHex?: string;
   prefix?: string;
   icon?: ReactNode;
@@ -102,10 +143,14 @@ function NavItem({ label, selected, onClick, colorHex, prefix, icon }: NavItemPr
       aria-label={label}
       onClick={onClick}
     >
-      {icon ? <span className={styles.itemIcon}>{icon}</span> : null}
-      {colorHex ? (
-        <span className={styles.dot} style={{ background: colorHex }} />
-      ) : null}
+      {/* Fixed-width leading slot — keeps all labels at the same x regardless
+          of whether the item has an SVG icon or is a colored view/label. */}
+      <span
+        className={styles.itemIcon}
+        style={colorHex ? { color: colorHex } : undefined}
+      >
+        {icon}
+      </span>
       <span className={styles.itemLabel}>
         {prefix ? <span className={styles.prefix}>{prefix}</span> : null}
         {label}
@@ -181,6 +226,7 @@ export function Sidebar({
           <div key={v.id} className={styles.viewRow}>
             <NavItem
               label={v.name}
+              icon={<IconView />}
               colorHex={v.colorHex}
               selected={sameSelection(selection, { kind: "project", id: v.id })}
               onClick={() => onSelect({ kind: "project", id: v.id })}
@@ -206,6 +252,7 @@ export function Sidebar({
             <NavItem
               key={l.id}
               label={l.name}
+              icon={<IconLabel />}
               prefix="@"
               colorHex={l.colorHex}
               selected={sameSelection(selection, { kind: "label", id: l.id })}

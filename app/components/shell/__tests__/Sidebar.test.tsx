@@ -94,6 +94,21 @@ describe("Sidebar", () => {
     expect(today.querySelector("svg")).toBeTruthy();
   });
 
+  it("renders an SVG icon inside view and label nav items (icon column consistent)", () => {
+    renderSidebar({ views: [view], labels: [label] });
+    const workBtn = screen.getByRole("button", { name: /^work$/i });
+    const errandBtn = screen.getByRole("button", { name: /errand/i });
+    // Both must have an SVG icon so the leading column aligns with All/Chat/Today
+    expect(workBtn.querySelector("svg")).toBeTruthy();
+    expect(errandBtn.querySelector("svg")).toBeTruthy();
+    // The icon slot must have a non-empty inline color (JSDOM normalises hex → rgb,
+    // so just assert the style is set rather than matching the exact hex string).
+    const workIcon = workBtn.querySelector("[class*='itemIcon']") as HTMLElement | null;
+    expect(workIcon?.style.color).toBeTruthy();
+    const errandIcon = errandBtn.querySelector("[class*='itemIcon']") as HTMLElement | null;
+    expect(errandIcon?.style.color).toBeTruthy();
+  });
+
   it("keeps label text in the DOM for each primary item (tooltip + aria)", () => {
     const { container } = renderSidebar();
     // aria-label on the button covers screen readers; itemLabel span holds
