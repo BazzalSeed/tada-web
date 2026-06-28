@@ -1,0 +1,175 @@
+/* MeetingOffer — focused review-and-send card for meeting actions.
+   Soft raised panel with a faint rust edge (matches OfferPanel language). */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised, var(--color-surface));
+  box-shadow: inset 2px 0 0 0 var(--color-accent);
+}
+
+.eyebrow {
+  font-size: var(--fs-ui-meta, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-accent-text);
+  margin: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.label {
+  font-size: var(--fs-ui-meta, 0.75rem);
+  color: var(--color-ink-muted);
+}
+
+.text,
+.field input,
+.field select {
+  font: inherit;
+  padding: var(--space-2);
+  border: var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.when {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.attendees {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.resolved {
+  margin: 0;
+  font-size: var(--fs-ui-meta, 0.8rem);
+  color: var(--color-accent-text);
+}
+
+.unresolved {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.who {
+  font-size: var(--fs-ui-meta, 0.8rem);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.candidates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.candidate {
+  font: inherit;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--fs-ui-meta, 0.8rem);
+  transition: background var(--dur-fast) var(--ease-out-quart);
+}
+
+.candidate:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+}
+
+.noMatch {
+  font-size: var(--fs-ui-meta, 0.75rem);
+  color: var(--color-ink-muted);
+}
+
+.emailInput {
+  font: inherit;
+  padding: var(--space-2);
+  border: var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.send {
+  font: inherit;
+  cursor: pointer;
+  padding: var(--space-2) var(--space-3);
+  align-self: flex-start;
+  background: var(--color-accent);
+  color: var(--color-on-accent, #fff);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transition:
+    filter var(--dur-fast) var(--ease-out-quart),
+    opacity var(--dur-fast) var(--ease-out-quart);
+}
+
+.send:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bookedTitle {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px var(--space-3);
+  margin: 0;
+  font-size: var(--fs-ui-meta, 0.8rem);
+}
+
+.details dt {
+  color: var(--color-ink-muted);
+}
+
+.details dd {
+  margin: 0;
+  color: var(--color-ink);
+}
+
+.calLink {
+  color: var(--color-accent);
+  font-size: var(--fs-ui-meta, 0.8rem);
+}
+
+.guarantee {
+  margin: 0;
+  font-size: var(--fs-ui-micro, 0.7rem);
+  color: var(--color-ink-faint, var(--color-ink-muted));
+}
+
+.error {
+  margin: 0;
+  font-size: var(--fs-ui-meta, 0.8rem);
+  color: var(--color-danger, #b3261e);
+}

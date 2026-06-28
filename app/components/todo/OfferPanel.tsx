@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ActionPayload, Attendee, Todo } from "@/lib/contracts";
 import type { FinishResponse } from "@/app/lib/api";
+import { MeetingOffer } from "./MeetingOffer";
 import { doneEyebrow, offerEffect, offerSubject } from "@/app/lib/offer";
 import styles from "./OfferPanel.module.css";
 
@@ -20,17 +21,27 @@ export interface OfferPanelProps {
   onFinish: () => Promise<FinishResponse>;
   // PATCH the actionPayload (resolve a field / pick an attendee) before re-finishing.
   onPatchPayload: (payload: ActionPayload) => Promise<void>;
+  // todo-level patch (meeting due-date sync)
+  onPatch?: (patch: Partial<Todo>) => void;
 }
 
 // datetime-local needs ISO without the trailing seconds/zone; our payloads are
 // offset-less local already. "attendees" is a free-text name.
 const DATE_FIELDS = new Set(["start", "remindAt"]);
 
-export function OfferPanel({ todo, onFinish, onPatchPayload }: OfferPanelProps) {
+export function OfferPanel({ todo, onFinish, onPatchPayload, onPatch }: OfferPanelProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsField, setNeedsField] = useState<string | null>(null);
   const [fieldValue, setFieldValue] = useState("");
+
+  // Delegate meetings to the focused MeetingOffer review card (must come before
+  // the done-state check so meetings get their own done rendering too).
+  if (todo.actionType === "meeting") {
+    return (
+      <MeetingOffer todo={todo} onFinish={onFinish} onPatchPayload={onPatchPayload} onPatch={onPatch} />
+    );
+  }
 
   // Executed — show the calm confirmation, not the offer. (describeOffer returns
   // null for a done action, so handle it before deriving the effect.)

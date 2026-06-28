@@ -123,6 +123,16 @@ export async function finishTodo(id: string): Promise<FinishResponse> {
   return send<FinishResponse>(`/api/todos/${id}/finish`, { method: "POST" });
 }
 
+// Resolve raw attendee names → Attendee[] (resolved email or unresolved+candidates)
+// via POST /api/contacts/resolve, so the meeting card confirms contacts before Send.
+export async function resolveContacts(names: string[]): Promise<Attendee[]> {
+  const { attendees } = await send<{ attendees: Attendee[] }>("/api/contacts/resolve", {
+    method: "POST",
+    body: JSON.stringify({ names }),
+  });
+  return attendees;
+}
+
 // Persist the browser's IANA timezone so bookings anchor to the user's real zone.
 // Fire-and-forget on app load; failures are non-fatal (booking falls back).
 export async function setTimezone(timezone: string): Promise<void> {
