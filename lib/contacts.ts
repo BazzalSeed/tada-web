@@ -30,9 +30,27 @@ async function searchPeople(
   readMask: string,
   accessToken: string,
 ): Promise<ContactCandidate[]> {
+  // People API search is index-backed; prime it with an empty-query warmup so the
+  // first real query doesn't come back empty (documented People API behavior).
+  try {
+    await fetch(`${endpoint}?query=&readMask=${encodeURIComponent(readMask)}&pageSize=1`, {
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    /* warmup is best-effort */
+  }
+
   const url = `${endpoint}?query=${encodeURIComponent(query)}&readMask=${encodeURIComponent(readMask)}&pageSize=10`;
   const res = await fetch(url, { headers: { authorization: `Bearer ${accessToken}` } });
-  if (!res.ok) return [];
+  if (!res.ok) {
+    console.warn(
+      `[contacts] ${endpoint} search failed: ${res.status}` +
+        (res.status === 403
+          ? " — Google scope not granted (needs contacts.other.readonly re-consent)"
+          : ""),
+    );
+    return [];
+  }
   const data = (await res.json()) as { results?: { person?: GooglePerson }[] };
   return (data.results ?? [])
     .map((r) => toCandidate(r.person))

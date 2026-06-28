@@ -86,6 +86,37 @@ describe("contactResolverFor.resolve", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
+
+  it("gracefully degrades when otherContacts:search returns 403 and still returns saved-contacts results", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if ((url as string).includes("otherContacts")) {
+          return new Response(null, { status: 403 });
+        }
+        return new Response(
+          JSON.stringify({
+            results: [
+              peopleResult({ name: "Dakota Lee", email: "dakota@x.com", org: "Acme" }),
+            ],
+          }),
+          { status: 200 },
+        );
+      }),
+    );
+
+    const out = await contactResolverFor(user).resolve("dakota");
+    // saved-contacts result still surfaced despite otherContacts 403
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ name: "Dakota Lee", email: "dakota@x.com" });
+    // 403 must be surfaced as a warning (not swallowed silently)
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("403"));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Google scope"));
+
+    vi.unstubAllGlobals();
+    warnSpy.mockRestore();
+  });
 });
 
 describe("resolveAttendees", () => {
