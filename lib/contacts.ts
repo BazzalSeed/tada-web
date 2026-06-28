@@ -9,14 +9,34 @@
 import { getGoogleAccessToken } from "./google";
 import type { Attendee, ContactCandidate, ContactResolver, UserCtx } from "./contracts";
 
+// Saved "My Contacts" (contacts.readonly) + Gmail-derived "Other contacts"
+// (contacts.other.readonly). otherContacts only supports a names/emails readMask.
 const PEOPLE_SEARCH = "https://people.googleapis.com/v1/people:searchContacts";
+const OTHER_SEARCH = "https://people.googleapis.com/v1/otherContacts:search";
 const READ_MASK = "names,emailAddresses,organizations,photos";
+const OTHER_READ_MASK = "names,emailAddresses";
 
 interface GooglePerson {
   names?: { displayName?: string }[];
   emailAddresses?: { value?: string }[];
   organizations?: { name?: string }[];
   photos?: { url?: string }[];
+}
+
+// One People-API search call → mapped candidates (email-less people dropped).
+async function searchPeople(
+  endpoint: string,
+  query: string,
+  readMask: string,
+  accessToken: string,
+): Promise<ContactCandidate[]> {
+  const url = `${endpoint}?query=${encodeURIComponent(query)}&readMask=${encodeURIComponent(readMask)}&pageSize=10`;
+  const res = await fetch(url, { headers: { authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) return [];
+  const data = (await res.json()) as { results?: { person?: GooglePerson }[] };
+  return (data.results ?? [])
+    .map((r) => toCandidate(r.person))
+    .filter((c): c is ContactCandidate => c !== null);
 }
 
 function toCandidate(person: GooglePerson | undefined): ContactCandidate | null {
@@ -48,17 +68,19 @@ export function contactResolverFor(user: UserCtx): ContactResolver {
       if (!q || !user.googleRefreshToken) return [];
 
       const accessToken = await getGoogleAccessToken(user.googleRefreshToken);
-      const url = `${PEOPLE_SEARCH}?query=${encodeURIComponent(q)}&readMask=${encodeURIComponent(READ_MASK)}&pageSize=10`;
-      const res = await fetch(url, { headers: { authorization: `Bearer ${accessToken}` } });
-      if (!res.ok) return [];
-
-      const data = (await res.json()) as { results?: { person?: GooglePerson }[] };
-      const candidates = (data.results ?? [])
-        .map((r) => toCandidate(r.person))
-        .filter((c): c is ContactCandidate => c !== null)
-        .map((c) => ({ ...c, rank: scoreFor(c, q) }));
-
-      return candidates.sort((a, b) => (b.rank ?? 0) - (a.rank ?? 0));
+      // Search saved + other contacts in parallel; merge, dedupe by email
+      // (prefer the saved-contact entry — it carries org/photo).
+      const [mine, other] = await Promise.all([
+        searchPeople(PEOPLE_SEARCH, q, READ_MASK, accessToken),
+        searchPeople(OTHER_SEARCH, q, OTHER_READ_MASK, accessToken),
+      ]);
+      const byEmail = new Map<string, ContactCandidate>();
+      for (const c of [...mine, ...other]) {
+        if (!byEmail.has(c.email)) byEmail.set(c.email, c);
+      }
+      return [...byEmail.values()]
+        .map((c) => ({ ...c, rank: scoreFor(c, q) }))
+        .sort((a, b) => (b.rank ?? 0) - (a.rank ?? 0));
     },
   };
 }

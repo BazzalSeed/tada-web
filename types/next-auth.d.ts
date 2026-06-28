@@ -7,7 +7,8 @@ declare module "next-auth" {
     user: {
       id: string;
       plan?: Plan;
-      googleRefreshToken?: string | null;
+      // NOTE: no googleRefreshToken here — the token is read server-side from the
+      // Account row (lib/auth.ts googleRefreshTokenFor), never sent to the client.
     } & DefaultSession["user"];
   }
 }
@@ -16,7 +17,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     uid?: string;
     plan?: Plan;
-    refresh_token?: string | null;
   }
 }
 
@@ -25,6 +25,5 @@ declare module "@auth/core/jwt" {
   interface JWT {
     uid?: string;
     plan?: Plan;
-    refresh_token?: string | null;
   }
 }

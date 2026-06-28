@@ -12,6 +12,7 @@ export interface SubtaskListProps {
   onAdd: (title: string) => void;
   onToggle: (id: string) => void;
   onReorder: (id: string, beforeId: string | null, afterId: string | null) => void;
+  onOpen?: (id: string) => void; // open the subtask's detail (e.g. a research report)
 }
 
 export function SubtaskList({
@@ -19,6 +20,7 @@ export function SubtaskList({
   onAdd,
   onToggle,
   onReorder,
+  onOpen,
 }: SubtaskListProps) {
   const [draft, setDraft] = useState("");
   const dragFrom = useRef<number | null>(null);
@@ -60,7 +62,18 @@ export function SubtaskList({
             >
               {s.status === "done" ? "✓" : ""}
             </button>
-            <span className={styles.title}>{s.title}</span>
+            {onOpen ? (
+              <button
+                type="button"
+                className={styles.titleButton}
+                onClick={() => onOpen(s.id)}
+                title="Open"
+              >
+                {s.title}
+              </button>
+            ) : (
+              <span className={styles.title}>{s.title}</span>
+            )}
           </li>
         ))}
       </ul>

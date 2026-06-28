@@ -54,6 +54,7 @@ export function DetailPaneView({ todo }: { todo: Todo }) {
       onPatch={patch}
       onCreateLabel={ensureLabel}
       offer={offer}
+      onTodoLink={(id) => dispatch({ type: "SELECT_TODO", id })}
     >
       <SubtaskSection parentId={todo.id} />
     </DetailPane>

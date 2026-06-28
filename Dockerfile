@@ -1,6 +1,6 @@
 # Tada Web — local e2e harness image (dev mode).
-# Runs `next dev` so the dev-login gate (NODE_ENV !== 'production' && ENABLE_DEV_LOGIN=1)
-# is active — this image is for LOCAL e2e only, never the production deploy.
+# Runs `next dev` for fast local iteration — this image is for LOCAL e2e only,
+# never the production deploy.
 FROM node:22-bookworm-slim
 
 WORKDIR /app

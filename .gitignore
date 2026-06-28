@@ -27,3 +27,6 @@ skills-lock.json
 .vercel
 .claude/team-plans/
 .env*
+
+# Saved Playwright auth state (session cookie — never commit)
+playwright/.auth/

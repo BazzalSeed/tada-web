@@ -45,6 +45,9 @@ export type TadaAction =
       captures?: Capture[];
     }
   | { type: "UPSERT_TODO"; todo: Todo }
+  // Full reconcile of the pool from the server (background poll). Preserves
+  // very-recent optimistic rows the server hasn't returned yet (avoids flicker).
+  | { type: "SYNC_TODOS"; todos: Todo[]; keepIds?: string[] }
   | { type: "RECONCILE_TODO"; tempId: string; todo: Todo }
   | { type: "UPSERT_LABEL"; label: TodoLabel }
   | { type: "RELABEL"; fromId: string; label: TodoLabel }
@@ -79,6 +82,15 @@ export function reducer(state: TadaState, action: TadaAction): TadaState {
           ? state.todos.map((t) => (t.id === action.todo.id ? action.todo : t))
           : [...state.todos, action.todo],
       };
+    }
+    case "SYNC_TODOS": {
+      // Replace the pool with the authoritative server set, but keep any local
+      // rows the caller flagged as in-flight (optimistic adds not yet persisted),
+      // so a poll landing mid-create doesn't make them flicker out.
+      const serverIds = new Set(action.todos.map((t) => t.id));
+      const keep = (action.keepIds ?? []).filter((id) => !serverIds.has(id));
+      const survivors = state.todos.filter((t) => keep.includes(t.id));
+      return { ...state, todos: [...action.todos, ...survivors] };
     }
     case "RECONCILE_TODO": {
       // Swap the optimistic temp row for the server one (matched by tempId), so a

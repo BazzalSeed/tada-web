@@ -82,7 +82,9 @@ async function sendMeetingInvite(p: Meeting, user: UserCtx): Promise<ExecResult>
   try {
     const accessToken = await getGoogleAccessToken(user.googleRefreshToken);
     const durationMin = p.durationMin ?? 30;
-    const tz = process.env.TADA_TIMEZONE ?? "America/Los_Angeles";
+    // Anchor the wall-clock start to the USER's real zone (captured from the
+    // browser → User.timezone). Fall back only when it's genuinely unknown.
+    const tz = user.timezone ?? process.env.TADA_TIMEZONE ?? "America/Los_Angeles";
     const res = await fetch(
       "https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=all",
       {

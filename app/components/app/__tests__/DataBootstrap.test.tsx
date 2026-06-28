@@ -9,6 +9,7 @@ vi.mock("@/app/lib/api", () => ({
   listTodos: () => listTodos(),
   listLabels: () => listLabels(),
   listCaptures: () => listCaptures(),
+  setTimezone: vi.fn(async () => {}),
 }));
 
 import { DataBootstrap } from "../DataBootstrap";

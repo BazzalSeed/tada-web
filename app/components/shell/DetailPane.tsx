@@ -32,6 +32,7 @@ export interface DetailPaneProps {
   onPatch: (patch: Partial<Todo>) => void;
   onCreateLabel: (name: string) => TodoLabel;
   offer?: ReactNode; // the "do it for me" offer panel (FIX2)
+  onTodoLink?: (id: string) => void; // open another todo from an in-note link
   children?: ReactNode;
 }
 
@@ -42,6 +43,7 @@ export function DetailPane({
   onPatch,
   onCreateLabel,
   offer,
+  onTodoLink,
   children,
 }: DetailPaneProps) {
   const [title, setTitle] = useState(todo?.title ?? "");
@@ -212,7 +214,7 @@ export function DetailPane({
         ) : (
           <div className={styles.notesPreview}>
             {detail.trim() ? (
-              <Markdown source={detail} />
+              <Markdown source={detail} onTodoLink={onTodoLink} />
             ) : (
               <p className={styles.empty}>No notes yet.</p>
             )}

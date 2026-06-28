@@ -17,14 +17,13 @@ export default auth((req) => {
 
   // Unauthenticated → the branded landing "/". Its "Log in" CTA carries
   // redirectTo:'/app', so a logged-out deep-linker lands on "/", signs in, and
-  // ends at /app. /dev-login stays directly reachable for the reviewer's
-  // test-session, and /api/auth/* remains public.
+  // ends at /app. /api/auth/* remains public for the sign-in handshake.
   return Response.redirect(new URL("/", req.nextUrl.origin));
 });
 
 export const config = {
   // Gate the authed app pages ONLY. Everything else stays public: "/" (landing),
-  // "/dev-login" (test session), "/api/auth/*" (sign-in), "/tokens", and all
-  // static assets. Bare "/app" + nested "/app/*" both covered.
+  // "/api/auth/*" (sign-in), "/tokens", and all static assets. Bare "/app" +
+  // nested "/app/*" both covered.
   matcher: ["/app", "/app/:path*"],
 };

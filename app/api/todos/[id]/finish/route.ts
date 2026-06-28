@@ -20,6 +20,17 @@ export async function POST(_req: Request, ctx: Ctx): Promise<Response> {
     const todo = (await store.listTodos(user.userId)).find((t) => t.id === id);
     if (!todo) return json({ error: "todo not found" }, 404);
 
+    // Idempotency: a finished action never re-runs (no duplicate calendar event /
+    // research run on a double-tap). Return the already-done outcome as-is.
+    if (todo.actionState === "done") {
+      return json({
+        ok: true,
+        actionExternalId: todo.actionExternalId ?? undefined,
+        markdown: todo.actionType === "research" ? (todo.detail ?? undefined) : undefined,
+        alreadyDone: true,
+      });
+    }
+
     if (todo.actionType === "research") {
       const r = await runResearch(todo, user);
       return json(r);

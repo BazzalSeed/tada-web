@@ -1,5 +1,5 @@
 # Tada Web — self-contained local e2e stack.
-#   docker compose up  →  http://localhost:3000  →  /dev-login  →  full hero flow.
+#   docker compose up  →  http://localhost:3000  →  Google sign-in  →  full hero flow.
 # DB is a LOCAL Postgres (pgvector image), NOT cloud Neon. The app uses plain Prisma
 # over a standard Postgres URL, so no driver toggle is needed — we just point
 # DATABASE_URL/DIRECT_URL at the `db` container below.
@@ -52,14 +52,11 @@ services:
       # Local DB (overrides .env's Neon URL):
       DATABASE_URL: postgresql://tada:tada@db:5432/tada
       DIRECT_URL: postgresql://tada:tada@db:5432/tada
-      # Dev mode so backend's dev-login gate (NODE_ENV !== 'production') is active.
       NODE_ENV: development
-      ENABLE_DEV_LOGIN: "1"
-      DEV_LOGIN_EMAIL: seedzpy@gmail.com
+      # seedzpy@gmail.com is admin → plan='unlimited' on Google sign-in.
       ADMIN_EMAILS: seedzpy@gmail.com
       # Auth.js base URL. Canonical localhost:3000 = the registered Google redirect
-      # (real Google sign-in works locally). TRUST_HOST lets dev-login also work if
-      # you map an alternate host port. Override AUTH_URL if you change the port.
+      # (real Google sign-in works locally). Override AUTH_URL if you change the port.
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       AUTH_TRUST_HOST: "true"
       # Chat compaction knobs (lib/chat/context.ts). Unset → code defaults (12 /
@@ -69,8 +66,7 @@ services:
       CHAT_SUMMARY_TRIGGER_TOKENS: ${CHAT_SUMMARY_TRIGGER_TOKENS:-}
     ports:
       # Canonical host port is 3000 (matches the Google OAuth redirect URI).
-      # For a smoke test while 3000 is occupied: APP_PORT=3939 docker compose up
-      # (dev-login works on any port; real Google needs 3000).
+      # Google sign-in only works on 3000 (the registered redirect URI).
       - "${APP_PORT:-3000}:3000"
 
 volumes:

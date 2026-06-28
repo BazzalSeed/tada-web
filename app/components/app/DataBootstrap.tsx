@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
-import { listCaptures, listLabels, listTodos } from "@/app/lib/api";
+import { useEffect, useRef } from "react";
+import { listCaptures, listLabels, listTodos, setTimezone } from "@/app/lib/api";
 import { useTada } from "@/app/lib/store";
+
+// Background sync cadence. Only polls while the tab is VISIBLE (a hidden tab does
+// nothing), so idle/background users cost zero — see the scaling note in the
+// commit. Supabase Realtime can later replace this behind the same dispatch.
+const POLL_MS = 5000;
 
 // T3.6b — real load hydration. On mount, fetch the owner's todos + labels +
 // source captures and seed the store. Captures (keyed by id) back the row
@@ -17,7 +22,43 @@ const MAX_ATTEMPTS = 4;
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export function DataBootstrap() {
-  const { dispatch } = useTada();
+  const { state, dispatch } = useTada();
+
+  // Capture the browser's IANA timezone once so meeting bookings anchor to the
+  // user's real zone (fire-and-forget; booking falls back if this hasn't landed).
+  useEffect(() => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) void setTimezone(tz).catch(() => {});
+  }, []);
+
+  // Background pool sync: reflect changes made elsewhere (chat, another tab/device,
+  // a finished research run) without a manual reload. Visibility-gated so hidden
+  // tabs never poll, and refetches immediately when the tab regains focus.
+  const todosRef = useRef(state.todos);
+  useEffect(() => {
+    todosRef.current = state.todos;
+  }, [state.todos]);
+  useEffect(() => {
+    const poll = async () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      const todos = await listTodos().catch(() => null);
+      if (!todos) return;
+      // Keep in-flight optimistic rows (temp UUID ids, not yet persisted) so a
+      // poll landing mid-create doesn't flicker them out.
+      const keepIds = todosRef.current.filter((t) => t.id.includes("-")).map((t) => t.id);
+      dispatch({ type: "SYNC_TODOS", todos, keepIds });
+    };
+    const timer = setInterval(poll, POLL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void poll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [dispatch]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {

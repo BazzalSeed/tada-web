@@ -1,9 +1,9 @@
 // @vitest-environment node
-// T3.6 — auth gating logic (pure/injectable units). isAdminEmail (env), the
-// signIn admission decision (existing/admin/invite/reject), and the dev-login
-// gate. DB-backed redeemInvite is integration-tested in invite.test.ts.
+// T3.6 — auth gating logic (pure/injectable units). isAdminEmail (env) and the
+// signIn admission decision (existing/admin/invite/reject). DB-backed
+// redeemInvite is integration-tested in invite.test.ts.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isAdminEmail, authorizeSignIn, devLoginEnabled } from "@/lib/auth";
+import { isAdminEmail, authorizeSignIn } from "@/lib/auth";
 
 beforeEach(() => {
   vi.stubEnv("ADMIN_EMAILS", "boss@tada.app, Admin@Example.com");
@@ -50,23 +50,5 @@ describe("authorizeSignIn", () => {
   });
   it("rejects a new non-admin with an invalid invite", async () => {
     expect(await authorizeSignIn("new@x.com", "BAD", deps(false, false))).toBe(false);
-  });
-});
-
-describe("devLoginEnabled", () => {
-  it("true only when non-prod AND ENABLE_DEV_LOGIN=1", () => {
-    vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("ENABLE_DEV_LOGIN", "1");
-    expect(devLoginEnabled()).toBe(true);
-  });
-  it("false in production even with the flag", () => {
-    vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("ENABLE_DEV_LOGIN", "1");
-    expect(devLoginEnabled()).toBe(false);
-  });
-  it("false when the flag is unset", () => {
-    vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("ENABLE_DEV_LOGIN", "");
-    expect(devLoginEnabled()).toBe(false);
   });
 });

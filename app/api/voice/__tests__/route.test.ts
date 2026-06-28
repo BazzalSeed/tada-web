@@ -9,15 +9,11 @@ vi.mock("@/lib/auth", () => ({ currentUser: vi.fn() }));
 // store/executors are imported transitively by agent-tools; stub them out so the
 // real registry runs without touching Prisma/Gemini/Google.
 vi.mock("@/lib/store", () => ({
-  store: { listTodos: vi.fn(), createCapture: vi.fn(), createTodo: vi.fn() },
-}));
-vi.mock("@/lib/executors", () => ({
-  executors: { setReminder: vi.fn(), sendMeetingInvite: vi.fn(), deepResearch: vi.fn() },
+  store: { listTodos: vi.fn(), createCapture: vi.fn(), createTodo: vi.fn(), updateTodo: vi.fn() },
 }));
 
 import { currentUser } from "@/lib/auth";
 import { store } from "@/lib/store";
-import { executors } from "@/lib/executors";
 import { POST as session } from "@/app/api/voice/session/route";
 import { POST as voiceTool } from "@/app/api/voice/tool/route";
 import { POST as usage } from "@/app/api/voice/usage/route";
@@ -48,7 +44,8 @@ describe("POST /api/voice/session", () => {
     // our function tools are embedded and returned to the client
     const names = body.tools.map((t: { name: string }) => t.name);
     expect(names).toContain("list_todos");
-    expect(names).toContain("send_meeting_invite");
+    expect(names).toContain("create_todo");
+    expect(names).not.toContain("send_meeting_invite"); // actions flow through todos now
 
     // called the current client_secrets endpoint with our key + tools in session
     const [calledUrl, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
@@ -87,28 +84,26 @@ describe("POST /api/voice/tool", () => {
     expect(body.output).toContain("a");
   });
 
-  it("withholds a gated write until approved (never auto-executes)", async () => {
+  it("withholds a gated mutate until approved (never auto-executes)", async () => {
+    (store.listTodos as ReturnType<typeof vi.fn>).mockResolvedValue([{ id: "t1", title: "x", status: "open", labelIds: [] }]);
     const res = await voiceTool(
-      req("http://localhost/api/voice/tool", { name: "send_meeting_invite", args: { title: "Sync", attendees: ["d@x.com"] } }),
+      req("http://localhost/api/voice/tool", { name: "complete_todo", args: { todoId: "t1" } }),
     );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.status).toBe("approval_required");
-    expect(executors.sendMeetingInvite).not.toHaveBeenCalled();
+    expect(store.updateTodo).not.toHaveBeenCalled(); // never auto-mutates
   });
 
-  it("executes a gated write once approved", async () => {
-    (executors.sendMeetingInvite as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, actionExternalId: "evt-1" });
+  it("executes a gated mutate once approved", async () => {
+    (store.listTodos as ReturnType<typeof vi.fn>).mockResolvedValue([{ id: "t1", title: "x", status: "open", labelIds: [] }]);
+    (store.updateTodo as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "t1", title: "x", status: "done", labelIds: [] });
     const res = await voiceTool(
-      req("http://localhost/api/voice/tool", {
-        name: "send_meeting_invite",
-        args: { title: "Sync", attendees: ["d@x.com"], start: "2026-07-01T14:00:00" },
-        approved: true,
-      }),
+      req("http://localhost/api/voice/tool", { name: "complete_todo", args: { todoId: "t1" }, approved: true }),
     );
     expect(res.status).toBe(200);
-    expect(executors.sendMeetingInvite).toHaveBeenCalled();
-    expect((await res.json()).output).toContain("evt-1");
+    expect(store.updateTodo).toHaveBeenCalledWith("u1", "t1", { status: "done" });
+    expect((await res.json()).output).toContain("Completed");
   });
 
   it("404s an unknown tool", async () => {
@@ -117,21 +112,22 @@ describe("POST /api/voice/tool", () => {
   });
 
   it("tolerates args as a JSON string (Realtime delivers arguments as a string)", async () => {
-    (executors.setReminder as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, actionExternalId: "rem-1" });
+    (store.createCapture as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "c1" });
+    (store.createTodo as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "t1", title: "Call mom", actionType: "none" });
+    // create_todo is ungated (capture) → runs immediately; the string args must parse.
     const res = await voiceTool(
       req("http://localhost/api/voice/tool", {
-        name: "set_reminder",
-        args: JSON.stringify({ text: "Call mom", remindAt: "2026-07-01T09:00:00" }),
-        approved: true,
+        name: "create_todo",
+        args: JSON.stringify({ title: "Call mom" }),
       }),
     );
     expect(res.status).toBe(200);
-    // parsed → executor got the object fields, not a string
-    expect(executors.setReminder).toHaveBeenCalledWith(expect.objectContaining({ text: "Call mom", remindAt: "2026-07-01T09:00:00" }));
+    // parsed → the handler got the object fields, not a string
+    expect(store.createTodo).toHaveBeenCalledWith("u1", expect.objectContaining({ title: "Call mom" }));
   });
 
   it("400s malformed JSON-string args (not a 500)", async () => {
-    const res = await voiceTool(req("http://localhost/api/voice/tool", { name: "set_reminder", args: "{not json", approved: true }));
+    const res = await voiceTool(req("http://localhost/api/voice/tool", { name: "create_todo", args: "{not json" }));
     expect(res.status).toBe(400);
   });
 });

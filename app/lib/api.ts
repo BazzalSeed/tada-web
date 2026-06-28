@@ -122,6 +122,15 @@ export async function finishTodo(id: string): Promise<FinishResponse> {
   return send<FinishResponse>(`/api/todos/${id}/finish`, { method: "POST" });
 }
 
+// Persist the browser's IANA timezone so bookings anchor to the user's real zone.
+// Fire-and-forget on app load; failures are non-fatal (booking falls back).
+export async function setTimezone(timezone: string): Promise<void> {
+  await send("/api/me/timezone", {
+    method: "POST",
+    body: JSON.stringify({ timezone }),
+  });
+}
+
 export async function reorderTodo(
   id: string,
   beforeId: string | null,

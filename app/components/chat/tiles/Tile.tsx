@@ -1,6 +1,7 @@
 import type { TodoLabel } from "@/lib/contracts";
 import type { ChatCard } from "../cards";
 import { TodoTile } from "./TodoTile";
+import { ChatActionTodo } from "./ChatActionTodo";
 import { OfferCard } from "./OfferCard";
 import { OfferResultTile } from "./OfferResultTile";
 import { ContactsTile } from "./ContactsTile";
@@ -20,8 +21,19 @@ export interface TileProps {
 
 export function Tile({ card, labels, now, onApprove, onDeny, offerStatus }: TileProps) {
   switch (card.type) {
-    case "todo":
-      return <TodoTile todo={card.todo} labels={labels} now={now} />;
+    case "todo": {
+      // Actionable (own action or action-bearing subtasks) → interactive tile
+      // with inline gated do-it buttons; otherwise a calm read-only preview.
+      const subtasks = card.subtasks ?? [];
+      const actionable =
+        card.todo.actionType !== "none" ||
+        subtasks.some((s) => s.actionType !== "none");
+      return actionable ? (
+        <ChatActionTodo parent={card.todo} subtasks={subtasks} labels={labels} now={now} />
+      ) : (
+        <TodoTile todo={card.todo} labels={labels} now={now} />
+      );
+    }
     case "todos":
       return (
         <div className={styles.stack}>

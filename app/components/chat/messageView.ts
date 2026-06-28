@@ -40,14 +40,11 @@ export interface MessageView {
   offers: OfferRef[];
 }
 
-// The side-effect tools that pause for approval (never auto-executed). Mirrors
-// the gated set in the AgentTool registry — incl. the UI-mirroring mutates (FIX9):
-// complete / uncomplete / update.
+// The mutating tools that pause for approval (never auto-executed). create_todo
+// is NOT here — creating a todo is capture (ungated); its action runs later at
+// the do-it tap. Only the UI-mirroring mutates (FIX9) stay gated: complete /
+// uncomplete / update.
 const GATED_OFFER_TOOLS = new Set([
-  "create_todo",
-  "set_reminder",
-  "send_meeting_invite",
-  "deep_research",
   "complete_todo",
   "uncomplete_todo",
   "update_todo",
@@ -71,32 +68,6 @@ function priorityOf(v: unknown): Priority | undefined {
 // offer. Tolerant of missing fields; the exact arg shapes are the chat seam.
 function actionFromInput(toolName: string, input: unknown): ProposedAction | null {
   const a = (input ?? {}) as Record<string, unknown>;
-  if (toolName === "create_todo") {
-    return {
-      kind: "todo",
-      title: str(a.title) ?? "New todo",
-      dueAt: str(a.dueAt) ?? null,
-      priority: priorityOf(a.priority),
-    };
-  }
-  if (toolName === "send_meeting_invite") {
-    return {
-      kind: "meeting",
-      title: str(a.title) ?? "New meeting",
-      attendees: Array.isArray(a.attendees)
-        ? (a.attendees.filter((x) => typeof x === "string") as string[])
-        : [],
-      start: str(a.start) ?? null,
-      durationMin: typeof a.durationMin === "number" ? a.durationMin : 30,
-      notes: str(a.notes) ?? null,
-    };
-  }
-  if (toolName === "set_reminder") {
-    return { kind: "reminder", text: str(a.text) ?? "Reminder", remindAt: str(a.remindAt) ?? null };
-  }
-  if (toolName === "deep_research") {
-    return { kind: "research", topic: str(a.topic) ?? "Research" };
-  }
   if (toolName === "complete_todo") return { kind: "complete" };
   if (toolName === "uncomplete_todo") return { kind: "uncomplete" };
   if (toolName === "update_todo") {

@@ -11,10 +11,24 @@ vi.mock("@/lib/store", () => ({
 vi.mock("@/lib/executors", () => ({
   executors: { setReminder: vi.fn(), sendMeetingInvite: vi.fn(), deepResearch: vi.fn() },
 }));
+// finishTodo resolves raw attendee names itself (the booking fix). Mock the
+// resolver: emails resolve directly; bare names are unresolved (overridden
+// per-test to inject candidates for the disambiguation path).
+vi.mock("@/lib/contacts", () => ({
+  contactResolverFor: () => ({ resolve: vi.fn(async () => []) }),
+  resolveAttendees: vi.fn(async (_r: unknown, names: string[]) =>
+    names.map((n) =>
+      n.includes("@")
+        ? { name: n, email: n, status: "resolved" }
+        : { name: n, status: "unresolved" },
+    ),
+  ),
+}));
 
 import { currentUser } from "@/lib/auth";
 import { store } from "@/lib/store";
 import { executors } from "@/lib/executors";
+import { resolveAttendees } from "@/lib/contacts";
 import { POST as finish } from "@/app/api/todos/[id]/finish/route";
 import { POST as startResearch } from "@/app/api/research/route";
 import { GET as researchStatus } from "@/app/api/research/[id]/route";
@@ -66,7 +80,7 @@ describe("POST /api/todos/:id/finish", () => {
     expect((await finishReq("ghost")).status).toBe(404);
   });
 
-  it("returns needsDisambiguation and parks the todo (no send) when an attendee is unresolved", async () => {
+  it("resolves the name, parks for the picker (no send) when it's ambiguous", async () => {
     mockList.mockResolvedValue([
       todo({ id: "t1", actionType: "meeting", actionPayload: { kind: "meeting", title: "Sync", attendees: ["Dakota"], start: "2026-07-01T14:00:00" } }),
     ]);
@@ -74,13 +88,14 @@ describe("POST /api/todos/:id/finish", () => {
       { name: "Dakota Lee", email: "dakota@x.com" },
       { name: "Dakota Smith", email: "ds@x.com" },
     ];
-    (executors.sendMeetingInvite as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: false,
-      needsDisambiguation: [{ name: "Dakota", status: "unresolved", candidates }],
-    });
+    // finishTodo resolves "Dakota" → ambiguous (candidates) → parks, never sends.
+    (resolveAttendees as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      { name: "Dakota", status: "unresolved", candidates },
+    ]);
     const res = await finishReq("t1");
     const body = await res.json();
     expect(body.needsDisambiguation).toHaveLength(1);
+    expect(executors.sendMeetingInvite).not.toHaveBeenCalled(); // never auto-sends
     // parked for the picker — actionState flips, candidates persisted, NOT done
     expect(mockUpdate).toHaveBeenCalledWith(
       "u1",

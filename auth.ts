@@ -1,20 +1,18 @@
 // ============================================================================
-// T3.6 — Auth.js v5 configuration (root). Google OAuth (offline + consent so we
-// get a refresh_token, persisted on the Account row by the adapter for
-// sendMeetingInvite) + a hard-gated dev-only Credentials test-login. JWT session
-// strategy (required by Credentials; PrismaAdapter still persists users/accounts).
+// T3.6 — Auth.js v5 configuration (root). Google OAuth only (offline + consent so
+// we get a refresh_token, persisted on the Account row by the adapter for
+// sendMeetingInvite). JWT session strategy; PrismaAdapter persists users/accounts.
 // New-user admission is gated by authorizeSignIn (admin bypass / invite redeem).
 // NO Claude/Anthropic anywhere — this is auth only.
 // ============================================================================
 
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { cookies } from "next/headers";
 import type { Provider } from "next-auth/providers";
 import { prisma } from "@/lib/db";
-import { authorizeSignIn, devLoginEnabled, planForEmail } from "@/lib/auth";
+import { authorizeSignIn, isAdminEmail } from "@/lib/auth";
 
 const providers: Provider[] = [
   Google({
@@ -23,42 +21,16 @@ const providers: Provider[] = [
         access_type: "offline",
         prompt: "consent",
         // calendar.events → sendMeetingInvite creates events + sends invites.
-        // contacts.readonly → T3.1a resolves attendee names to emails.
+        // contacts.readonly → saved "My Contacts"; contacts.other.readonly →
+        // Gmail-derived "Other contacts" (people you've emailed but not saved),
+        // so attendee resolution covers the common "book with <name>" case.
         scope:
-          "openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/contacts.readonly",
+          "openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/contacts.readonly https://www.googleapis.com/auth/contacts.other.readonly",
       },
     },
     allowDangerousEmailAccountLinking: true,
   }),
 ];
-
-// TEST SEAM — never in prod. Only mounted when NODE_ENV!=='production' AND
-// ENABLE_DEV_LOGIN==='1'; authorize() re-asserts the gate (defense-in-depth).
-if (devLoginEnabled()) {
-  providers.push(
-    Credentials({
-      id: "dev-login",
-      name: "Dev Login (test only)",
-      credentials: { email: { label: "email", type: "text" } },
-      authorize: async (creds) => {
-        if (process.env.NODE_ENV === "production") {
-          throw new Error("dev-login is disabled in production");
-        }
-        const email = (
-          (creds?.email as string) ||
-          process.env.DEV_LOGIN_EMAIL ||
-          "seedzpy@gmail.com"
-        ).toLowerCase();
-        const user = await prisma.user.upsert({
-          where: { email },
-          create: { email, name: "Dev User", plan: planForEmail(email) },
-          update: {},
-        });
-        return { id: user.id, email: user.email, name: user.name, plan: user.plan };
-      },
-    }),
-  );
-}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -67,32 +39,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: { signIn: "/join" },
   callbacks: {
     // Gate account CREATION: existing → admit; admin → admit; else require a
-    // valid invite code (read from the join cookie). Dev-login bypasses (test).
-    async signIn({ user, account }) {
-      if (account?.provider === "dev-login") return true;
+    // valid invite code (read from the join cookie).
+    async signIn({ user }) {
       const code = (await cookies()).get("invite_code")?.value ?? null;
       return authorizeSignIn(user.email, code);
     },
-    async jwt({ token, account, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.uid = user.id;
-        // plan: from the credentials user, else look up the adapter-created user.
-        const plan =
+        // Effective plan, resolved at sign-in. Admin status is env-driven
+        // (ADMIN_EMAILS) so we derive it live → admins always get unlimited even
+        // if their stored row predates being granted admin. Everyone else keeps
+        // their stored plan (e.g. an upgraded "pro"), defaulting to "free".
+        const stored =
           (user as { plan?: string }).plan ??
           (user.email
             ? (await prisma.user.findUnique({ where: { email: user.email } }))?.plan
             : undefined);
-        if (plan) token.plan = plan as typeof token.plan;
+        token.plan = (
+          user.email && isAdminEmail(user.email) ? "unlimited" : stored ?? "free"
+        ) as typeof token.plan;
       }
-      if (account?.provider === "google" && account.refresh_token) {
-        token.refresh_token = account.refresh_token;
-      }
+      // NOTE: the Google refresh_token is deliberately NOT carried on the JWT or
+      // session — it would be readable by the client (/api/auth/session). It
+      // lives only in the Account row; currentUser reads it server-side on demand.
       return token;
     },
     async session({ session, token }) {
       if (token.uid) session.user.id = token.uid;
       if (token.plan) session.user.plan = token.plan;
-      session.user.googleRefreshToken = token.refresh_token ?? null;
       return session;
     },
   },

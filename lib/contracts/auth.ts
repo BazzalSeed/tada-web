@@ -22,6 +22,7 @@ export interface UserCtx {
   email: string;
   plan: Plan;
   googleRefreshToken?: string | null;
+  timezone?: string | null; // IANA zone (e.g. "America/New_York"), captured from the browser
 }
 
 // The boundary every query passes through (resolves the session -> UserCtx).

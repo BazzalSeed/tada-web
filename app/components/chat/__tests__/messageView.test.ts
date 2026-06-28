@@ -51,53 +51,7 @@ describe("messageToView", () => {
     expect(v.offers).toEqual([]);
   });
 
-  it("renders a gated meeting awaiting approval as a pending offer + approval ref", () => {
-    const v = messageToView({
-      id: "m3",
-      role: "assistant",
-      parts: [
-        {
-          type: "tool-send_meeting_invite",
-          toolCallId: "c9",
-          state: "approval-requested",
-          input: { title: "Sync with Dakota", start: "2026-06-30T14:00:00", durationMin: 30, attendees: ["Dakota"] },
-          approval: { id: "appr-1" },
-        },
-      ],
-    } as never);
-    expect(v.cards).toHaveLength(1);
-    expect(v.cards[0]).toMatchObject({
-      type: "pending",
-      toolName: "send_meeting_invite",
-      action: { kind: "meeting", title: "Sync with Dakota" },
-    });
-    expect(v.offers).toEqual([
-      { cardIndex: 0, approvalId: "appr-1", toolName: "send_meeting_invite" },
-    ]);
-  });
-
-  it("maps a gated reminder awaiting approval to a reminder pending offer", () => {
-    const v = messageToView({
-      id: "m4",
-      role: "assistant",
-      parts: [
-        {
-          type: "tool-set_reminder",
-          toolCallId: "c10",
-          state: "approval-requested",
-          input: { text: "Call mom", remindAt: "2026-06-26T18:00:00" },
-          approval: { id: "appr-2" },
-        },
-      ],
-    } as never);
-    expect(v.cards[0]).toMatchObject({
-      type: "pending",
-      action: { kind: "reminder", text: "Call mom" },
-    });
-    expect(v.offers[0].approvalId).toBe("appr-2");
-  });
-
-  it("maps a gated create_todo awaiting approval to a todo pending offer", () => {
+  it("renders create_todo (ungated) as an executed todo tile — never a pending gate", () => {
     const v = messageToView({
       id: "m5",
       role: "assistant",
@@ -105,16 +59,19 @@ describe("messageToView", () => {
         {
           type: "tool-create_todo",
           toolCallId: "c11",
-          state: "approval-requested",
-          input: { title: "Buy oat milk", priority: "p2" },
-          approval: { id: "appr-3" },
+          state: "output-available",
+          input: { title: "Meeting with Hansen", action: { type: "meeting" } },
+          output: {
+            output: "Set up “Meeting with Hansen”. Tap to run it when you're ready.",
+            card: { type: "todo", todo: todo("Meeting with Hansen"), subtasks: [todo("Research Q3")] },
+          },
         },
       ],
     } as never);
-    expect(v.cards[0]).toMatchObject({
-      type: "pending",
-      action: { kind: "todo", title: "Buy oat milk", priority: "p2" },
-    });
+    // Creating a todo is capture → runs immediately, renders the todo tile (with
+    // its subtasks), and is NOT gated behind an approval offer.
+    expect(v.cards[0]).toMatchObject({ type: "todo" });
+    expect(v.offers).toEqual([]);
   });
 
   it("maps gated complete/uncomplete/update mutates to pending offers (FIX9)", () => {

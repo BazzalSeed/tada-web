@@ -12,9 +12,13 @@
 export type TodoStatus = "open" | "done" | "dismissed";
 export type Priority = "none" | "p1" | "p2" | "p3"; // p4 == none (native parity)
 export type ActionType = "none" | "meeting" | "reminder" | "research";
+// none = no action; proposed = action defined, awaiting an explicit do-it tap;
+// running = executor in flight (e.g. background research); done/failed = outcome;
+// needs_disambiguation = meeting blocked on unresolved attendee(s).
 export type ActionState =
   | "none"
   | "proposed"
+  | "running"
   | "done"
   | "failed"
   | "needs_disambiguation";

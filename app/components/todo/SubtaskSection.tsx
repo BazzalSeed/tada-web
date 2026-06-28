@@ -71,6 +71,7 @@ export function SubtaskSection({ parentId }: { parentId: string }) {
       onAdd={add}
       onToggle={toggle}
       onReorder={reorder}
+      onOpen={(id) => dispatch({ type: "SELECT_TODO", id })}
     />
   );
 }

@@ -28,7 +28,7 @@ model Todo {
   status           String    @default("open") // TodoStatus: open|done|dismissed
   actionType       String    @default("none") @map("action_type") // none|meeting|reminder|research
   actionPayload    Json?     @map("action_payload")
-  actionState      String    @default("none") @map("action_state") // none|proposed|done|failed
+  actionState      String    @default("none") @map("action_state") // none|proposed|running|done|failed|needs_disambiguation
   actionExternalId String?   @map("action_external_id")
   dueAt            DateTime? @map("due_at")
   sortIndex        Float     @map("sort_index") // fractional; lower sorts higher
@@ -143,6 +143,7 @@ model User {
   image         String?
   emailVerified DateTime? @map("email_verified")
   plan          String    @default("free") // free|pro|unlimited
+  timezone      String?   // IANA zone captured from the browser; used to anchor bookings
   createdAt     DateTime  @default(now()) @map("created_at")
 
   accounts Account[]

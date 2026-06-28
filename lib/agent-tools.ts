@@ -11,7 +11,6 @@ import type { ToolSet } from "ai";
 import type { ZodTypeAny } from "zod";
 import { store } from "./store";
 import { applyFilter } from "./core";
-import { executors } from "./executors";
 import { contactResolverFor } from "./contacts";
 import type {
   AgentTool,
@@ -142,80 +141,124 @@ const search_contacts: AgentTool = {
   },
 };
 
-// ---- writes (gated) ----
+// ---- writes ----
+// An action the agent can attach to a todo (or subtask) it creates. Mapped to the
+// frozen actionType + actionPayload; the SIDE EFFECT runs later at the do-it tap
+// (POST /api/todos/:id/finish), never here. Fields are shared across kinds and
+// applied per-type by toAction.
+const actionInput = z
+  .object({
+    type: z.enum(["meeting", "reminder", "research"]),
+    attendees: z.array(z.string()).optional(), // meeting: names or emails
+    start: z.string().nullish(), // meeting: ISO local, offset-less
+    durationMin: z.number().optional(),
+    notes: z.string().nullish(),
+    remindAt: z.string().nullish(), // reminder time
+    text: z.string().nullish(), // reminder body (defaults to title)
+    topic: z.string().nullish(), // research topic (defaults to title)
+  })
+  .nullish();
+
+type ActionInput = {
+  type: "meeting" | "reminder" | "research";
+  attendees?: string[];
+  start?: string | null;
+  durationMin?: number;
+  notes?: string | null;
+  remindAt?: string | null;
+  text?: string | null;
+  topic?: string | null;
+};
+
+// action input → (actionType, actionPayload, actionState). Actionable todos start
+// "proposed" (awaiting the do-it tap); plain todos are "none".
+function toAction(
+  title: string,
+  action?: ActionInput | null,
+): Pick<Todo, "actionType" | "actionPayload" | "actionState"> {
+  if (!action) return { actionType: "none", actionPayload: null, actionState: "none" };
+  switch (action.type) {
+    case "meeting":
+      return {
+        actionType: "meeting",
+        actionState: "proposed",
+        actionPayload: {
+          kind: "meeting",
+          title,
+          attendees: action.attendees ?? null,
+          start: action.start ?? null,
+          durationMin: action.durationMin,
+          notes: action.notes ?? null,
+        },
+      };
+    case "reminder":
+      return {
+        actionType: "reminder",
+        actionState: "proposed",
+        actionPayload: { kind: "reminder", text: action.text ?? title, remindAt: action.remindAt ?? null },
+      };
+    case "research":
+      return {
+        actionType: "research",
+        actionState: "proposed",
+        actionPayload: { kind: "research", topic: action.topic ?? title },
+      };
+  }
+}
+
+// create_todo — capture into the spine. UNGATED: creating a todo is capture, not a
+// side effect. Optionally attaches an action (meeting/reminder/research) and/or
+// action-bearing subtasks; the do-it tap on the rendered tile is the gate. For a
+// goal needing prep, create ONE parent (e.g. the meeting) + a research subtask —
+// the subtask's report lands in the parent's notes and feeds the invite.
 const create_todo: AgentTool = {
   name: "create_todo",
-  gated: true,
+  gated: false,
   inputSchema: z.object({
     title: z.string(),
     dueAt: z.string().nullish(),
     priority: z.enum(["none", "p1", "p2", "p3"]).optional(),
+    action: actionInput,
+    subtasks: z.array(z.object({ title: z.string(), action: actionInput })).optional(),
   }),
   run: async (args, user: UserCtx) => {
-    const { title, dueAt, priority } = args as { title: string; dueAt?: string | null; priority?: "none" | "p1" | "p2" | "p3" };
+    const a = args as {
+      title: string;
+      dueAt?: string | null;
+      priority?: "none" | "p1" | "p2" | "p3";
+      action?: ActionInput | null;
+      subtasks?: { title: string; action?: ActionInput | null }[];
+    };
     // Capture-first: every todo references a Capture.
-    const capture = await store.createCapture(user.userId, { kind: "text", note: title });
+    const capture = await store.createCapture(user.userId, { kind: "text", note: a.title });
+    const top = toAction(a.title, a.action);
     const todo = await store.createTodo(user.userId, {
       sourceCaptureId: capture.id,
-      title,
-      dueAt: dueAt ?? null,
-      priority: priority ?? "none",
+      title: a.title,
+      dueAt: a.dueAt ?? null,
+      priority: a.priority ?? "none",
+      ...top,
     });
-    return { output: `Created todo “${todo.title}”.`, card: { type: "todo", todo } };
-  },
-};
-
-const set_reminder: AgentTool = {
-  name: "set_reminder",
-  gated: true,
-  inputSchema: z.object({ text: z.string(), remindAt: z.string().nullish() }),
-  run: async (args, user: UserCtx) => {
-    void user;
-    const { text, remindAt } = args as { text: string; remindAt?: string | null };
-    const r = await executors.setReminder({ kind: "reminder", text, remindAt: remindAt ?? null });
+    const subtasks: Todo[] = [];
+    for (const s of a.subtasks ?? []) {
+      const cap = await store.createCapture(user.userId, { kind: "text", note: s.title });
+      subtasks.push(
+        await store.createTodo(user.userId, {
+          sourceCaptureId: cap.id,
+          title: s.title,
+          parentId: todo.id,
+          ...toAction(s.title, s.action),
+        }),
+      );
+    }
+    const steps = subtasks.length ? ` (+${subtasks.length} step${subtasks.length > 1 ? "s" : ""})` : "";
+    const actionable = top.actionType !== "none" || subtasks.some((t) => t.actionType !== "none");
+    const verb = top.actionType === "none" && !subtasks.length ? "Added" : "Set up";
+    const tail = actionable ? " Tap to run it when you're ready." : "";
     return {
-      output: r.ok ? `Reminder set: ${text}` : `Need a time for the reminder.`,
-      card: { type: "offer", kind: "reminder", result: r },
+      output: `${verb} “${todo.title}”${steps}.${tail}`,
+      card: { type: "todo", todo, subtasks },
     };
-  },
-};
-
-const send_meeting_invite: AgentTool = {
-  name: "send_meeting_invite",
-  gated: true,
-  inputSchema: z.object({
-    title: z.string(),
-    attendees: z.array(z.string()),
-    start: z.string().nullish(),
-    durationMin: z.number().optional(),
-    notes: z.string().nullish(),
-  }),
-  run: async (args, user: UserCtx) => {
-    const a = args as { title: string; attendees: string[]; start?: string | null; durationMin?: number; notes?: string | null };
-    const r = await executors.sendMeetingInvite(
-      { kind: "meeting", title: a.title, attendees: a.attendees, start: a.start ?? null, durationMin: a.durationMin, notes: a.notes ?? null },
-      user,
-    );
-    const output = r.ok
-      ? `Meeting booked (${r.actionExternalId}).`
-      : r.needsDisambiguation
-        ? `Need to confirm who: ${r.needsDisambiguation.filter((x) => x.status !== "resolved").map((x) => x.name ?? "?").join(", ")}.`
-        : r.needsField
-          ? `Need ${r.needsField} to book.`
-          : `Couldn't book: ${r.error}`;
-    return { output, card: { type: "offer", kind: "meeting", result: r } };
-  },
-};
-
-const deep_research: AgentTool = {
-  name: "deep_research",
-  gated: true,
-  inputSchema: z.object({ topic: z.string() }),
-  run: async (args, user: UserCtx) => {
-    void user;
-    const { topic } = args as { topic: string };
-    const { markdown } = await executors.deepResearch({ kind: "research", topic });
-    return { output: markdown, card: { type: "research", topic, markdown } };
   },
 };
 
@@ -294,9 +337,6 @@ export const agentTools: AgentToolRegistry = {
   complete_todo,
   uncomplete_todo,
   update_todo,
-  set_reminder,
-  send_meeting_invite,
-  deep_research,
 };
 
 const DESCRIPTIONS: Record<string, string> = {
@@ -304,13 +344,11 @@ const DESCRIPTIONS: Record<string, string> = {
   query_todos:
     "Query/filter the user's todos like the app's Views do. dateWindow: today | overdue | next7 (this week / upcoming) | noDate | any. labelNames: any-of tag filter. minPriority: p1|p2|p3 threshold. status: open (default) | done | all. text: substring quick-find over title/notes. dueFrom/dueTo: explicit ISO due range. Returns matching todos with their ids — use these ids for complete_todo/uncomplete_todo/update_todo.",
   search_contacts: "Search the user's Google contacts by name to find an email for a meeting attendee.",
-  create_todo: "Create a new todo (the user must approve).",
+  create_todo:
+    "Create a todo, optionally with an action and/or subtasks. Runs immediately (creating a todo is capture, not a side effect) and renders a tile with a gated do-it button. action.type: 'meeting' (attendees as names or emails, start as ISO local time, durationMin, notes), 'reminder' (remindAt, text), or 'research' (topic) — the action makes the todo's do-it button book / remind / research. For a goal that needs prep (e.g. 'book a meeting with Hansen and research X first') create ONE parent meeting todo with a research subtask: the subtask's report lands in the parent's notes and feeds the invite. Do NOT execute the action yourself — the user taps the do-it button.",
   complete_todo: "Mark a todo done by its id — get the id from list_todos/query_todos first (the user must approve).",
   uncomplete_todo: "Reopen a completed todo by its id (the user must approve).",
   update_todo: "Edit a todo by its id: change its title, set/clear dueAt, set priority, and/or replace its labels (labelNames replaces the whole set). Get the id from list_todos/query_todos first (the user must approve).",
-  set_reminder: "Set a reminder with text and a time (the user must approve).",
-  send_meeting_invite: "Book a meeting and send a Google Calendar invite (the user must approve).",
-  deep_research: "Run deep research on a topic and write a report (the user must approve).",
 };
 
 // Maps the registry → AI SDK tools for a given user. Both read and write tools

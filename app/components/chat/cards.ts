@@ -40,7 +40,9 @@ export type ProposedAction =
 // note. The tile components render purely from this union.
 export type ChatCard =
   // --- executed results (from part.output.card) ---
-  | { type: "todo"; todo: Todo }
+  // A created todo + its action-bearing subtasks. When the todo (or a subtask)
+  // carries an action, the tile renders inline gated do-it buttons (→ /finish).
+  | { type: "todo"; todo: Todo; subtasks?: Todo[] }
   | { type: "todos"; todos: Todo[] }
   | { type: "contacts"; query: string; candidates: ContactCandidate[] }
   | { type: "offer"; kind: "reminder" | "meeting"; result: ExecResult }

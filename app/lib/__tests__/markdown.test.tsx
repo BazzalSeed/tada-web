@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { Markdown } from "../markdown";
 
 describe("Markdown (minimal renderer)", () => {
@@ -22,5 +22,22 @@ describe("Markdown (minimal renderer)", () => {
   it("renders paragraphs for plain lines", () => {
     render(<Markdown source={"hello world"} />);
     expect(screen.getByText("hello world").tagName).toBe("P");
+  });
+
+  it("renders a todo: link as a button that opens the target todo", () => {
+    const onTodoLink = vi.fn();
+    render(
+      <Markdown source="Prep done [→ full report](todo:sub_123)" onTodoLink={onTodoLink} />,
+    );
+    const link = screen.getByRole("button", { name: "→ full report" });
+    fireEvent.click(link);
+    expect(onTodoLink).toHaveBeenCalledWith("sub_123");
+  });
+
+  it("renders an http link as an anchor", () => {
+    render(<Markdown source="see [docs](https://example.com)" />);
+    const a = screen.getByText("docs");
+    expect(a.tagName).toBe("A");
+    expect(a).toHaveAttribute("href", "https://example.com");
   });
 });

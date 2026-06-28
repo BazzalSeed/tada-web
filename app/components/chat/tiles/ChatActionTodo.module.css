@@ -1,0 +1,26 @@
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.subtasks {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-left: 2px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.subtask {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.subtaskTitle {
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b6256);
+}

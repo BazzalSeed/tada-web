@@ -4,7 +4,6 @@
 //  - isAdminEmail / redeemInvite: typed against the frozen contract aliases.
 //  - authorizeSignIn: the new-user admission decision (admin bypass / invite),
 //    injectable for unit tests; wired by the Auth.js signIn callback in @/auth.
-//  - devLoginEnabled: the hard gate for the non-prod test-login seam.
 // The Auth.js v5 config lives in `@/auth` (root); it imports the gating helpers
 // here. currentUser dynamically imports `@/auth` to avoid an init cycle.
 // ============================================================================
@@ -20,10 +19,6 @@ export const isAdminEmail: IsAdminEmail = (email) => {
     .filter(Boolean);
   return list.includes(email.trim().toLowerCase());
 };
-
-// Admins get unlimited on account creation; everyone else starts free.
-export const planForEmail = (email: string): Plan =>
-  isAdminEmail(email) ? "unlimited" : "free";
 
 // Atomic conditional claim: increments used_count iff the code is still valid
 // (under maxUses, unexpired, and not bound to a different email). Single SQL
@@ -62,21 +57,34 @@ export async function authorizeSignIn(
   return false; // new non-admin without a valid invite
 }
 
-// Hard gate for the dev-only test-login seam — non-prod AND explicit flag only.
-export const devLoginEnabled = (): boolean =>
-  process.env.NODE_ENV !== "production" && process.env.ENABLE_DEV_LOGIN === "1";
+// The Google refresh token is the user's, persisted by the adapter on the
+// `Account` row. We read it server-side (NEVER via the session — that would leak
+// it to the client at /api/auth/session) so the meeting/contacts executors can
+// mint an access token on demand.
+export async function googleRefreshTokenFor(userId: string): Promise<string | null> {
+  const acct = await prisma.account.findFirst({
+    where: { userId, provider: "google" },
+    select: { refresh_token: true },
+  });
+  return acct?.refresh_token ?? null;
+}
 
-// Resolves the Auth.js session → UserCtx. plan + googleRefreshToken are attached
-// to the session in the Auth.js session callback (see @/auth).
+// Resolves the Auth.js session → UserCtx. plan comes off the session; the Google
+// refresh token is looked up server-side from the Account row (never client-exposed).
 export const currentUser: CurrentUser = async () => {
   const { auth } = await import("@/auth");
   const session = await auth();
   const u = session?.user;
   if (!u?.id || !u.email) throw new Error("unauthorized");
+  const [googleRefreshToken, row] = await Promise.all([
+    googleRefreshTokenFor(u.id),
+    prisma.user.findUnique({ where: { id: u.id }, select: { timezone: true } }),
+  ]);
   return {
     userId: u.id,
     email: u.email,
     plan: (u.plan ?? "free") as Plan,
-    googleRefreshToken: u.googleRefreshToken ?? null,
+    googleRefreshToken,
+    timezone: row?.timezone ?? null,
   };
 };

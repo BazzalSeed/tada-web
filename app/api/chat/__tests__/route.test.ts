@@ -52,9 +52,11 @@ describe("POST /api/chat", () => {
     expect(mockGetConvo).toHaveBeenCalledWith("u1", "c1");
     const arg = mockStream.mock.calls[0][0];
     expect(arg.model.__model).toBe("gemini-2.5-flash");
-    // read tool present + gated write tool present
+    // read tool + create_todo (the capture surface for actions) wired
     expect(arg.tools.list_todos).toBeTruthy();
-    expect(arg.tools.send_meeting_invite).toBeTruthy();
+    expect(arg.tools.create_todo).toBeTruthy();
+    // direct side-effect tools are gone — actions flow through todos + /finish
+    expect(arg.tools.send_meeting_invite).toBeUndefined();
   });
 
   it("requires a conversationId", async () => {

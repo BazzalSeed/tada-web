@@ -36,7 +36,7 @@ npm run prisma:migrate      # apply migrations to the local database
 npm run dev                 # http://localhost:3000
 ```
 
-- **Google OAuth needs port 3000** — the registered redirect URI is `http://localhost:3000/api/auth/callback/google`. To sign in without Google, set `ENABLE_DEV_LOGIN=1` (non-prod only) and use `/dev-login`.
+- **Google OAuth needs port 3000** — the registered redirect URI is `http://localhost:3000/api/auth/callback/google`, so sign-in only works when the dev server runs on 3000.
 - Other scripts: `npm run build`, `npm run typecheck`, `npm run lint`, `npm test` (unit), `npm run test:integration` (DB tests in a throwaway container). The marketing landing previews standalone via `python3 design/landing-preview/.nocache_server.py`.
 
 ## Docs
