@@ -119,10 +119,12 @@ describe("DetailPaneView (store-wired)", () => {
         <DetailPaneView todo={parentWithLink} />
       </TadaProvider>,
     );
-    const link = screen.getByRole("button", { name: /→ full report/i });
-    fireEvent.click(link); // expand — Collapse control appears
+    // expand — Collapse control appears. Re-query the link before each click:
+    // react-markdown re-creates the link's DOM node on re-render, so a captured
+    // reference goes stale after the first click.
+    fireEvent.click(screen.getByRole("button", { name: /→ full report/i }));
     expect(screen.getByRole("button", { name: /collapse/i })).toBeInTheDocument();
-    fireEvent.click(link); // collapse — Collapse control disappears
+    fireEvent.click(screen.getByRole("button", { name: /→ full report/i })); // collapse
     expect(screen.queryByRole("button", { name: /collapse/i })).toBeNull();
   });
 
