@@ -89,3 +89,12 @@
 .confirm:hover {
   opacity: 0.8;
 }
+
+.confirm[data-destructive] {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.confirm[data-destructive]:hover {
+  opacity: 0.85;
+}

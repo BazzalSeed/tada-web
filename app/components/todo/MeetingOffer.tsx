@@ -26,6 +26,9 @@ export function MeetingOffer({ todo, onFinish, onPatchPayload, onPatch }: OfferP
   const [error, setError] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const resolvedOnce = useRef(false);
+  // Always reflects the latest payload so the resolve .then can merge without
+  // clobbering concurrent edits made while resolution was in-flight.
+  const pRef = useRef(p); pRef.current = p;
 
   // Always-confirm contact: resolve raw names on mount so the user SEES the email
   // before Send (no silent booking, even on a unique match). Runs once.
@@ -38,7 +41,7 @@ export function MeetingOffer({ todo, onFinish, onPatchPayload, onPatch }: OfferP
       resolveContacts(raw)
         .then((attendees) => {
           setResolving(false);
-          onPatchPayload({ ...p, resolvedAttendees: attendees });
+          onPatchPayload({ ...(pRef.current ?? p), resolvedAttendees: attendees });
         })
         .catch(() => {
           setResolving(false);

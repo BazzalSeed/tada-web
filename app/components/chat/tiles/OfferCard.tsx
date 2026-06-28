@@ -38,9 +38,9 @@ const APPROVE_LABEL: Record<ProposedAction["kind"], string> = {
 
 const PRIORITY_LABEL: Record<string, string> = {
   none: "No priority",
+  p0: "P0",
   p1: "P1",
   p2: "P2",
-  p3: "P3",
 };
 
 // The agent should emit offset-less ISO, but sometimes hands back a natural

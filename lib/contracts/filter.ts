@@ -46,7 +46,7 @@ export type ApplyFilter = (c: FilterCriteria, todos: Todo[], now: Date) => Todo[
 // Maps a sidebar selection to its FilterCriteria (SavedView lookup for projects).
 export type CriteriaFor = (sel: ViewSelection, views: SavedView[]) => FilterCriteria;
 
-// Quick-add parse. tokens: p1/p2/p3 - @label - #list -
+// Quick-add parse. tokens: p0/p1/p2 - @label - #list -
 //   today|tomorrow|tmr|<weekday>|<ISO yyyy-MM-dd> - "every <unit|weekday>".
 //   Recurrence is scanned before bare weekday dates.
 export type ParseQuickAdd = (text: string, now?: Date) => ParsedQuickAdd;

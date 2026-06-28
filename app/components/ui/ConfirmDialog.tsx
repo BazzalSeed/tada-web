@@ -23,6 +23,7 @@ export function ConfirmDialog({
   message,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
+  destructive,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -71,6 +72,7 @@ export function ConfirmDialog({
             ref={confirmRef}
             type="button"
             className={styles.confirm}
+            data-destructive={destructive || undefined}
             onClick={onConfirm}
           >
             {confirmLabel}
