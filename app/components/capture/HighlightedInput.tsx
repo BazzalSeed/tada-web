@@ -48,6 +48,7 @@ export function HighlightedInput({
 }: HighlightedInputProps) {
   const segments = useMemo(() => segmentize(value, tokens), [value, tokens]);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = taRef.current;
     if (!el) return;
@@ -57,7 +58,7 @@ export function HighlightedInput({
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.backdrop} aria-hidden="true">
+      <div ref={backdropRef} className={styles.backdrop} aria-hidden="true">
         {segments.map((s, i) =>
           s.kind ? (
             <span key={i} className={styles.token} data-kind={s.kind}>
@@ -77,6 +78,13 @@ export function HighlightedInput({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onScroll={(e) => {
+          const b = backdropRef.current;
+          if (b) {
+            b.scrollTop = e.currentTarget.scrollTop;
+            b.scrollLeft = e.currentTarget.scrollLeft;
+          }
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
