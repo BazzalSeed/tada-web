@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { ActionPayload, Todo } from "@/lib/contracts";
 import { finishTodo as finishTodoApi, patchTodo } from "@/app/lib/api";
 import { reflectFinish } from "@/app/lib/offer";
@@ -14,6 +15,9 @@ import { DetailPane } from "./DetailPane";
 export function DetailPaneView({ todo }: { todo: Todo }) {
   const { state, dispatch } = useTada();
   const ensureLabel = useEnsureLabel();
+  // (A) Inline report expansion — toggled by clicking a todo: link in notes.
+  // Resets automatically when this component remounts (key={selectedTodo.id}).
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
 
   async function patch(p: Partial<Todo>) {
     dispatch({ type: "UPSERT_TODO", todo: { ...todo, ...p } });
@@ -35,6 +39,16 @@ export function DetailPaneView({ todo }: { todo: Todo }) {
     return res;
   }
 
+  // (A) Inline report: resolve the expanded child from the store.
+  const inlineReportTodo = expandedReportId
+    ? (state.todos.find((t) => t.id === expandedReportId) ?? null)
+    : null;
+
+  // (B) Back-to-parent breadcrumb: resolve parent if this todo is a subtask.
+  const parentTodo = todo.parentId
+    ? (state.todos.find((t) => t.id === todo.parentId) ?? null)
+    : null;
+
   // OfferPanel self-manages: active offer, the executed-confirmation (done), or
   // null. Mount it for any actionType todo (none → it renders nothing).
   const offer =
@@ -55,7 +69,22 @@ export function DetailPaneView({ todo }: { todo: Todo }) {
       onPatch={patch}
       onCreateLabel={ensureLabel}
       offer={offer}
-      onTodoLink={(id) => dispatch({ type: "SELECT_TODO", id })}
+      onTodoLink={(id) =>
+        setExpandedReportId((prev) => (prev === id ? null : id))
+      }
+      inlineReport={
+        inlineReportTodo
+          ? { todo: inlineReportTodo, onClose: () => setExpandedReportId(null) }
+          : null
+      }
+      parentCrumb={
+        parentTodo
+          ? {
+              title: parentTodo.title,
+              onClick: () => dispatch({ type: "SELECT_TODO", id: parentTodo.id }),
+            }
+          : undefined
+      }
     >
       <SubtaskSection parentId={todo.id} />
     </DetailPane>

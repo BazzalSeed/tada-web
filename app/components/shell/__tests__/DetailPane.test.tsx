@@ -120,4 +120,108 @@ describe("DetailPane (editable)", () => {
     fireEvent.click(screen.getByRole("button", { name: /close/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  // ── parentCrumb (B) ───────────────────────────────────────────────────────
+  it("renders the parent breadcrumb when parentCrumb is passed", () => {
+    const onClick = vi.fn();
+    render(
+      <DetailPane
+        {...paneProps({
+          parentCrumb: { title: "Big Project", onClick },
+        })}
+      />,
+    );
+    const crumb = screen.getByRole("button", { name: /← big project/i });
+    expect(crumb).toBeInTheDocument();
+    fireEvent.click(crumb);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("does NOT render a parent breadcrumb when parentCrumb is absent", () => {
+    render(<DetailPane {...paneProps()} />);
+    expect(screen.queryByRole("button", { name: /←/i })).toBeNull();
+  });
+
+  // ── inlineReport (A) ──────────────────────────────────────────────────────
+  it("renders the inline report panel with child title and markdown when inlineReport is passed", () => {
+    const onClose = vi.fn();
+    const childTodo: Todo = {
+      id: "c1",
+      createdAt: "2026-06-26T09:00:00",
+      sourceCaptureId: "",
+      title: "Research subtask",
+      detail: "**Finding:** Rome was not built in a day",
+      status: "open",
+      actionType: "none",
+      actionState: "none",
+      sortIndex: 1,
+      priority: "none",
+      labelIds: [],
+      parentId: "t1",
+    };
+    render(
+      <DetailPane
+        {...paneProps({
+          inlineReport: { todo: childTodo, onClose },
+        })}
+      />,
+    );
+    // child title appears in the inline report header
+    expect(screen.getByText("Research subtask")).toBeInTheDocument();
+    // markdown is rendered (bold)
+    expect(screen.getByText("Finding:")).toBeInTheDocument();
+  });
+
+  it("calls inlineReport.onClose when the collapse control is clicked", () => {
+    const onClose = vi.fn();
+    const childTodo: Todo = {
+      id: "c1",
+      createdAt: "2026-06-26T09:00:00",
+      sourceCaptureId: "",
+      title: "Research subtask",
+      detail: "Some report content",
+      status: "open",
+      actionType: "none",
+      actionState: "none",
+      sortIndex: 1,
+      priority: "none",
+      labelIds: [],
+      parentId: "t1",
+    };
+    render(
+      <DetailPane
+        {...paneProps({
+          inlineReport: { todo: childTodo, onClose },
+        })}
+      />,
+    );
+    const collapse = screen.getByRole("button", { name: /collapse/i });
+    fireEvent.click(collapse);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders 'No report yet.' when inlineReport.todo.detail is empty", () => {
+    const childTodo: Todo = {
+      id: "c1",
+      createdAt: "2026-06-26T09:00:00",
+      sourceCaptureId: "",
+      title: "Empty report",
+      detail: "",
+      status: "open",
+      actionType: "none",
+      actionState: "none",
+      sortIndex: 1,
+      priority: "none",
+      labelIds: [],
+      parentId: "t1",
+    };
+    render(
+      <DetailPane
+        {...paneProps({
+          inlineReport: { todo: childTodo, onClose: vi.fn() },
+        })}
+      />,
+    );
+    expect(screen.getByText(/no report yet/i)).toBeInTheDocument();
+  });
 });

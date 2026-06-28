@@ -18,6 +18,21 @@ const todo: Todo = {
   labelIds: [],
 };
 
+const childTodo: Todo = {
+  id: "c1",
+  createdAt: "2026-06-26T10:00:00",
+  sourceCaptureId: "",
+  title: "Research report",
+  detail: "## Findings\nSome content here",
+  status: "open",
+  actionType: "none",
+  actionState: "none",
+  sortIndex: 1,
+  priority: "none",
+  labelIds: [],
+  parentId: "t1",
+};
+
 function Probe() {
   const { state } = useTada();
   const t = state.todos.find((x) => x.id === "t1");
@@ -32,9 +47,9 @@ function Probe() {
 
 afterEach(() => vi.restoreAllMocks());
 
-function renderView() {
+function renderView(extraTodos: Todo[] = []) {
   return render(
-    <TadaProvider preload={{ todos: [todo], selectedTodoId: "t1" }}>
+    <TadaProvider preload={{ todos: [todo, ...extraTodos], selectedTodoId: "t1" }}>
       <Probe />
       <DetailPaneView todo={todo} />
     </TadaProvider>,
@@ -66,5 +81,102 @@ describe("DetailPaneView (store-wired)", () => {
     renderView();
     fireEvent.click(screen.getByRole("button", { name: /set priority p2/i }));
     await waitFor(() => expect(screen.getByTestId("prio")).toHaveTextContent("p2"));
+  });
+
+  // ── inline report expansion (A) ───────────────────────────────────────────
+  it("clicking a todo: link in notes expands the report inline (does NOT dispatch SELECT_TODO)", () => {
+    globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
+    // The parent todo has a note linking to the child via todo: protocol
+    const parentWithLink: Todo = {
+      ...todo,
+      detail: "See [→ full report](todo:c1)",
+    };
+    render(
+      <TadaProvider preload={{ todos: [parentWithLink, childTodo], selectedTodoId: "t1" }}>
+        <Probe />
+        <DetailPaneView todo={parentWithLink} />
+      </TadaProvider>,
+    );
+    // The note link renders as a button (from markdown.tsx)
+    const link = screen.getByRole("button", { name: /→ full report/i });
+    fireEvent.click(link);
+
+    // The inline report panel is open — the Collapse button appears
+    expect(screen.getByRole("button", { name: /collapse/i })).toBeInTheDocument();
+    // SELECT_TODO should NOT have changed the selected todo — still t1
+    expect(screen.getByTestId("sel")).toHaveTextContent("t1");
+  });
+
+  it("clicking the todo: link again collapses the inline report", () => {
+    globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
+    const parentWithLink: Todo = {
+      ...todo,
+      detail: "See [→ full report](todo:c1)",
+    };
+    render(
+      <TadaProvider preload={{ todos: [parentWithLink, childTodo], selectedTodoId: "t1" }}>
+        <Probe />
+        <DetailPaneView todo={parentWithLink} />
+      </TadaProvider>,
+    );
+    const link = screen.getByRole("button", { name: /→ full report/i });
+    fireEvent.click(link); // expand — Collapse control appears
+    expect(screen.getByRole("button", { name: /collapse/i })).toBeInTheDocument();
+    fireEvent.click(link); // collapse — Collapse control disappears
+    expect(screen.queryByRole("button", { name: /collapse/i })).toBeNull();
+  });
+
+  // ── back-to-parent breadcrumb (B) ─────────────────────────────────────────
+  it("shows a parent breadcrumb when the viewed todo has a parentId in store", () => {
+    globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
+    const parent: Todo = {
+      id: "p1",
+      createdAt: "2026-06-26T08:00:00",
+      sourceCaptureId: "",
+      title: "Big Project",
+      status: "open",
+      actionType: "none",
+      actionState: "none",
+      sortIndex: 0,
+      priority: "none",
+      labelIds: [],
+    };
+    const child: Todo = {
+      ...todo,
+      id: "t1",
+      parentId: "p1",
+    };
+    render(
+      <TadaProvider preload={{ todos: [parent, child], selectedTodoId: "t1" }}>
+        <Probe />
+        <DetailPaneView todo={child} />
+      </TadaProvider>,
+    );
+    expect(screen.getByRole("button", { name: /← big project/i })).toBeInTheDocument();
+  });
+
+  it("clicking the parent breadcrumb dispatches SELECT_TODO with the parent id", () => {
+    globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
+    const parent: Todo = {
+      id: "p1",
+      createdAt: "2026-06-26T08:00:00",
+      sourceCaptureId: "",
+      title: "Big Project",
+      status: "open",
+      actionType: "none",
+      actionState: "none",
+      sortIndex: 0,
+      priority: "none",
+      labelIds: [],
+    };
+    const child: Todo = { ...todo, id: "t1", parentId: "p1" };
+    render(
+      <TadaProvider preload={{ todos: [parent, child], selectedTodoId: "t1" }}>
+        <Probe />
+        <DetailPaneView todo={child} />
+      </TadaProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /← big project/i }));
+    expect(screen.getByTestId("sel")).toHaveTextContent("p1");
   });
 });

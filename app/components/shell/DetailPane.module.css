@@ -246,3 +246,78 @@
   color: var(--color-ink-muted);
   font-style: italic;
 }
+
+/* (B) Back-to-parent breadcrumb — subtle text button, rust on hover */
+.parentCrumb {
+  display: inline-flex;
+  align-items: center;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out-quart);
+}
+
+.parentCrumb:hover {
+  color: var(--color-accent);
+}
+
+/* (A) Inline-expanded subtask report — inset panel below notes */
+.inlineReport {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  margin-top: var(--space-1);
+  border: var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+}
+
+.inlineReportHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.inlineReportTitle {
+  font-family: var(--font-body);
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inlineReportCollapse {
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  padding: 2px var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink-soft);
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out-quart);
+}
+
+.inlineReportCollapse:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-accent-text);
+}

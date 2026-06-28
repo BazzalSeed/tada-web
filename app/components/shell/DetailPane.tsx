@@ -34,6 +34,10 @@ export interface DetailPaneProps {
   offer?: ReactNode; // the "do it for me" offer panel (FIX2)
   onTodoLink?: (id: string) => void; // open another todo from an in-note link
   children?: ReactNode;
+  /** When the viewed todo is a subtask, a clickable crumb back to its parent. */
+  parentCrumb?: { title: string; onClick: () => void };
+  /** Inline-expanded research subtask report; rendered below the notes block. */
+  inlineReport?: { todo: Todo; onClose: () => void } | null;
 }
 
 export function DetailPane({
@@ -45,6 +49,8 @@ export function DetailPane({
   offer,
   onTodoLink,
   children,
+  parentCrumb,
+  inlineReport,
 }: DetailPaneProps) {
   const [title, setTitle] = useState(todo?.title ?? "");
   const [detail, setDetail] = useState(todo?.detail ?? "");
@@ -73,7 +79,18 @@ export function DetailPane({
   return (
     <aside className={styles.pane} aria-label="Todo detail">
       <div className={styles.header}>
-        <span className={styles.crumb}>Detail</span>
+        {parentCrumb ? (
+          <button
+            type="button"
+            className={styles.parentCrumb}
+            onClick={parentCrumb.onClick}
+            title={parentCrumb.title}
+          >
+            ← {parentCrumb.title}
+          </button>
+        ) : (
+          <span className={styles.crumb}>Detail</span>
+        )}
         <button
           type="button"
           className={styles.close}
@@ -221,6 +238,28 @@ export function DetailPane({
           </div>
         )}
       </div>
+
+      {/* Inline-expanded research subtask report (A) */}
+      {inlineReport ? (
+        <div className={styles.inlineReport}>
+          <div className={styles.inlineReportHead}>
+            <span className={styles.inlineReportTitle}>{inlineReport.todo.title}</span>
+            <button
+              type="button"
+              className={styles.inlineReportCollapse}
+              aria-label="Collapse report"
+              onClick={inlineReport.onClose}
+            >
+              Collapse
+            </button>
+          </div>
+          {inlineReport.todo.detail?.trim() ? (
+            <Markdown source={inlineReport.todo.detail} onTodoLink={onTodoLink} />
+          ) : (
+            <p className={styles.empty}>No report yet.</p>
+          )}
+        </div>
+      ) : null}
 
       {children ? (
         <div className={styles.section}>
