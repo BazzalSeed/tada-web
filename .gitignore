@@ -3,6 +3,10 @@
 .env.*
 !.env.example
 
+# scratch
+todo.md
+.superpowers/
+
 # deps / build
 node_modules/
 .vercel/

@@ -892,6 +892,25 @@ git commit -m "feat(capture): compact action pill + open review card on chip acc
 
 ---
 
+### Task 9: Harden contact resolution — warmup + surface errors (user feedback)
+
+Symptom: a real "other contact" (Gmail-derived, e.g. "Legend Wind") resolves to "No matches found".
+Root causes: (a) the user's refresh token may predate the `contacts.other.readonly` scope → 403 on
+`otherContacts:search`, silently swallowed; (b) People API search needs a warmup (empty-query) request
+before the first real search, or it returns empty.
+
+**Files:** `lib/contacts.ts` (+ test `lib/__tests__/contacts.test.ts`).
+- Before the first real search per `resolve()` call, send a warmup request with an **empty query** to
+  BOTH endpoints (People API requires this to populate the search index), then run the real query.
+- In `searchPeople`, distinguish a non-OK response from an empty result set: on `!res.ok`, surface the
+  status (log a warning incl. endpoint + status; on 403, this signals the scope wasn't granted). Do not
+  let a 403 read as "no contacts exist".
+- Keep the merge/dedupe/scoring behavior unchanged.
+- Verify the warmup requirement against current Google People API docs (via context7) when implementing.
+
+Note: the immediate user-facing unblock is RE-CONSENT (sign out/in to grant `contacts.other.readonly`);
+this task makes the failure mode loud instead of silent and adds the warmup so a cold index doesn't miss.
+
 ### Task 8: Relocate the enhancing indicator to the enriching todo row (user feedback)
 
 Task 2 put the "Enhancing…" pill in the add card; per user feedback it belongs on the just-added
