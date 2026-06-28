@@ -1,24 +1,136 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { signIn } from "next-auth/react";
 import { Spark } from "@/app/components/brand/Spark";
 import styles from "./Landing.module.css";
 
 // T4.1 — the marketing landing, ported from design/landing-preview (rust palette,
 // already on-brand). Static-first: content is visible without JS; a mount effect
-// layers the entrance reveal, the frosted-on-scroll nav, and the beats spine.
+// layers the entrance reveal, the frosted-on-scroll nav, the beats spine, and the
+// hero switchboard animation (sources wire into Tada; the active flow plays).
 
-const Check = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 12l5 5L19 7" />
+// Hero switchboard icons — capture sources (left column + flow header) and the
+// action Tada finishes with (the Done step). Inherit color via currentColor.
+const IconEmail = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="M3 7l9 6 9-6" />
   </svg>
 );
+const IconShot = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="4" width="18" height="14" rx="2" />
+    <path d="M3 16l5-4 4 3 4-4 5 4" />
+  </svg>
+);
+const IconQuick = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M4 7h16M4 12h10M4 17h7" />
+  </svg>
+);
+const IconCal = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4" />
+  </svg>
+);
+const IconBell = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7" />
+    <path d="M10 21h4" />
+  </svg>
+);
+const IconSearch = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="7" />
+    <path d="M16.5 16.5L21 21" />
+  </svg>
+);
+
+// The three capture sources (left column). Order drives the auto-play cycle.
+const SOURCES: { id: string; icon: ReactNode; t: string; m: string }[] = [
+  { id: "email", icon: <IconEmail />, t: "Email", m: "Forwarded · your inbox" },
+  { id: "shot", icon: <IconShot />, t: "Screenshots", m: "Pasted · images" },
+  { id: "quick", icon: <IconQuick />, t: "Quick add", m: "Typed or spoken" },
+];
+
+// One end-to-end story per source: the raw input (shape of the source) → the
+// structured task Tada wrote → the action Tada finished for you.
+type Flow = {
+  kind: string;
+  kIcon: ReactNode;
+  text: ReactNode;
+  task: string;
+  chips: [string, string][];
+  dIcon: ReactNode;
+  done: string;
+};
+const FLOWS: Record<string, Flow> = {
+  email: {
+    kind: "Forwarded email",
+    kIcon: <IconEmail />,
+    text: (
+      <>
+        “…can we <b>sync Tuesday afternoon</b>? I&apos;ll send over the brief.” — Dakota
+      </>
+    ),
+    task: "Meet Dakota — project sync",
+    chips: [
+      ["date", "Tue 2:00 PM"],
+      ["lab", "#work"],
+    ],
+    dIcon: <IconCal />,
+    done: "Booked it — invite sent to Dakota",
+  },
+  shot: {
+    kind: "Screenshot, read by Tada",
+    kIcon: <IconShot />,
+    text: (
+      <>
+        “can you <b>find the best CRMs</b> for a small team and summarize the trade-offs?”
+      </>
+    ),
+    task: "Research CRMs for the team",
+    chips: [["lab", "#research"]],
+    dIcon: <IconSearch />,
+    done: "Deep research done — findings written in",
+  },
+  quick: {
+    kind: "Typed or spoken",
+    kIcon: <IconQuick />,
+    text: (
+      <>
+        “remind me to <b>call mom tonight</b> at 6”
+      </>
+    ),
+    task: "Call mom",
+    chips: [
+      ["date", "Today 6:00 PM"],
+      ["lab", "#family"],
+    ],
+    dIcon: <IconBell />,
+    done: "Reminder set · 6:00 PM",
+  },
+};
 
 export function Landing() {
   const rootRef = useRef<HTMLDivElement>(null);
   const beatsRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
+
+  // Hero switchboard: which source is "on" (cycled), the per-source wire paths
+  // (measured from layout), and refs the wire geometry + traveling dot read.
+  const [active, setActive] = useState(0);
+  const [wirePaths, setWirePaths] = useState<string[]>([]);
+  const [wiresViewBox, setWiresViewBox] = useState("0 0 0 0");
+  const gridRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const sourceRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const pathRefs = useRef<(SVGPathElement | null)[]>([]);
+  const dotRef = useRef<SVGCircleElement | null>(null);
+  const activeRef = useRef(0);
+  activeRef.current = active;
 
   useEffect(() => {
     const root = rootRef.current;
@@ -71,6 +183,87 @@ export function Landing() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Switchboard wire geometry: a curved Bézier from each source's right edge
+  // converging into the "Tada" mark. Recomputed on layout/resize/font-ready so
+  // the wires stay registered with the cards as the page reflows.
+  useEffect(() => {
+    const grid = gridRef.current;
+    const card = cardRef.current;
+    if (!grid || !card) return;
+    const draw = () => {
+      const gb = grid.getBoundingClientRect();
+      if (!gb.width) return; // pre-layout (e.g. jsdom) — nothing to draw yet
+      setWiresViewBox(`0 0 ${gb.width} ${gb.height}`);
+      const cb = card.getBoundingClientRect();
+      const endX = cb.left - gb.left;
+      const endY = cb.top - gb.top + 30; // converge into the Tada mark
+      setWirePaths(
+        sourceRefs.current.map((el) => {
+          if (!el) return "";
+          const b = el.getBoundingClientRect();
+          const x1 = b.right - gb.left;
+          const y1 = b.top - gb.top + b.height / 2;
+          const dx = endX - x1;
+          const c1 = x1 + dx * 0.5;
+          const c2 = endX - dx * 0.5;
+          return `M${x1},${y1} C${c1},${y1} ${c2},${endY} ${endX},${endY}`;
+        }),
+      );
+    };
+    draw();
+    window.addEventListener("resize", draw);
+    window.addEventListener("load", draw);
+    let ro: ResizeObserver | undefined;
+    if ("ResizeObserver" in window) {
+      ro = new ResizeObserver(draw);
+      ro.observe(grid);
+    }
+    const fonts = (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts;
+    if (fonts?.ready) fonts.ready.then(draw).catch(() => {});
+    return () => {
+      window.removeEventListener("resize", draw);
+      window.removeEventListener("load", draw);
+      ro?.disconnect();
+    };
+  }, []);
+
+  // Auto-play the sources and ride a dot along the active wire. Both are skipped
+  // under prefers-reduced-motion (CSS then shows the flow statically).
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+    const interval = setInterval(() => {
+      setActive((a) => (a + 1) % SOURCES.length);
+    }, 4600);
+
+    let raf = 0;
+    let phase = 0;
+    const tick = () => {
+      phase += 0.0065;
+      if (phase > 1) phase -= 1;
+      const dot = dotRef.current;
+      const path = pathRefs.current[activeRef.current];
+      if (dot && path && typeof path.getTotalLength === "function") {
+        const len = path.getTotalLength();
+        if (len) {
+          const pt = path.getPointAtLength(len * phase);
+          dot.setAttribute("cx", String(pt.x));
+          dot.setAttribute("cy", String(pt.y));
+          dot.setAttribute("opacity", phase < 0.04 || phase > 0.96 ? "0" : "1");
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      clearInterval(interval);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  const flow = FLOWS[SOURCES[active].id];
+
   return (
     <div className={styles.landing} ref={rootRef} id="top">
       <header className={styles.nav} data-scrolled={scrolled}>
@@ -112,49 +305,88 @@ export function Landing() {
             </div>
 
             <div className={styles.reveal}>
-              <div className={styles.swbGrid}>
-                <div className={styles.swbSources}>
-                  <div className={styles.swbSrc} data-on="true">
-                    <span className={styles.swbSrcT}>Email</span>
-                    <span className={styles.swbSrcM}>Forwarded · your inbox</span>
-                  </div>
-                  <div className={styles.swbSrc}>
-                    <span className={styles.swbSrcT}>Screenshots</span>
-                    <span className={styles.swbSrcM}>Pasted · images</span>
-                  </div>
-                  <div className={styles.swbSrc}>
-                    <span className={styles.swbSrcT}>Quick add</span>
-                    <span className={styles.swbSrcM}>Typed or spoken</span>
-                  </div>
-                </div>
+              <div
+                className={styles.swb}
+                aria-label="Email, screenshots and quick add flow into Tada. It turns each into a task and finishes it for you — booking a meeting, doing deep research, or setting a reminder."
+              >
+                <div className={styles.swbGrid} ref={gridRef}>
+                  <svg className={styles.swbWires} viewBox={wiresViewBox} aria-hidden="true">
+                    {SOURCES.map((s, i) => (
+                      <path
+                        key={s.id}
+                        ref={(el) => {
+                          pathRefs.current[i] = el;
+                        }}
+                        className={`${styles.swbWire} ${i === active ? styles.swbWireOn : ""}`}
+                        d={wirePaths[i] ?? ""}
+                      />
+                    ))}
+                    <circle ref={dotRef} className={styles.swbDot} r="3.4" opacity="0" />
+                  </svg>
 
-                <div className={styles.swbHub}>
-                  <div className={styles.swbCard}>
-                    <div className={styles.swbCardTop}>
-                      <span className={styles.swbCardMark}>
-                        Tada
-                        <Spark size={13} className={styles.spark} />
-                      </span>
-                      <span className={styles.swbCardDot} aria-hidden="true" />
+                  <div className={styles.swbSources}>
+                    {SOURCES.map((s, i) => (
+                      <div
+                        key={s.id}
+                        ref={(el) => {
+                          sourceRefs.current[i] = el;
+                        }}
+                        className={styles.swbSrc}
+                        data-on={i === active}
+                      >
+                        <span className={styles.swbSrcT}>
+                          {s.icon}
+                          {s.t}
+                        </span>
+                        <span className={styles.swbSrcM}>{s.m}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className={styles.swbHub}>
+                    <div className={styles.swbCard} ref={cardRef}>
+                      <div className={styles.swbCardTop}>
+                        <span className={styles.swbCardMark}>
+                          Tada
+                          <Spark size={13} className={styles.spark} />
+                        </span>
+                        <span className={styles.swbCardDot} aria-hidden="true" />
+                      </div>
+                      <span className={styles.swbCardSub}>your assistant · reads it, then does it</span>
                     </div>
-                    <span className={styles.swbCardSub}>your assistant · reads it, then does it</span>
-                  </div>
-                  <div className={styles.swbTask}>
-                    <span className={styles.swbTaskT}>
-                      <span className={styles.o} />
-                      Meet Dakota — project sync
-                    </span>
-                    <span className={styles.swbChips}>
-                      <span className={`${styles.swbChip} ${styles.date}`}>Tue 2:00 PM</span>
-                      <span className={`${styles.swbChip} ${styles.lab}`}>#work</span>
-                    </span>
-                  </div>
-                  <div className={styles.swbDone}>
-                    <span className={styles.dc}>
-                      <Check />
-                    </span>
-                    <span>Booked it — invite sent to Dakota</span>
-                    <span className={styles.spark}>✦</span>
+
+                    {/* keyed on the active source so each switch remounts the steps
+                        and replays the staggered In → Task → Done entrance. */}
+                    <div className={styles.swbFlow} aria-live="polite" key={active}>
+                      <div className={styles.swbStep}>
+                        <span className={styles.swbStepK}>
+                          {flow.kIcon}
+                          {flow.kind}
+                        </span>
+                        <p className={styles.swbInT}>{flow.text}</p>
+                      </div>
+                      <div className={`${styles.swbStep} ${styles.swbTask}`}>
+                        <span className={styles.swbTaskT}>
+                          <span className={styles.o} />
+                          {flow.task}
+                        </span>
+                        <span className={styles.swbChips}>
+                          {flow.chips.map(([k, v]) => (
+                            <span
+                              key={v}
+                              className={`${styles.swbChip} ${k === "date" ? styles.date : styles.lab}`}
+                            >
+                              {v}
+                            </span>
+                          ))}
+                        </span>
+                      </div>
+                      <div className={`${styles.swbStep} ${styles.swbDone}`}>
+                        <span className={styles.dc}>{flow.dIcon}</span>
+                        <span>{flow.done}</span>
+                        <span className={styles.spark}>✦</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
