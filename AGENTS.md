@@ -1,7 +1,7 @@
 # AGENTS.md — Tada Web
 
 Working agreement for any agent (or human) committing to this repo. For
-orientation see `README.md`, `docs/current-design.md`, and `CLAUDE.md` (the full
+orientation see `README.md`, `docs/architecture.md`, and `CLAUDE.md` (the full
 agent guide with the locked decisions).
 
 ## Local CI — run before every push
@@ -29,7 +29,7 @@ Rules:
 
 ## Pointers
 - Setup & how to run locally → `README.md`
-- Architecture, repo layout, the `app/api` surface → `docs/current-design.md`
+- Architecture, repo layout, the `app/api` surface → `docs/architecture.md`
 - Locked decisions, design system, conventions → `CLAUDE.md`
 - New to TypeScript/Next.js (coming from Django) → `docs/onboarding-for-django-devs.md`
 - Env layout: `.env.local` = local dev (local Docker Postgres), `.env.prod` = prod reference. Production reads env from **Vercel**, not from any local file.

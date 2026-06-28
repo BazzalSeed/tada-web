@@ -50,7 +50,7 @@ types/                Type augmentation (next-auth session shape)
 scripts/              mint-invite.ts (CLI to create invite codes)
 design/landing-preview/  Self-contained HTML/CSS landing seed (iterated on)
 docker/, Dockerfile, docker-compose.yml   Local e2e stack (see docs/DOCKER.md)
-docs/                 current-design.md, onboarding-for-django-devs.md, DOCKER.md
+docs/                 architecture.md, onboarding-for-django-devs.md, DOCKER.md, DEPLOY.md
 ```
 
 Two `lib` directories on purpose: **`lib/`** is server-only core (DB, AI, executors, frozen contracts); **`app/lib/`** is client-side React/UI logic. The `@/*` import alias maps to the repo root (`tsconfig.json`), so `@/lib/...` is the server core and `@/app/lib/...` is the client.

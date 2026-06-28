@@ -41,7 +41,7 @@ npm run dev                 # http://localhost:3000
 
 ## Docs
 
-- **How it's built:** [docs/archiectrure.md](docs/archiectrure.md) — architecture, repo layout, the `app/api` surface.
+- **How it's built:** [docs/architecture.md](docs/architecture.md) — architecture, repo layout, the `app/api` surface.
 - **New to TypeScript/Next.js?** [docs/onboarding-for-django-devs.md](docs/onboarding-for-django-devs.md) — maps everything to Django and walks each golden flow end-to-end.
 - **Locked decisions / conventions:** [CLAUDE.md](CLAUDE.md).
 - **Local Docker e2e stack:** [docs/DOCKER.md](docs/DOCKER.md).
