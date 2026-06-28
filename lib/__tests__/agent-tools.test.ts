@@ -51,7 +51,7 @@ describe("query_todos (read, mirrors the app's Views via applyFilter)", () => {
   const pool = [
     { id: "t1", title: "Due today", status: "open", dueAt: today, priority: "p1", labelIds: ["lw"], actionType: "none", detail: null },
     { id: "t2", title: "Overdue thing", status: "open", dueAt: yesterday, priority: "none", labelIds: [], actionType: "none", detail: null },
-    { id: "t3", title: "No date task", status: "open", dueAt: null, priority: "p3", labelIds: ["lw"], actionType: "none", detail: "buy milk" },
+    { id: "t3", title: "No date task", status: "open", dueAt: null, priority: "p2", labelIds: ["lw"], actionType: "none", detail: "buy milk" },
     { id: "t4", title: "Done one", status: "done", dueAt: today, priority: "none", labelIds: [], actionType: "none", detail: null },
   ];
 

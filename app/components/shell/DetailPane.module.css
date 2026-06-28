@@ -107,7 +107,7 @@
   font-weight: 600;
 }
 
-.prio[data-priority="p1"][data-active="true"] {
+.prio[data-priority="p0"][data-active="true"] {
   color: var(--color-accent);
 }
 

@@ -50,7 +50,7 @@ const GATED_OFFER_TOOLS = new Set([
   "update_todo",
 ]);
 
-const PRIORITIES = new Set<Priority>(["none", "p1", "p2", "p3"]);
+const PRIORITIES = new Set<Priority>(["none", "p0", "p1", "p2"]);
 
 function toolNameOf(partType: string): string | null {
   return partType.startsWith("tool-") ? partType.slice("tool-".length) : null;

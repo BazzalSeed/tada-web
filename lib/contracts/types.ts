@@ -10,7 +10,7 @@
 
 // ---- Enums (string unions; stored as String columns, see prisma/schema.prisma) ----
 export type TodoStatus = "open" | "done" | "dismissed";
-export type Priority = "none" | "p1" | "p2" | "p3"; // p4 == none (native parity)
+export type Priority = "none" | "p0" | "p1" | "p2"; // p0 = most urgent; none = no priority
 export type ActionType = "none" | "meeting" | "reminder" | "research";
 // none = no action; proposed = action defined, awaiting an explicit do-it tap;
 // running = executor in flight (e.g. background research); done/failed = outcome;
@@ -29,9 +29,9 @@ export type CaptureKind = "image" | "text" | "file" | "email";
 // Priority ordering for threshold filtering (higher rank == more urgent).
 export const PRIORITY_RANK: Record<Priority, number> = {
   none: 0,
-  p3: 1,
-  p2: 2,
-  p1: 3,
+  p2: 1,
+  p1: 2,
+  p0: 3,
 };
 
 export interface RecurrenceRule {

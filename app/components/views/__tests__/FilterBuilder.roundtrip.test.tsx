@@ -39,10 +39,10 @@ const match = todo({
 });
 // Right labels but no due date → excluded by next7.
 const noDate = todo({ id: "nodate", priority: "p1", labelIds: ["l-urgent"] });
-// In-window + labelled but priority too low for P2+.
+// In-window + labelled but priority too low for P1+.
 const lowPrio = todo({
   id: "lowprio",
-  priority: "p3",
+  priority: "p2",
   labelIds: ["l-work"],
   dueAt: "2026-06-28T00:00:00",
 });
@@ -73,11 +73,11 @@ function Harness() {
 }
 
 describe("FilterBuilder → applyFilter round-trip", () => {
-  it("composes @work ANY @urgent + P2+ + next7 down to exactly the matching todo", () => {
+  it("composes @work ANY @urgent + P1+ + next7 down to exactly the matching todo", () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole("button", { name: /@work/i }));
     fireEvent.click(screen.getByRole("button", { name: /@urgent/i }));
-    fireEvent.click(screen.getByRole("button", { name: "P2+" }));
+    fireEvent.click(screen.getByRole("button", { name: "P1+" }));
     fireEvent.click(screen.getByRole("button", { name: "Next 7" }));
     // Only `match` survives all four facets.
     expect(screen.getByTestId("ids")).toHaveTextContent("match");

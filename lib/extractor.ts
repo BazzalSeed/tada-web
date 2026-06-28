@@ -49,7 +49,7 @@ const extractedTodo = z.object({
   actionType: z.enum(["none", "meeting", "reminder", "research"]),
   actionPayload: barePayload.optional(),
   suggestedDueAt: z.string().nullable().optional(),
-  suggestedPriority: z.enum(["none", "p1", "p2", "p3"]).nullable().optional(),
+  suggestedPriority: z.enum(["none", "p0", "p1", "p2"]).nullable().optional(),
   suggestedListName: z.string().nullable().optional(),
   suggestedLabels: z.array(z.string()).nullable().optional(),
   recurrenceText: z.string().nullable().optional(),
@@ -89,7 +89,7 @@ Rules:
 - NEVER invent a time. Only set start/remindAt/suggestedDueAt when an explicit time appears; otherwise null.
 - actionPayload (only when actionType != none): meeting -> {title, attendees?, start?, durationMin?, notes?}; reminder -> {text, remindAt?}; research -> {topic}. Leave all other fields null.
 - Dedupe: if a todo matches one of the existing open titles, set duplicateOf to that exact title.
-- Auto-organize from the user's REAL taxonomy only: suggest suggestedListName / suggestedLabels from the provided existing lists/labels, plus suggestedPriority and recurrenceText (raw phrase like "every monday") when clearly implied.`;
+- Auto-organize from the user's REAL taxonomy only: suggest suggestedListName / suggestedLabels from the provided existing lists/labels, plus suggestedPriority (p0 = urgent/critical/ASAP, p1 = high/important, p2 = normal/routine; none if truly neutral) and recurrenceText (raw phrase like "every monday") when clearly implied.`;
 
 const WEEKDAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
@@ -203,8 +203,8 @@ export const ENRICH_SYSTEM_PROMPT = `You enrich a SINGLE to-do the user just typ
 
 Return EXACTLY ONE todo (never zero, never split into several) — the enriched version of their input. Fill in as many fields as you reasonably can, but never fabricate specifics (names, exact times, amounts) the user didn't imply.
 
-- title: a clean imperative, <= 8 words. Fix casing/grammar; keep the user's concrete details. Do NOT keep raw tokens like "p1", "@work", "tomorrow" in the title — those become structured fields.
-- suggestedPriority: infer urgency. "urgent/asap/important/critical/by EOD" -> p1; a soft deadline or "soon" -> p2; routine -> p3; truly neutral -> none. An explicit p1/p2/p3 always wins.
+- title: a clean imperative, <= 8 words. Fix casing/grammar; keep the user's concrete details. Do NOT keep raw tokens like "p0", "p1", "p2", "@work", "tomorrow" in the title — those become structured fields.
+- suggestedPriority: infer urgency. "urgent/asap/critical/by EOD" -> p0; "important/soon/high" -> p1; routine/normal -> p2; truly neutral -> none. An explicit p0/p1/p2 always wins.
 - suggestedDueAt: resolve relative/explicit dates ("today", "tomorrow", "friday", "next week", "by the 15th", "in 3 days") to an ISO local date (yyyy-MM-ddT00:00:00). If a clock time is stated, include it. If NO date is implied, null — don't invent one.
 - recurrenceText: the raw cadence phrase if the task repeats ("every monday", "daily", "weekly"); else null.
 - suggestedLabels: 0-2 tags. STRONGLY prefer reusing the user's existing labels (provided). Only propose a new lowercase label when it clearly fits and none existing match. No label is fine.

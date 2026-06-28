@@ -168,8 +168,8 @@ export const parseQuickAdd: ParseQuickAdd = (text, now = new Date()) => {
     }
   }
 
-  // 2. Priority: p1|p2|p3 (case-insensitive, word-boundary).
-  const prioRe = /\bp([1-3])\b/gi;
+  // 2. Priority: p0|p1|p2 (case-insensitive, word-boundary).
+  const prioRe = /\bp([0-2])\b/gi;
   let pm: RegExpExecArray | null;
   while ((pm = prioRe.exec(text)) !== null) {
     if (overlaps(pm.index, pm[0].length, consumed)) continue;

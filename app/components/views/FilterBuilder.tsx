@@ -20,8 +20,8 @@ export interface FilterBuilderProps {
 // minPriority is a rank THRESHOLD; the segmented control offers the native set.
 const PRIORITY_SEGMENTS: { label: string; value: Priority | null }[] = [
   { label: "Any priority", value: null },
-  { label: "P2+", value: "p2" },
-  { label: "P1", value: "p1" },
+  { label: "P1+", value: "p1" },
+  { label: "P0", value: "p0" },
 ];
 
 const DATE_SEGMENTS: { label: string; value: DateWindow }[] = [

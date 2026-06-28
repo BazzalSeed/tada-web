@@ -65,7 +65,7 @@ export const DENIED_OUTPUT = JSON.stringify({
   reason: "The user declined this action, so nothing was done.",
 });
 
-const PRIORITIES = new Set<Priority>(["none", "p1", "p2", "p3"]);
+const PRIORITIES = new Set<Priority>(["none", "p0", "p1", "p2"]);
 function str(v: unknown): string | undefined {
   return typeof v === "string" ? v : undefined;
 }

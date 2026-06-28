@@ -20,13 +20,13 @@
     border-color var(--dur-fast) var(--ease-out-quart);
 }
 
-.circle[data-priority="p1"] {
+.circle[data-priority="p0"] {
   --ring: var(--color-accent);
 }
-.circle[data-priority="p2"] {
+.circle[data-priority="p1"] {
   --ring: var(--color-accent-bright);
 }
-.circle[data-priority="p3"] {
+.circle[data-priority="p2"] {
   --ring: var(--color-caution, var(--color-ink-soft));
 }
 .circle[data-priority="none"] {

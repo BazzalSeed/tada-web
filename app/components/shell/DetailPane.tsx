@@ -10,12 +10,12 @@ import styles from "./DetailPane.module.css";
 // persists through the single `onPatch` channel (the view wires it to PATCH).
 // The subtask section plugs in via `children`. Remount on todo change (key) so
 // local field state re-initialises.
-const PRIORITIES: Priority[] = ["none", "p1", "p2", "p3"];
+const PRIORITIES: Priority[] = ["none", "p0", "p1", "p2"];
 const PRIORITY_LABEL: Record<Priority, string> = {
   none: "—",
+  p0: "P0",
   p1: "P1",
   p2: "P2",
-  p3: "P3",
 };
 const FREQS: (RecurFreq | "none")[] = [
   "none",

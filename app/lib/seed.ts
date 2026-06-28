@@ -117,7 +117,7 @@ const todos: Todo[] = [
     actionPayload: { kind: "research", topic: "standing desks under $400" },
     actionState: "none",
     sortIndex: 2,
-    priority: "p3",
+    priority: "p2",
     dueAt: "2026-06-27T00:00:00",
     labelIds: ["l-work"],
   },

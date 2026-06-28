@@ -107,11 +107,11 @@ describe("criteriaFor", () => {
 // ============================== parseQuickAdd ==============================
 describe("parseQuickAdd", () => {
   it("strips priority and reports its token offset", () => {
-    const p = parseQuickAdd("call dentist p1", NOW);
-    expect(p.priority).toBe("p1");
+    const p = parseQuickAdd("call dentist p0", NOW);
+    expect(p.priority).toBe("p0");
     expect(p.title).toBe("call dentist");
     const tok = p.tokens.find((t) => t.kind === "priority")!;
-    expect("call dentist p1".slice(tok.start, tok.start + tok.length)).toBe("p1");
+    expect("call dentist p0".slice(tok.start, tok.start + tok.length)).toBe("p0");
   });
 
   it("extracts @labels and #list, leaving a clean title", () => {

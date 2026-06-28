@@ -29,7 +29,7 @@ describe("ViewEditor", () => {
     fireEvent.change(screen.getByLabelText(/view name/i), {
       target: { value: "Deep work" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "P1" }));
+    fireEvent.click(screen.getByRole("button", { name: "P1+" }));
     fireEvent.click(screen.getByRole("button", { name: /save/i }));
     expect(onSave).toHaveBeenCalledWith(
       "Deep work",
@@ -59,7 +59,7 @@ describe("ViewEditor", () => {
       <ViewEditor
         mode="edit"
         initialName="Urgent"
-        initialCriteria={{ ...seed, minPriority: "p2", dateWindow: "today" }}
+        initialCriteria={{ ...seed, minPriority: "p1", dateWindow: "today" }}
         labels={labels}
         onSave={onSave}
         onCancel={vi.fn()}
@@ -67,7 +67,7 @@ describe("ViewEditor", () => {
       />,
     );
     expect(screen.getByLabelText(/view name/i)).toHaveValue("Urgent");
-    expect(screen.getByRole("button", { name: "P2+" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "P1+" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );

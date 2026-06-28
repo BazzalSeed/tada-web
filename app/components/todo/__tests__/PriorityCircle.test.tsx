@@ -38,7 +38,7 @@ describe("PriorityCircle", () => {
   it("calls onToggle when clicked", () => {
     const onToggle = vi.fn();
     render(
-      <PriorityCircle priority="p3" done={false} title="x" onToggle={onToggle} />,
+      <PriorityCircle priority="p2" done={false} title="x" onToggle={onToggle} />,
     );
     fireEvent.click(screen.getByRole("checkbox"));
     expect(onToggle).toHaveBeenCalledTimes(1);

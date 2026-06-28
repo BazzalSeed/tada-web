@@ -63,7 +63,7 @@ const query_todos: AgentTool = {
   inputSchema: z.object({
     dateWindow: z.enum(["any", "today", "overdue", "next7", "noDate"]).optional(),
     labelNames: z.array(z.string()).optional(),
-    minPriority: z.enum(["p1", "p2", "p3"]).optional(),
+    minPriority: z.enum(["p0", "p1", "p2"]).optional(),
     status: z.enum(["open", "done", "all"]).optional(),
     text: z.string().optional(),
     dueFrom: z.string().nullish(),
@@ -217,7 +217,7 @@ const create_todo: AgentTool = {
   inputSchema: z.object({
     title: z.string(),
     dueAt: z.string().nullish(),
-    priority: z.enum(["none", "p1", "p2", "p3"]).optional(),
+    priority: z.enum(["none", "p0", "p1", "p2"]).optional(),
     action: actionInput,
     subtasks: z.array(z.object({ title: z.string(), action: actionInput })).optional(),
   }),
@@ -225,7 +225,7 @@ const create_todo: AgentTool = {
     const a = args as {
       title: string;
       dueAt?: string | null;
-      priority?: "none" | "p1" | "p2" | "p3";
+      priority?: "none" | "p0" | "p1" | "p2";
       action?: ActionInput | null;
       subtasks?: { title: string; action?: ActionInput | null }[];
     };
@@ -298,7 +298,7 @@ const update_todo: AgentTool = {
     todoId: z.string(),
     title: z.string().optional(),
     dueAt: z.string().nullish(),
-    priority: z.enum(["none", "p1", "p2", "p3"]).optional(),
+    priority: z.enum(["none", "p0", "p1", "p2"]).optional(),
     labelNames: z.array(z.string()).nullish(),
   }),
   run: async (args, user: UserCtx) => {
@@ -342,7 +342,7 @@ export const agentTools: AgentToolRegistry = {
 const DESCRIPTIONS: Record<string, string> = {
   list_todos: "List the user's todos (everything, optionally by status). For anything more specific (due today/overdue/this week, a label, a priority, or a text search) use query_todos instead.",
   query_todos:
-    "Query/filter the user's todos like the app's Views do. dateWindow: today | overdue | next7 (this week / upcoming) | noDate | any. labelNames: any-of tag filter. minPriority: p1|p2|p3 threshold. status: open (default) | done | all. text: substring quick-find over title/notes. dueFrom/dueTo: explicit ISO due range. Returns matching todos with their ids — use these ids for complete_todo/uncomplete_todo/update_todo.",
+    "Query/filter the user's todos like the app's Views do. dateWindow: today | overdue | next7 (this week / upcoming) | noDate | any. labelNames: any-of tag filter. minPriority: p0|p1|p2 threshold (p0=most urgent). status: open (default) | done | all. text: substring quick-find over title/notes. dueFrom/dueTo: explicit ISO due range. Returns matching todos with their ids — use these ids for complete_todo/uncomplete_todo/update_todo.",
   search_contacts: "Search the user's Google contacts by name to find an email for a meeting attendee.",
   create_todo:
     "Create a todo, optionally with an action and/or subtasks. Runs immediately (creating a todo is capture, not a side effect) and renders a tile with a gated do-it button. action.type: 'meeting' (attendees as names or emails, start as ISO local time, durationMin, notes), 'reminder' (remindAt, text), or 'research' (topic) — the action makes the todo's do-it button book / remind / research. For a goal that needs prep (e.g. 'book a meeting with Hansen and research X first') create ONE parent meeting todo with a research subtask: the subtask's report lands in the parent's notes and feeds the invite. Do NOT execute the action yourself — the user taps the do-it button.",

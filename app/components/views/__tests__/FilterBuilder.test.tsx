@@ -58,16 +58,16 @@ describe("FilterBuilder", () => {
 
   it("sets the minPriority threshold from the segmented control", () => {
     const onChange = setup();
-    fireEvent.click(screen.getByRole("button", { name: "P2+" }));
+    fireEvent.click(screen.getByRole("button", { name: "P1+" }));
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ minPriority: "p2" }),
+      expect.objectContaining({ minPriority: "p1" }),
     );
   });
 
-  it("maps the P1 segment to a p1 threshold and Any back to null", () => {
-    const onChange = setup({ minPriority: "p1" });
+  it("maps the P0 segment to a p0 threshold and Any back to null", () => {
+    const onChange = setup({ minPriority: "p0" });
     // current selection reflected
-    expect(screen.getByRole("button", { name: "P1" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "P0" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
