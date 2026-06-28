@@ -38,6 +38,12 @@
   overflow-y: auto;
   display: block;
   max-height: calc(1.4em * 6 + var(--space-3) * 2); /* ~6 rows, then scroll */
+  min-height: calc(1.4em + var(--space-3) * 2); /* 1 row */
+  transition: min-height 0.15s ease;
+}
+
+.input:focus {
+  min-height: calc(1.4em * 3 + var(--space-3) * 2); /* ~3 rows on focus */
 }
 
 .input::placeholder {
