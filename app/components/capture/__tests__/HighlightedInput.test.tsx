@@ -45,6 +45,17 @@ describe("HighlightedInput", () => {
     expect(onChange).toHaveBeenCalledWith("x");
   });
 
+  it("renders a textarea, submits on Enter, newlines on Shift+Enter", () => {
+    const onSubmit = vi.fn();
+    render(<HighlightedInput value="buy milk" tokens={[]} onChange={vi.fn()} onSubmit={onSubmit} />);
+    const field = screen.getByRole("textbox");
+    expect(field.tagName).toBe("TEXTAREA");
+    fireEvent.keyDown(field, { key: "Enter", shiftKey: true });
+    expect(onSubmit).not.toHaveBeenCalled();
+    fireEvent.keyDown(field, { key: "Enter", shiftKey: false });
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
   it("submits on Enter (not Shift+Enter)", () => {
     const onSubmit = vi.fn();
     render(

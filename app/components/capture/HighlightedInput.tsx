@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { ParseToken } from "@/lib/contracts";
 import styles from "./HighlightedInput.module.css";
 
@@ -47,6 +47,13 @@ export function HighlightedInput({
   autoFocus,
 }: HighlightedInputProps) {
   const segments = useMemo(() => segmentize(value, tokens), [value, tokens]);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
 
   return (
     <div className={styles.wrap}>
@@ -61,9 +68,10 @@ export function HighlightedInput({
           ),
         )}
       </div>
-      <input
-        type="text"
+      <textarea
+        ref={taRef}
         className={styles.input}
+        rows={1}
         // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
         placeholder={placeholder}
