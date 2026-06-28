@@ -77,7 +77,7 @@ export function Landing() {
         <div className={`${styles.wrap} ${styles.navIn}`}>
           <a className={styles.word} href="#top" aria-label="Tada home">
             Tada
-            <Spark size={13} />
+            <Spark size={13} className={styles.spark} />
           </a>
           <div className={styles.navCta}>
             {/* Top-right = Log in for existing (invited) users → Google OAuth,
@@ -99,7 +99,7 @@ export function Landing() {
           <div className={`${styles.wrap} ${styles.heroGrid}`}>
             <div className={`${styles.heroCopy} ${styles.reveal}`}>
               <span className={styles.eyebrow}>
-                <Spark size={11} />
+                <Spark size={11} className={styles.spark} />
                 The to-do app that does it for you
               </span>
               <h1>
@@ -133,7 +133,7 @@ export function Landing() {
                     <div className={styles.swbCardTop}>
                       <span className={styles.swbCardMark}>
                         Tada
-                        <Spark size={13} />
+                        <Spark size={13} className={styles.spark} />
                       </span>
                       <span className={styles.swbCardDot} aria-hidden="true" />
                     </div>
@@ -167,7 +167,7 @@ export function Landing() {
           <div className={styles.wrap}>
             <div className={`${styles.secHead} ${styles.reveal}`}>
               <span className={styles.eyebrow}>
-                <Spark size={11} />
+                <Spark size={11} className={styles.spark} />
                 How it works
               </span>
               <h2>Three ways in. One that finishes the job.</h2>
@@ -300,7 +300,7 @@ export function Landing() {
           <div className={styles.wrap}>
             <div className={`${styles.secHead} ${styles.reveal}`}>
               <span className={styles.eyebrow}>
-                <Spark size={11} />
+                <Spark size={11} className={styles.spark} />
                 Todo vs Tada
               </span>
               <h2>
@@ -310,7 +310,7 @@ export function Landing() {
             <div className={`${styles.versus} ${styles.reveal}`}>
               <div className={`${styles.vh} ${styles.them}`}>A normal to-do app</div>
               <div className={`${styles.vh} ${styles.us}`}>
-                <Spark size={12} /> Tada
+                <Spark size={12} className={styles.spark} /> Tada
               </div>
               <div className={`${styles.vcell} ${styles.them}`}>You type every task out by hand.</div>
               <div className={`${styles.vcell} ${styles.us}`}>
@@ -332,7 +332,7 @@ export function Landing() {
         <section className={styles.close} id="get-started">
           <div className={`${styles.wrap} ${styles.reveal}`}>
             <span className={styles.eyebrow} style={{ justifyContent: "center", display: "flex" }}>
-              <Spark size={11} />
+              <Spark size={11} className={styles.spark} />
               Invite-only, for now
             </span>
             <h2>
@@ -358,7 +358,7 @@ export function Landing() {
         <div className={`${styles.wrap} ${styles.foot}`}>
           <a className={styles.word} href="#top">
             Tada
-            <Spark size={12} />
+            <Spark size={12} className={styles.spark} />
           </a>
           <small>Not to-do. Ta-da.</small>
         </div>
