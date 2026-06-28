@@ -93,9 +93,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     // Gate account CREATION: existing → admit; admin → admit; else require a
     // valid invite code (read from the join cookie).
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       const code = (await cookies()).get("invite_code")?.value ?? null;
-      return authorizeSignIn(user.email, code);
+      if (!(await authorizeSignIn(user.email, code))) return false;
+      // Refresh the stored Google token + granted scopes on EVERY sign-in. The
+      // PrismaAdapter persists the Account row only on the FIRST link, so a user
+      // who consented before a scope was added (e.g. contacts.other.readonly)
+      // keeps a stale token forever — otherContacts:search then 403s and contact
+      // resolution silently misses Gmail-derived contacts. prompt=consent (above)
+      // makes Google return a fresh refresh_token + the full scope set each time,
+      // so we mirror it onto the existing row. updateMany no-ops for a brand-new
+      // user whose row the adapter hasn't created yet.
+      if (account?.provider === "google" && account.providerAccountId) {
+        await prisma.account.updateMany({
+          where: { provider: "google", providerAccountId: account.providerAccountId },
+          data: {
+            access_token: account.access_token ?? undefined,
+            refresh_token: account.refresh_token ?? undefined,
+            expires_at:
+              typeof account.expires_at === "number" ? account.expires_at : undefined,
+            scope: account.scope ?? undefined,
+            token_type: account.token_type ?? undefined,
+            id_token: account.id_token ?? undefined,
+          },
+        });
+      }
+      return true;
     },
     async jwt({ token, user }) {
       if (user) {
