@@ -173,9 +173,10 @@
    56 px wide: icons/dots centered, labels as hover tooltips.
    ============================================================ */
 
-/* Rail container — allow tooltip to escape the scrollable region */
+/* Rail container — allow tooltip to escape the scrollable region.
+   Top padding clears the 40px toggle button (top: 8px + 40px + 4px gap = 52px). */
 .sidebar[data-collapsed] {
-  padding: var(--space-5) var(--space-2);
+  padding: 52px 0 var(--space-5);
   align-items: center;
   overflow: visible;
 }
@@ -201,17 +202,35 @@
   display: none;
 }
 
-/* Each item: center icon/dot, make room for the tooltip */
+/* + add-view button in the rail: 40×40 square, consistent with nav items */
+.sidebar[data-collapsed] .add {
+  width: 40px;
+  height: 40px;
+}
+
+/* Each item: fixed 40×40 centered square — Notion/Linear icon rail treatment */
 .sidebar[data-collapsed] .item {
+  width: 40px;
+  height: 40px;
+  margin: 2px auto;
+  padding: 0;
   justify-content: center;
-  padding: var(--space-2);
   position: relative;
   overflow: visible;
 }
 
-/* In viewRow, remove right padding needed for the hidden edit button */
+/* Active highlight in collapsed rail: centered accent-tinted box, NO left bar.
+   Uses --accent-tint (rgba(200,99,46,0.10) light / 0.22 dark) — token already in :root. */
+.sidebar[data-collapsed] .active,
+.sidebar[data-collapsed] .active:hover {
+  background: var(--accent-tint);
+  box-shadow: none;
+  color: var(--color-accent-text);
+}
+
+/* In viewRow, remove right padding used in expanded (edit button hidden in rail) */
 .sidebar[data-collapsed] .viewRow .item {
-  padding-right: var(--space-2);
+  padding-right: 0;
 }
 
 /* Hide the ··· edit button in rail */

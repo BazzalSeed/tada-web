@@ -68,22 +68,25 @@
 .sidebarToggle {
   position: absolute;
   top: 8px;
-  left: calc(var(--sidebar-width, 260px) - 28px);
+  /* Expanded: sits inside the sidebar, near its right edge */
+  left: calc(var(--sidebar-width, 260px) - 38px);
   z-index: 10;
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md, 7px);
   background: transparent;
   color: var(--color-ink-muted, #888);
   font-size: 13px;
   cursor: pointer;
   transition:
     left var(--dur-base) var(--ease-out-quart),
+    width var(--dur-base) var(--ease-out-quart),
+    height var(--dur-base) var(--ease-out-quart),
     color 120ms ease,
     background 120ms ease;
 }
@@ -93,8 +96,11 @@
   background: var(--color-surface-raised, rgba(0, 0, 0, 0.06));
 }
 
+/* Collapsed: 40×40, horizontally centered in the 56px rail ((56-40)/2 = 8px) */
 .shell[data-sidebar-collapsed] .sidebarToggle {
-  left: 4px;
+  left: 8px;
+  width: 40px;
+  height: 40px;
 }
 
 @media (max-width: 720px) {
