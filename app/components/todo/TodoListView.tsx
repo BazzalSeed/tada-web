@@ -80,6 +80,7 @@ export function TodoListView() {
         childrenByParent={childrenByParent}
         capturesById={state.captures}
         selectedId={state.selectedTodoId}
+        enrichingId={state.enrichingTodoId}
         onSelect={(id) => dispatch({ type: "SELECT_TODO", id })}
         onToggleComplete={toggleComplete}
         onReorder={reorder}

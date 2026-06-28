@@ -1,6 +1,7 @@
 "use client";
 
 import type { Todo, TodoLabel } from "@/lib/contracts";
+import { Spark } from "@/app/components/brand/Spark";
 import { PriorityCircle } from "./PriorityCircle";
 import { MetaChips } from "./MetaChips";
 import { CaptureThumbnail } from "@/app/components/capture/CaptureThumbnail";
@@ -36,6 +37,7 @@ export interface TodoRowProps {
   // pane where the concrete effect is confirmed (the tap there is the trigger).
   offer?: { eyebrow: string; line?: string } | null;
   offerDone?: string | null; // executed → a calm done badge ("Invite sent")
+  enriching?: boolean; // this row's todo is being AI-enriched right now
 }
 
 export function TodoRow({
@@ -61,6 +63,7 @@ export function TodoRow({
   captureThumb,
   offer,
   offerDone,
+  enriching,
 }: TodoRowProps) {
   const done = todo.status === "done";
   return (
@@ -110,6 +113,12 @@ export function TodoRow({
           subtaskDone={subtaskDone}
           subtaskTotal={subtaskTotal}
         />
+        {enriching ? (
+          <div className={styles.enhancing} role="status" aria-live="polite">
+            <Spark size={12} className={styles.enhanceSpark} />
+            <span>Enhancing…</span>
+          </div>
+        ) : null}
         {offerDone ? (
           <span className={styles.offerDone}>✓ {offerDone}</span>
         ) : offer ? (

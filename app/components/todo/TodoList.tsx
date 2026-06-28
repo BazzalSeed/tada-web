@@ -27,6 +27,7 @@ export interface TodoListProps {
   childrenByParent?: Record<string, Todo[]>; // one-level subtasks, indented on expand
   capturesById?: Record<string, Capture>; // source captures for row thumbnails
   selectedId: string | null;
+  enrichingId?: string | null;
   onSelect: (id: string) => void;
   onToggleComplete: (id: string) => void;
   onReorder: (id: string, beforeId: string | null, afterId: string | null) => void;
@@ -50,6 +51,7 @@ export function TodoList({
   childrenByParent = {},
   capturesById = {},
   selectedId,
+  enrichingId,
   onSelect,
   onToggleComplete,
   onReorder,
@@ -114,6 +116,7 @@ export function TodoList({
         subtaskTotal={count.total}
         captureThumb={captureThumb}
         selected={selectedId === todo.id}
+        enriching={todo.id === enrichingId}
         onSelect={() => onSelect(todo.id)}
         onToggleComplete={() => onToggleComplete(todo.id)}
         offer={offer}

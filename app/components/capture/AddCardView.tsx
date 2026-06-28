@@ -6,7 +6,6 @@ import { parseQuickAdd } from "@/lib/core";
 import { createTodo, enrichText, patchTodo } from "@/app/lib/api";
 import { enrichmentChips, type EnrichmentChip } from "@/app/lib/enrich";
 import { useEnsureLabel, useTada } from "@/app/lib/store";
-import { Spark } from "@/app/components/brand/Spark";
 import { HighlightedInput } from "./HighlightedInput";
 import { MicButton } from "./MicButton";
 import { EnrichmentBar } from "./EnrichmentBar";
@@ -23,7 +22,6 @@ export function AddCardView() {
   // Async enrichment offers for the most-recently-added todo (T2.5).
   const [enrichTarget, setEnrichTarget] = useState<Todo | null>(null);
   const [chips, setChips] = useState<EnrichmentChip[]>([]);
-  const [enriching, setEnriching] = useState(false);
 
   // Keep only chips that ADD something the deterministic parse didn't already
   // capture — no point re-offering a priority/label/date the user already typed.
@@ -150,7 +148,7 @@ export function AddCardView() {
 
     // Fire the async AI pass over the ORIGINAL text (full context) and fold any
     // novel suggestions into tappable chips. Never auto-applies.
-    setEnriching(true);
+    dispatch({ type: "SET_ENRICHING", id: persisted.id });
     enrichText(rawText)
       .then((suggestions) => {
         const first = suggestions[0];
@@ -163,7 +161,7 @@ export function AddCardView() {
       .catch(() => {
         // enrichment is best-effort; silence failures (quota / offline / pre-auth).
       })
-      .finally(() => setEnriching(false));
+      .finally(() => dispatch({ type: "SET_ENRICHING", id: null }));
   }
 
   return (
@@ -183,12 +181,6 @@ export function AddCardView() {
           setText((prev) => (prev.trim() ? `${prev} ${spoken}` : spoken))
         }
       />
-      {enriching ? (
-        <div className={styles.enhancing} role="status" aria-live="polite">
-          <Spark size={13} className={styles.enhanceSpark} />
-          <span>Enhancing…</span>
-        </div>
-      ) : null}
       <EnrichmentBar
         chips={chips}
         onAccept={acceptChip}

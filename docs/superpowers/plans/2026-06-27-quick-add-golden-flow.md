@@ -892,6 +892,22 @@ git commit -m "feat(capture): compact action pill + open review card on chip acc
 
 ---
 
+### Task 8: Relocate the enhancing indicator to the enriching todo row (user feedback)
+
+Task 2 put the "Enhancing…" pill in the add card; per user feedback it belongs on the just-added
+todo ROW being enriched. Route the enriching todo id through the store so the row renders the spark.
+
+**Files:**
+- Modify: `app/lib/store.tsx` (add `enrichingTodoId: string | null` to state + a `SET_ENRICHING` action)
+- Modify: `app/components/capture/AddCardView.tsx` (dispatch `SET_ENRICHING` on enrich start/finally; remove the in-card pill)
+- Modify: `app/components/capture/AddCardView.module.css` (drop `.enhancing`/`.enhanceSpark` — moved)
+- Modify: `app/components/todo/TodoListView.tsx` (pass `enrichingId={state.enrichingTodoId}` to TodoList)
+- Modify: `app/components/todo/TodoList.tsx` (thread `enrichingId`; pass `enriching={todo.id === enrichingId}` to TodoRow)
+- Modify: `app/components/todo/TodoRow.tsx` (+ `.module.css`) (render a small animated `<Spark>` + "Enhancing…" when `enriching`)
+- Test: a TodoRow test that the spark shows only when `enriching`.
+
+Reuses the shared `<Spark>` (Task 2) and the twinkle keyframe (move it into `TodoRow.module.css`).
+
 ### Task 7: Full verification (CI + Playwright e2e)
 
 **Files:** none (verification only).

@@ -38,9 +38,10 @@ scrolls). **Enter** adds the todo; **Shift+Enter** inserts a newline. The live t
 
 ### New · "Enhancing…" sparkle while AI enriches
 Capture stays instant — the deterministic plain todo lands immediately, the model is never in the hot
-path. The moment the async enrich pass starts, a small **✨ Enhancing…** pill appears in the add card
-with the brand ta-da spark animating; it disappears when the suggestion chips arrive (or the pass
-fails silently). The existing inline `<Spark>` glyph (today defined in the landing page) is promoted
+path. The moment the async enrich pass starts, a small **✨ Enhancing…** indicator appears **on the
+just-added todo row** (the row being enriched, in the All list — NOT in the add card) with the brand
+ta-da spark animating; it disappears when the suggestion chips arrive (or the pass fails silently).
+The "which todo is enriching" state rides in the store so the row can render it. The existing inline `<Spark>` glyph (today defined in the landing page) is promoted
 to a shared component and reused here. Animation respects `prefers-reduced-motion`.
 
 ### 1 · The meeting review card (core fix)

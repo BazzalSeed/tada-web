@@ -1,0 +1,104 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - navigation "Primary" [ref=e5]:
+        - paragraph [ref=e6]: Tada
+        - generic [ref=e7]:
+          - button "All" [ref=e8] [cursor=pointer]:
+            - generic [ref=e9]: All
+          - button "Chat" [ref=e10] [cursor=pointer]:
+            - generic [ref=e11]: Chat
+          - button "Today" [ref=e12] [cursor=pointer]:
+            - generic [ref=e13]: Today
+        - generic [ref=e15]:
+          - generic [ref=e16]: Views
+          - button "Add view" [ref=e17] [cursor=pointer]: +
+      - main [ref=e18]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - button "Show 4 earlier messages (condensed for the assistant)" [ref=e46] [cursor=pointer]
+            - paragraph [ref=e49]: research into klaviyo and add as a todo to book a meeting with head of Productr
+            - generic [ref=e51]:
+              - paragraph [ref=e52]: I've completed the research on Klaviyo. I've also added a to-do to "Book meeting with Head of Product regarding Klaviyo research."
+              - generic [ref=e53]:
+                - paragraph [ref=e57]: Review research on best CRMs for a small team
+                - generic [ref=e58]:
+                  - generic [ref=e59]: Research findings
+                  - generic [ref=e60]:
+                    - 'heading "Research Report: Klaviyo" [level=3] [ref=e61]':
+                      - strong [ref=e62]: "Research Report: Klaviyo"
+                    - paragraph [ref=e63]: "***"
+                    - heading "Short Summary" [level=3] [ref=e64]:
+                      - strong [ref=e65]: Short Summary
+                    - paragraph [ref=e66]: Klaviyo is a marketing automation platform specializing in email and SMS for e-commerce businesses. Its core strength lies in its deep integration with e-commerce platforms (like Shopify), which allows it to leverage rich customer data for highly advanced segmentation, personalization, and automated communication flows. It is considered a premium, powerful tool designed to drive and track revenue directly from marketing efforts.
+                    - heading "Key Findings" [level=3] [ref=e67]:
+                      - strong [ref=e68]: Key Findings
+                    - list [ref=e69]:
+                      - listitem [ref=e70]:
+                        - strong [ref=e71]: "Deep E-commerce Integration:"
+                        - text: Klaviyo connects seamlessly with platforms like Shopify, BigCommerce, and Magento.
+                    - paragraph [ref=e72]: "* *Reasoning:* This allows it to pull in a vast amount of behavioral and transactional data (e.g., products viewed, items added to cart, purchase history, order value) which is the foundation for all its other features."
+                    - list [ref=e73]:
+                      - listitem [ref=e74]:
+                        - strong [ref=e75]: "Advanced Segmentation:"
+                        - text: The platform enables the creation of highly specific and dynamic customer segments.
+                    - paragraph [ref=e76]: "* *Reasoning:* By combining event data, customer properties, and predictive analytics (e.g., \"predicted churn risk\"), marketers can target niche audiences (like \"VIP customers who haven't purchased in 90 days\") for more effective campaigns."
+                    - list [ref=e77]:
+                      - listitem [ref=e78]:
+                        - strong [ref=e79]: "Powerful Automation (\"Flows\"):"
+                        - text: Klaviyo excels at building complex, automated email and SMS sequences triggered by user behavior.
+                    - paragraph [ref=e80]: "* *Reasoning:* Pre-built and customizable flows for abandoned carts, welcome series, post-purchase follow-ups, and customer win-backs are critical for driving revenue on autopilot and nurturing the customer lifecycle."
+                    - list [ref=e81]:
+                      - listitem [ref=e82]:
+                        - strong [ref=e83]: "Unified Email & SMS Platform:"
+                        - text: It manages both channels within a single interface and a single customer profile.
+                    - paragraph [ref=e84]: "* *Reasoning:* This allows for cohesive, multi-channel marketing campaigns. For example, an abandoned cart flow can start with an email and follow up with an SMS for a more immediate impact, all orchestrated from one place."
+                    - list [ref=e85]:
+                      - listitem [ref=e86]:
+                        - strong [ref=e87]: "Robust Analytics & Revenue Attribution:"
+                        - text: The platform is built to demonstrate ROI with clear, detailed reporting.
+                    - paragraph [ref=e88]: "* *Reasoning:* Every campaign and flow directly tracks key metrics like open rates, click rates, and, most importantly, the exact amount of revenue generated, making it easy to justify marketing spend."
+                    - heading "Notable Considerations & Tradeoffs" [level=3] [ref=e89]:
+                      - strong [ref=e90]: Notable Considerations & Tradeoffs
+                    - list [ref=e91]:
+                      - listitem [ref=e92]:
+                        - strong [ref=e93]: "Premium Pricing Structure:"
+                        - text: Klaviyo is more expensive than many entry-level email service providers.
+                    - paragraph [ref=e94]: "* *Tradeoff:* The cost, which scales with contact list size and SMS volume, can be prohibitive for small businesses or those with low margins. You are paying for power and data capabilities, not just email sends."
+                    - list [ref=e95]:
+                      - listitem [ref=e96]:
+                        - strong [ref=e97]: "Steep Learning Curve:"
+                        - text: While powerful, the platform's extensive feature set can be overwhelming for beginners.
+                    - paragraph [ref=e98]: "* *Tradeoff:* To fully leverage its capabilities, users need to invest significant time in learning the tool or have dedicated marketing expertise. It is not a simple \"plug-and-play\" solution for basic newsletters."
+                    - list [ref=e99]:
+                      - listitem [ref=e100]:
+                        - strong [ref=e101]: "Primarily E-commerce Focused:"
+                        - text: The platform's greatest strengths are directly tied to selling physical or digital products.
+                    - paragraph [ref=e102]: "* *Tradeoff:* For non-e-commerce businesses (e.g., B2B SaaS, content creators, service providers), many of its core data integrations and features are less relevant, making simpler, more affordable alternatives a better fit."
+                    - heading "Final Recommendation" [level=3] [ref=e103]:
+                      - strong [ref=e104]: Final Recommendation
+                    - paragraph [ref=e105]:
+                      - text: Klaviyo is
+                      - strong [ref=e106]: highly recommended
+                      - text: for data-driven e-commerce businesses seeking to maximize customer lifetime value through sophisticated marketing automation.
+                    - paragraph [ref=e107]: Its ability to translate deep customer data into highly segmented, automated, and revenue-generating campaigns across both email and SMS is a key market differentiator. The higher cost and initial learning curve are a justifiable investment for businesses that have the scale and expertise to leverage its full feature set for significant ROI.
+                    - paragraph [ref=e108]: Businesses with simple needs, very small budgets, or those not focused on e-commerce should consider less complex and more affordable alternatives.
+                - paragraph [ref=e112]: Book meeting with Head of Product regarding Klaviyo research
+            - paragraph [ref=e124]: Book a 15-minute meeting titled "Tada e2e booking test" tomorrow at 10am, attendee seedzpy@gmail.com.
+            - generic [ref=e126]:
+              - paragraph [ref=e137]: OK. I've booked a 15-minute meeting for tomorrow at 10 AM titled "Tada e2e booking test" with seedzpy@gmail.com.
+              - generic [ref=e139]:
+                - generic [ref=e140]: ✓
+                - paragraph [ref=e141]: Meeting booked · iddt064moavtpcfqdnf39qdhlg
+          - generic [ref=e114]:
+            - textbox "Ask Tada to do something…" [ref=e115]
+            - button "Start voice mode" [ref=e116] [cursor=pointer]:
+              - img [ref=e117]
+            - button "Send message" [disabled] [ref=e119]:
+              - img [ref=e120]
+    - button "Choose File" [ref=e30]
+    - button "Upload image to capture" [ref=e31] [cursor=pointer]:
+      - img [ref=e32]
+  - button "Open Next.js Dev Tools" [ref=e39] [cursor=pointer]:
+    - img [ref=e40]
+  - alert [ref=e43]

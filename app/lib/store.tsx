@@ -25,6 +25,7 @@ export interface TadaState {
   captures: Record<string, Capture>; // by id — source captures for row thumbnails
   selection: NavSelection;
   selectedTodoId: string | null;
+  enrichingTodoId: string | null;
 }
 
 export const initialState: TadaState = {
@@ -34,6 +35,7 @@ export const initialState: TadaState = {
   captures: {},
   selection: { kind: "all" },
   selectedTodoId: null,
+  enrichingTodoId: null,
 };
 
 export type TadaAction =
@@ -55,7 +57,8 @@ export type TadaAction =
   | { type: "DELETE_VIEW"; id: string }
   | { type: "UPSERT_CAPTURE"; capture: Capture }
   | { type: "SELECT_NAV"; selection: NavSelection }
-  | { type: "SELECT_TODO"; id: string | null };
+  | { type: "SELECT_TODO"; id: string | null }
+  | { type: "SET_ENRICHING"; id: string | null };
 
 export function reducer(state: TadaState, action: TadaAction): TadaState {
   switch (action.type) {
@@ -167,6 +170,8 @@ export function reducer(state: TadaState, action: TadaAction): TadaState {
       return { ...state, selection: action.selection, selectedTodoId: null };
     case "SELECT_TODO":
       return { ...state, selectedTodoId: action.id };
+    case "SET_ENRICHING":
+      return { ...state, enrichingTodoId: action.id };
     default:
       return state;
   }
