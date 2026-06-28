@@ -289,6 +289,52 @@
   display: none;
 }
 
+/* A label row: nav item + a reveal-on-hover ✕ delete affordance. */
+.labelRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.labelRow .item {
+  flex: 1;
+  padding-right: 28px;
+}
+
+.deleteLabel {
+  position: absolute;
+  right: var(--space-1);
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink-muted);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease-out-quart),
+    color var(--dur-fast) var(--ease-out-quart);
+}
+
+.labelRow:hover .deleteLabel,
+.deleteLabel:focus-visible {
+  opacity: 1;
+}
+
+.deleteLabel:hover {
+  color: var(--color-accent-text);
+}
+
+/* Hide delete button in collapsed rail */
+.sidebar[data-collapsed] .deleteLabel {
+  display: none;
+}
+
 /* Label → visually hidden inline; reappears as a tooltip on hover/focus */
 .sidebar[data-collapsed] .itemLabel {
   position: absolute;

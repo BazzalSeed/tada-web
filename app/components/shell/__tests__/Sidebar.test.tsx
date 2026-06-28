@@ -169,4 +169,29 @@ describe("Sidebar", () => {
     expect(screen.getByRole("button", { name: /^work$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /errand/i })).toBeInTheDocument();
   });
+
+  // ── Delete label affordance ────────────────────────────────────────────
+
+  it("renders a delete button per label when onDeleteLabel is provided", () => {
+    renderSidebar({ labels: [label], onDeleteLabel: vi.fn() });
+    expect(
+      screen.getByRole("button", { name: /delete #errand/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("calls onDeleteLabel (not onSelect) when the delete button is clicked", () => {
+    const onDeleteLabel = vi.fn();
+    const onSelect = vi.fn();
+    renderSidebar({ labels: [label], onDeleteLabel, onSelect });
+    fireEvent.click(screen.getByRole("button", { name: /delete #errand/i }));
+    expect(onDeleteLabel).toHaveBeenCalledWith(label);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("does not render delete buttons when onDeleteLabel is omitted", () => {
+    renderSidebar({ labels: [label] });
+    expect(
+      screen.queryByRole("button", { name: /delete #errand/i }),
+    ).not.toBeInTheDocument();
+  });
 });

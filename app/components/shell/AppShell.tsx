@@ -20,6 +20,8 @@ export interface AppShellProps {
   onPaletteSelect: (item: PaletteItem) => void;
   onCreateView: () => void;
   onEditView: (view: SavedView) => void;
+  /** When provided, each label row in the sidebar shows a ✕ delete affordance. */
+  onDeleteLabel?: (label: TodoLabel) => void;
   overlay?: ReactNode; // modal layer (e.g. the view filter-builder)
   children: ReactNode;
 }
@@ -34,6 +36,7 @@ export function AppShell({
   onPaletteSelect,
   onCreateView,
   onEditView,
+  onDeleteLabel,
   overlay,
   children,
 }: AppShellProps) {
@@ -90,6 +93,7 @@ export function AppShell({
           onSelect={onSelectNav}
           onCreateView={onCreateView}
           onEditView={onEditView}
+          onDeleteLabel={onDeleteLabel}
           collapsed={sidebarCollapsed}
           onToggle={toggleSidebar}
         />

@@ -167,6 +167,32 @@ describe("PrismaTadaStore", () => {
     expect(all.some((v) => v.id === view.id)).toBe(true);
   });
 
+  it("deleteLabel removes the label and strips it from todos", async () => {
+    // Arrange: a label and a todo tagged with it.
+    const label = await store.upsertLabelByName(userId, "to-delete");
+    const cap = await store.createCapture(userId, { kind: "text" });
+    const todo = await store.createTodo(userId, {
+      sourceCaptureId: cap.id,
+      title: "tagged todo",
+      labelIds: [label.id],
+    });
+    // Confirm the todo starts with the label.
+    const before = await store.labels(userId);
+    expect(before.some((l) => l.id === label.id)).toBe(true);
+
+    // Act.
+    await store.deleteLabel(userId, label.id);
+
+    // Assert: label is gone.
+    const afterLabels = await store.labels(userId);
+    expect(afterLabels.some((l) => l.id === label.id)).toBe(false);
+
+    // Assert: todo's labelIds no longer contains the deleted label id.
+    const afterTodos = await store.listTodos(userId);
+    const updated = afterTodos.find((t) => t.id === todo.id)!;
+    expect(updated.labelIds).not.toContain(label.id);
+  });
+
   it("reorderTodo places a todo between two neighbors (fractional)", async () => {
     const cap = await store.createCapture(userId, { kind: "text" });
     const first = await store.createTodo(userId, {

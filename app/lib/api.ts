@@ -104,6 +104,11 @@ export async function ensureLabel(name: string): Promise<TodoLabel> {
   return label;
 }
 
+// Delete a label and strip it from all todos (atomic server-side transaction).
+export async function deleteLabel(id: string): Promise<void> {
+  await send<{ ok: boolean }>(`/api/labels/${id}`, { method: "DELETE" });
+}
+
 // The "do it for me" tap path (FIX2). POST /api/todos/:id/finish dispatches on
 // actionType (meeting/reminder deterministic; research via the agent) and returns
 // the ExecResult — incl. `needsField` (one inline ask) and `needsDisambiguation`

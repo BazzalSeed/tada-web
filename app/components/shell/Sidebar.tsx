@@ -210,6 +210,8 @@ export interface SidebarProps {
   collapsed?: boolean;
   /** Called when the user clicks the collapse/expand toggle button. */
   onToggle?: () => void;
+  /** When provided, each label row shows a ✕ delete affordance. */
+  onDeleteLabel?: (label: TodoLabel) => void;
 }
 
 export function Sidebar({
@@ -221,6 +223,7 @@ export function Sidebar({
   onEditView,
   collapsed,
   onToggle,
+  onDeleteLabel,
 }: SidebarProps) {
   return (
     <nav
@@ -303,14 +306,28 @@ export function Sidebar({
             <span className={styles.sectionTitle}>Labels</span>
           </div>
           {labels.map((l) => (
-            <NavItem
-              key={l.id}
-              label={l.name}
-              icon={<IconLabel />}
-              prefix="#"
-              selected={sameSelection(selection, { kind: "label", id: l.id })}
-              onClick={() => onSelect({ kind: "label", id: l.id })}
-            />
+            <div key={l.id} className={styles.labelRow}>
+              <NavItem
+                label={l.name}
+                icon={<IconLabel />}
+                prefix="#"
+                selected={sameSelection(selection, { kind: "label", id: l.id })}
+                onClick={() => onSelect({ kind: "label", id: l.id })}
+              />
+              {onDeleteLabel ? (
+                <button
+                  type="button"
+                  className={styles.deleteLabel}
+                  aria-label={`Delete #${l.name}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteLabel(l);
+                  }}
+                >
+                  ✕
+                </button>
+              ) : null}
+            </div>
           ))}
         </div>
       ) : null}

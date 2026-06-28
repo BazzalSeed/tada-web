@@ -22,6 +22,7 @@ export interface TadaStore {
   listCaptures(userId: string): Promise<Capture[]>; // captures for a user, newest first
   labels(userId: string): Promise<TodoLabel[]>;
   upsertLabelByName(userId: string, name: string): Promise<TodoLabel>;
+  deleteLabel(userId: string, labelId: string): Promise<void>;
   views(userId: string): Promise<SavedView[]>;
   saveView(userId: string, v: Partial<SavedView>): Promise<SavedView>;
 }

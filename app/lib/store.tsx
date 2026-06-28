@@ -56,6 +56,7 @@ export type TadaAction =
   | { type: "RECONCILE_TODO"; tempId: string; todo: Todo }
   | { type: "UPSERT_LABEL"; label: TodoLabel }
   | { type: "RELABEL"; fromId: string; label: TodoLabel }
+  | { type: "DELETE_LABEL"; id: string }
   | { type: "UPSERT_VIEW"; view: SavedView }
   | { type: "DELETE_VIEW"; id: string }
   | { type: "UPSERT_CAPTURE"; capture: Capture }
@@ -152,6 +153,20 @@ export function reducer(state: TadaState, action: TadaAction): TadaState {
         ),
       };
     }
+    case "DELETE_LABEL":
+      return {
+        ...state,
+        labels: state.labels.filter((l) => l.id !== action.id),
+        todos: state.todos.map((t) =>
+          t.labelIds.includes(action.id)
+            ? { ...t, labelIds: t.labelIds.filter((lid) => lid !== action.id) }
+            : t,
+        ),
+        selection:
+          state.selection.kind === "label" && state.selection.id === action.id
+            ? { kind: "all" }
+            : state.selection,
+      };
     case "UPSERT_CAPTURE":
       return {
         ...state,

@@ -223,6 +223,21 @@ export class PrismaTadaStore implements TadaStore {
     return rows.map(toLabel);
   }
 
+  async deleteLabel(userId: string, labelId: string): Promise<void> {
+    // Verify ownership before touching anything.
+    const existing = await this.db.todoLabel.findFirst({
+      where: { id: labelId, userId },
+    });
+    if (!existing) return; // not found or not theirs — no-op
+
+    await this.db.$transaction([
+      // 1. Strip the label id from every todo's label_ids array.
+      this.db.$executeRaw`UPDATE todos SET label_ids = array_remove(label_ids, ${labelId}) WHERE user_id = ${userId}`,
+      // 2. Delete the label row.
+      this.db.todoLabel.delete({ where: { id: labelId } }),
+    ]);
+  }
+
   async upsertLabelByName(userId: string, name: string): Promise<TodoLabel> {
     const lower = name.trim().toLowerCase();
     const row = await this.db.todoLabel.upsert({

@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import type { FilterCriteria, SavedView, ViewSelection } from "@/lib/contracts";
+import type { FilterCriteria, SavedView, TodoLabel, ViewSelection } from "@/lib/contracts";
 import { criteriaFor } from "@/lib/core";
 import { paletteItemsFor, useTada } from "@/app/lib/store";
+import { deleteLabel as apiDeleteLabel } from "@/app/lib/api";
 import { TodoListView } from "@/app/components/todo/TodoListView";
 import { ChatView } from "@/app/components/chat/ChatView";
 import { VoiceStage } from "@/app/components/voice/VoiceStage";
 import { ViewEditor } from "@/app/components/views/ViewEditor";
+import { ConfirmDialog } from "@/app/components/ui/ConfirmDialog";
 import { AppShell } from "./AppShell";
 import { DetailPaneView } from "./DetailPaneView";
 import styles from "./ContentPlaceholder.module.css";
@@ -27,6 +29,12 @@ export function AppShellContainer({ children }: { children?: ReactNode }) {
   const [editor, setEditor] = useState<EditorState | null>(null);
   // The live-voice overlay (entered from the chat composer's mic).
   const [voiceOpen, setVoiceOpen] = useState(false);
+  // The label pending deletion — drives the ConfirmDialog.
+  const [labelToDelete, setLabelToDelete] = useState<TodoLabel | null>(null);
+
+  const affectedCount = labelToDelete
+    ? state.todos.filter((t) => t.labelIds.includes(labelToDelete.id)).length
+    : 0;
 
   // New views seed from the current selection's criteria (snapshot default),
   // then the builder lets the user compose the full FilterCriteria.
@@ -77,6 +85,7 @@ export function AppShellContainer({ children }: { children?: ReactNode }) {
       }}
       onCreateView={openCreate}
       onEditView={(view) => setEditor({ mode: "edit", view })}
+      onDeleteLabel={setLabelToDelete}
       overlay={
         editor ? (
           <div
@@ -116,6 +125,20 @@ export function AppShellContainer({ children }: { children?: ReactNode }) {
         ))}
     </AppShell>
     {voiceOpen ? <VoiceStage onClose={() => setVoiceOpen(false)} /> : null}
+    {labelToDelete ? (
+      <ConfirmDialog
+        title="Delete label?"
+        message={`Delete #${labelToDelete.name}?${affectedCount > 0 ? ` This removes it from ${affectedCount} todo${affectedCount === 1 ? "" : "s"}.` : ""} This can't be undone.`}
+        confirmLabel="Delete"
+        destructive
+        onConfirm={async () => {
+          await apiDeleteLabel(labelToDelete.id);
+          dispatch({ type: "DELETE_LABEL", id: labelToDelete.id });
+          setLabelToDelete(null);
+        }}
+        onCancel={() => setLabelToDelete(null)}
+      />
+    ) : null}
     </>
   );
 }
