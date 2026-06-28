@@ -87,6 +87,7 @@ repo. `.env*` files are gitignored — **never commit a secret**. Inspect names 
 | `AUTH_SECRET` | Auth.js (NextAuth v5) session/JWT signing |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | Google OAuth client (sign-in + Calendar/People scopes) |
 | `AUTH_URL` / `AUTH_TRUST_HOST` | Auth.js base URL / trust the Vercel proxy host |
+| `AUTH_COOKIE_DOMAIN` | `gettada.app` — shares auth cookies across apex + app subdomain so a sign-in started on `gettada.app` survives the callback on `app.gettada.app`. Optional: prod auto-derives it from `AUTH_URL`; unset locally (single host). |
 | `GEMINI_API_KEY` | Gemini — extract / enrich / chat / research |
 | `OPENAI_API_KEY` | OpenAI Realtime — voice |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob — capture image storage |
@@ -98,6 +99,13 @@ repo. `.env*` files are gitignored — **never commit a secret**. Inspect names 
 
 - `/api/auth/providers` must be **Google-only** in prod. The dev-login shortcut is
   non-production only and must never be enabled on prod.
+- **Apex + app subdomain share cookies.** The landing is served on both `gettada.app`
+  (apex) and `app.gettada.app`, but the OAuth callback lands on `app.gettada.app`. Without
+  a shared cookie domain, a sign-in *started on the apex* sets the PKCE/state
+  cookies host-only on `gettada.app` and they never reach the callback host →
+  `InvalidCheck: pkceCodeVerifier could not be parsed`. The env var scopes those cookies to
+  the parent domain so either entry host works. (`auth.ts` — the `__Host-` CSRF cookie stays
+  host-only by design.)
 - The Google OAuth client must have the prod redirect URI registered
   (`https://app.gettada.app/api/auth/callback/google`). Full Google sign-in cannot be
   driven headlessly (Google blocks automation), so the authenticated app and real-token
