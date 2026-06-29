@@ -9,7 +9,7 @@ run in CI anyway. dev-login (the old non-prod Credentials shortcut) has been rem
 
 Playwright MCP launches Chromium with a **persistent user-data-dir**, so the Google
 session survives across MCP restarts. You sign in with a real Google account **once**
-(`seedzpy@gmail.com` — a test user + admin → `plan='unlimited'`) and subsequent runs
+(any Google OAuth test-user → admitted with `plan='unlimited'`) and subsequent runs
 reuse that cookie. The session is the Auth.js JWT cookie `authjs.session-token`
 (httpOnly, ~30-day expiry); the Google refresh_token lives only on the DB `Account` row,
 never in the cookie.

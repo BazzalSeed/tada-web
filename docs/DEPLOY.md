@@ -91,12 +91,19 @@ repo. `.env*` files are gitignored — **never commit a secret**. Inspect names 
 | `GEMINI_API_KEY` | Gemini — extract / enrich / chat / research |
 | `OPENAI_API_KEY` | OpenAI Realtime — voice |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob — capture image storage |
-| `ADMIN_EMAILS` | Comma-list granted the admin/unlimited plan |
 | `AGENT_MEMORY_DATABASE_URL` | Separate store for agent memory |
 | `POSTMARK_INBOUND_WEBHOOK_SECRET` | Inbound email capture webhook (forward-an-email; dormant in v0) |
 
 ## Auth in production
 
+- **Access control during beta = the Google OAuth app's "Testing" status.** There is
+  **no in-app allowlist** (no `ADMIN_EMAILS`, no invite codes — both removed). Admission
+  is "any account Google authenticated" (`authorizeSignIn` in `lib/auth.ts`), and every
+  admitted user gets `plan='unlimited'`. While the OAuth consent screen is in **Testing**,
+  only its listed test users (≤100) can complete sign-in — that list *is* the allowlist.
+  **⚠️ Do not flip the OAuth app to "In production" / Published during beta** — that removes
+  the only gate and the app would admit any Google account. To add a tester: add their
+  email under **Google Cloud Console → APIs & Services → OAuth consent screen → Test users**.
 - `/api/auth/providers` must be **Google-only** in prod. The dev-login shortcut is
   non-production only and must never be enabled on prod.
 - **Apex + app subdomain share cookies.** The landing is served on both `gettada.app`

@@ -9,10 +9,9 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { cookies } from "next/headers";
 import type { Provider } from "next-auth/providers";
 import { prisma } from "@/lib/db";
-import { authorizeSignIn, isAdminEmail } from "@/lib/auth";
+import { authorizeSignIn } from "@/lib/auth";
 
 const providers: Provider[] = [
   Google({
@@ -88,14 +87,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   providers,
-  pages: { signIn: "/join" },
+  pages: { signIn: "/" },
   cookies: crossSubdomainCookies,
   callbacks: {
-    // Gate account CREATION: existing → admit; admin → admit; else require a
-    // valid invite code (read from the join cookie).
+    // Beta admission: admit any account Google authenticated. The OAuth app stays
+    // in "Testing", so only its listed test users can reach here — there is no
+    // in-app allowlist (see lib/auth.ts). Publishing the OAuth app would remove
+    // the only gate, so keep it in Testing during the beta.
     async signIn({ user, account }) {
-      const code = (await cookies()).get("invite_code")?.value ?? null;
-      if (!(await authorizeSignIn(user.email, code))) return false;
+      if (!authorizeSignIn(user.email)) return false;
       // Refresh the stored Google token + granted scopes on EVERY sign-in. The
       // PrismaAdapter persists the Account row only on the FIRST link, so a user
       // who consented before a scope was added (e.g. contacts.other.readonly)
@@ -123,18 +123,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.uid = user.id;
-        // Effective plan, resolved at sign-in. Admin status is env-driven
-        // (ADMIN_EMAILS) so we derive it live → admins always get unlimited even
-        // if their stored row predates being granted admin. Everyone else keeps
-        // their stored plan (e.g. an upgraded "pro"), defaulting to "free".
-        const stored =
-          (user as { plan?: string }).plan ??
-          (user.email
-            ? (await prisma.user.findUnique({ where: { email: user.email } }))?.plan
-            : undefined);
-        token.plan = (
-          user.email && isAdminEmail(user.email) ? "unlimited" : stored ?? "free"
-        ) as typeof token.plan;
+        // Beta: every admitted user is a trusted OAuth test user → unlimited
+        // (quota metering off). Revisit plan tiers when the beta opens up beyond
+        // the Google OAuth test-user list.
+        token.plan = "unlimited";
       }
       // NOTE: the Google refresh_token is deliberately NOT carried on the JWT or
       // session — it would be readable by the client (/api/auth/session). It

@@ -25,8 +25,9 @@ redirect, so there's no reason to remap it.)
 
 ## Auth — Google OAuth
 
-Visit `http://localhost:3000`, click sign in, use your real Google account
-(`seedzpy@gmail.com` is a test user + admin → `plan='unlimited'`). Gets a real
+Visit `http://localhost:3000`, click sign in, use your real Google account (any
+account on the Google OAuth app's test-user list; every admitted user gets
+`plan='unlimited'`). Gets a real
 refresh_token, so **meeting / contacts "do-it-for-me" features work locally**. Requires
 `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET`/`AUTH_SECRET` in `.env` (they're passed through) and
 host port 3000.
@@ -46,13 +47,13 @@ host port 3000.
 - **Dev mode is intentional.** The container runs `next dev` with `NODE_ENV=development`
   for fast local iteration (hot reload). This image is **local-only** and must never be the
   production deploy.
-- **Auth is real Google OAuth on :3000** (see above): `seedzpy@gmail.com` is admin →
-  `plan='unlimited'`.
+- **Auth is real Google OAuth on :3000** (see above): any Google OAuth test-user is
+  admitted and gets `plan='unlimited'` (no in-app allowlist).
 - **`.env` precedence (and why secrets aren't in `environment:`).** `app` loads `./.env` via
   `env_file`, which supplies all secrets/cloud keys: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`,
   `AUTH_SECRET`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `BLOB_READ_WRITE_TOKEN`. The compose
   `environment:` block lists **only** the overrides (`DATABASE_URL`/`DIRECT_URL` → local DB,
-  `NODE_ENV`, `ADMIN_EMAILS`, `AUTH_URL`/`AUTH_TRUST_HOST`). Secrets are deliberately *not* in
+  `NODE_ENV`, `AUTH_URL`/`AUTH_TRUST_HOST`). Secrets are deliberately *not* in
   `environment:` — because `environment` wins over `env_file`, listing `${GEMINI_API_KEY:-}`
   there would blank the real key whenever it isn't also exported in the shell. Keeping them
   in `env_file` only means the real `.env` values always flow through.

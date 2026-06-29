@@ -46,13 +46,13 @@ The codebase is built around **frozen contracts** in `lib/contracts/` — pure T
 - **"Where's the URL for X?"** → find the matching folder under `app/`. `app/api/todos/route.ts` is `POST/GET /api/todos`. `app/app/page.tsx` is the page at `/app`.
 - **"Where's the database query for X?"** → `lib/store.ts` (the `TadaStore` implementation — all todo/label/view CRUD) or the raw `prisma` client in `lib/db.ts`.
 - **"What does a Todo look like?"** → `prisma/schema.prisma` (the table) and `lib/contracts/types.ts` (the TS type). They mirror each other; wire/DB keys are `snake_case` (`@map`), TS fields are `camelCase`.
-- **"How does auth work?"** → `auth.ts` (Auth.js config: providers + callbacks), `lib/auth.ts` (`currentUser`, invite/admin gating), `proxy.ts` (the redirect gate), `auth.config.ts` (edge-safe subset for the proxy).
+- **"How does auth work?"** → `auth.ts` (Auth.js config: providers + callbacks), `lib/auth.ts` (`currentUser`, `authorizeSignIn` admission — beta admits any Google OAuth test-user, no in-app allowlist), `proxy.ts` (the redirect gate), `auth.config.ts` (edge-safe subset for the proxy).
 - **"Where's the AI?"** → `lib/extractor.ts` (capture extraction + quick-add enrichment), `lib/executors.ts` (reminder/meeting/research actions), `lib/research.ts` (the research agent loop), `lib/agent-tools.ts` (the chat/voice tool registry). All call Gemini via the Vercel AI SDK.
 - **"Where's the UI?"** → `app/components/` grouped by domain (`capture/`, `todo/`, `chat/`, `voice/`, `shell/`, `views/`, `landing/`). Client-only logic is in `app/lib/`.
 - **"How does the browser talk to the server?"** → `app/lib/api.ts` and `app/lib/capture.ts` are the client-side `fetch()` wrappers that hit the `app/api/**` routes.
 - **"What are the rules/decisions?"** → `CLAUDE.md` (locked decisions).
 
-The data model (`prisma/schema.prisma`): `Todo` (the one flat pool, with a self-relation `parentId` for one level of subtasks, a `sortIndex` float for drag-ordering, and `actionType`/`actionPayload`/`actionState` for "do it for me"), `Capture` (the raw input a todo came from), `TodoLabel`, `SavedView` (a stored `FilterCriteria` — views are *read-only filters*, not folders), `User`/`Account`/`Session` (Auth.js), `InviteCode`, `AiUsage` (quota), `Conversation`/`Message` (persisted chat — see [chat-persistence.md](chat-persistence.md)).
+The data model (`prisma/schema.prisma`): `Todo` (the one flat pool, with a self-relation `parentId` for one level of subtasks, a `sortIndex` float for drag-ordering, and `actionType`/`actionPayload`/`actionState` for "do it for me"), `Capture` (the raw input a todo came from), `TodoLabel`, `SavedView` (a stored `FilterCriteria` — views are *read-only filters*, not folders), `User`/`Account`/`Session` (Auth.js), `AiUsage` (quota), `Conversation`/`Message` (persisted chat — see [chat-persistence.md](chat-persistence.md)).
 
 ---
 

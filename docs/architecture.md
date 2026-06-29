@@ -29,7 +29,7 @@ lib/                  SERVER-side core (the deterministic spine + AI seams)
   core/               Pure, deterministic functions (flow filtering, offers)
   db.ts               Prisma client singleton
   store.ts            TadaStore — Prisma-backed CRUD/reorder/labels/views
-  auth.ts             currentUser() boundary + invite/admin gating
+  auth.ts             currentUser() boundary + sign-in admission (beta: any Google test-user)
   capture.ts          Capture-first pipeline (shared by all capture sources)
   extractor.ts        Gemini extractor + enricher (generateObject + Zod)
   executors.ts        "do it for me": setReminder / sendMeetingInvite / deepResearch
@@ -47,7 +47,6 @@ auth.ts               Auth.js v5 config (root) — Google OAuth provider
 auth.config.ts        Edge-safe (Prisma-free) auth config for the proxy gate
 proxy.ts              Next 16 "proxy" (middleware) — redirects unauthed /app → /
 types/                Type augmentation (next-auth session shape)
-scripts/              mint-invite.ts (CLI to create invite codes)
 design/landing-preview/  Self-contained HTML/CSS landing seed (iterated on)
 docker/, Dockerfile, docker-compose.yml   Local e2e stack (see docs/DOCKER.md)
 docs/                 architecture.md, onboarding-for-django-devs.md, DOCKER.md, DEPLOY.md

@@ -53,8 +53,9 @@ services:
       DATABASE_URL: postgresql://tada:tada@db:5432/tada
       DIRECT_URL: postgresql://tada:tada@db:5432/tada
       NODE_ENV: development
-      # seedzpy@gmail.com is admin → plan='unlimited' on Google sign-in.
-      ADMIN_EMAILS: seedzpy@gmail.com
+      # No in-app allowlist: any Google account that completes OAuth is admitted
+      # and gets plan='unlimited' (beta). Access is gated by the OAuth app's
+      # "Testing" test-user list, not by env here.
       # Auth.js base URL. Canonical localhost:3000 = the registered Google redirect
       # (real Google sign-in works locally). Override AUTH_URL if you change the port.
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}

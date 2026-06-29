@@ -201,19 +201,8 @@ model VerificationToken {
 }
 
 // ============================================================================
-// Invites, quota
+// Quota
 // ============================================================================
-
-model InviteCode {
-  code         String    @id
-  maxUses      Int       @default(1) @map("max_uses")
-  usedCount    Int       @default(0) @map("used_count")
-  expiresAt    DateTime? @map("expires_at")
-  invitedEmail String?   @map("invited_email")
-  createdAt    DateTime  @default(now()) @map("created_at")
-
-  @@map("invite_codes")
-}
 
 model AiUsage {
   userId    String   @map("user_id")
