@@ -11,7 +11,7 @@ import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { Provider } from "next-auth/providers";
 import { prisma } from "@/lib/db";
-import { authorizeSignIn } from "@/lib/auth";
+import { authorizeSignIn, wouldMergeGoogleAccount } from "@/lib/auth";
 
 const providers: Provider[] = [
   Google({
@@ -27,7 +27,12 @@ const providers: Provider[] = [
           "openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/contacts.readonly https://www.googleapis.com/auth/contacts.other.readonly",
       },
     },
-    allowDangerousEmailAccountLinking: true,
+    // No automatic account linking. allowDangerousEmailAccountLinking (the name is
+    // a warning) would link any new OAuth account whose email matches an existing
+    // user — an account-takeover vector. We are Google-only with no legitimate
+    // cross-provider linking, so leave it OFF: one verified Google identity = one
+    // user, always. Cross-account merges are also blocked server-side in the
+    // signIn callback (wouldMergeGoogleAccount).
   }),
 ];
 
@@ -96,6 +101,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // the only gate, so keep it in Testing during the beta.
     async signIn({ user, account }) {
       if (!authorizeSignIn(user.email)) return false;
+      // One Google account = one app user. Auth.js links a freshly authenticated
+      // OAuth account to the currently signed-in user (its "connect another
+      // account" flow); without this guard, signing in as B while still logged in
+      // as A merges B's Google account onto A's row and B sees A's data. Refuse to
+      // attach a new Google account to a user that already has one.
+      if (
+        account?.provider === "google" &&
+        account.providerAccountId &&
+        user.id &&
+        (await wouldMergeGoogleAccount(user.id, account.providerAccountId))
+      ) {
+        return false;
+      }
       // Refresh the stored Google token + granted scopes on EVERY sign-in. The
       // PrismaAdapter persists the Account row only on the FIRST link, so a user
       // who consented before a scope was added (e.g. contacts.other.readonly)

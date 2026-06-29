@@ -20,6 +20,47 @@ export function authorizeSignIn(rawEmail: string | null | undefined): boolean {
   return !!rawEmail?.trim();
 }
 
+// One Google account = one app user. Auth.js (the adapter) links a freshly
+// authenticated OAuth account to the CURRENTLY signed-in user — its "connect
+// another account" behavior. That means: sign in as B while still logged in as A
+// and B's Google account gets attached to A's user row, so B then sees A's data
+// (a cross-tenant leak). We never want implicit linking. rejectsGoogleMerge is
+// the pure decision; the signIn callback feeds it two facts from the accounts
+// table. wouldMergeGoogleAccount looks those facts up.
+export function rejectsGoogleMerge(facts: {
+  accountAlreadyLinked: boolean; // this (google, providerAccountId) already has a row
+  targetUserHasGoogleAccount: boolean; // the user it would attach to already has a google account
+}): boolean {
+  // Block only the dangerous case: a brand-new Google account (not yet linked)
+  // attaching to a user that already owns a different Google account. A returning
+  // account (already linked) or a fresh user (no google account yet) is fine —
+  // the latter keeps normal new-user creation and account-recovery working.
+  return !facts.accountAlreadyLinked && facts.targetUserHasGoogleAccount;
+}
+
+// DB-backed evaluation of rejectsGoogleMerge for a pending google sign-in:
+// would admitting this providerAccountId onto `userId` merge a second Google
+// account onto that user?
+export async function wouldMergeGoogleAccount(
+  userId: string,
+  providerAccountId: string,
+): Promise<boolean> {
+  const [linked, ownGoogle] = await Promise.all([
+    prisma.account.findFirst({
+      where: { provider: "google", providerAccountId },
+      select: { id: true },
+    }),
+    prisma.account.findFirst({
+      where: { userId, provider: "google" },
+      select: { id: true },
+    }),
+  ]);
+  return rejectsGoogleMerge({
+    accountAlreadyLinked: !!linked,
+    targetUserHasGoogleAccount: !!ownGoogle,
+  });
+}
+
 // The Google refresh token is the user's, persisted by the adapter on the
 // `Account` row. We read it server-side (NEVER via the session — that would leak
 // it to the client at /api/auth/session) so the meeting/contacts executors can
