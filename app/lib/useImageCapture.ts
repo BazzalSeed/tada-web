@@ -1,27 +1,21 @@
 import { useCallback, useState } from "react";
-import { captureImageFile } from "@/app/lib/capture";
-import { useTada } from "@/app/lib/store";
+import { useCaptureReviewContext } from "@/app/lib/useCaptureReview";
 
-// Shared image-capture ingest: POST each image (capture-first) and fold the
-// returned Capture + Todos into the store. Errors surface (capture is the hero).
+// Shared image-capture ingest: opens the review card against the dropped/
+// pasted/uploaded image — nothing is created until the user approves in the
+// modal (the modal's commit path does the actual capture + todo creation).
+// v1 reviews only the first file; multi-file batch review is a future
+// follow-up.
 export function useImageCapture() {
-  const { dispatch } = useTada();
+  const review = useCaptureReviewContext();
   const [error, setError] = useState<string | null>(null);
   const ingest = useCallback(
     async (files: File[]) => {
-      for (const file of files) {
-        try {
-          const { capture, todos } = await captureImageFile(file);
-          dispatch({ type: "UPSERT_CAPTURE", capture });
-          for (const todo of todos) dispatch({ type: "UPSERT_TODO", todo });
-          setError(null);
-        } catch (err) {
-          console.error("[capture] failed to ingest", file.name, err);
-          setError("Couldn't capture that image. Please sign in and try again.");
-        }
-      }
+      if (files.length === 0) return;
+      review.start({ kind: "image", file: files[0] });
+      setError(null);
     },
-    [dispatch],
+    [review.start],
   );
   return { ingest, error, clearError: () => setError(null) };
 }

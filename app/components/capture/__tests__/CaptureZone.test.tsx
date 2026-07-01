@@ -9,6 +9,27 @@ vi.mock("@/app/lib/capture", () => ({
   captureText: vi.fn(),
 }));
 
+// Image ingest now opens the shared review card instead of capturing
+// instantly (Task 6) — mock the review context and assert start() is called.
+const start = vi.fn();
+vi.mock("@/app/lib/useCaptureReview", () => ({
+  useCaptureReviewContext: () => ({
+    open: false,
+    source: null,
+    note: "",
+    status: "describing",
+    captureId: null,
+    proposals: [],
+    start,
+    setNote: vi.fn(),
+    extract: vi.fn(),
+    editProposal: vi.fn(),
+    removeProposal: vi.fn(),
+    commit: vi.fn(),
+    cancel: vi.fn(),
+  }),
+}));
+
 import { CaptureZone } from "../CaptureZone";
 
 function Probe() {
@@ -27,28 +48,12 @@ function pngFile() {
 
 afterEach(() => {
   captureImageFile.mockReset();
+  start.mockReset();
   vi.restoreAllMocks();
 });
 
 describe("CaptureZone (store-wired)", () => {
-  it("on image drop: captures and dispatches the returned capture + todos", async () => {
-    captureImageFile.mockResolvedValue({
-      capture: { id: "cap1", createdAt: "x", kind: "image", blobPath: "https://blob/s.png" },
-      todos: [
-        {
-          id: "t1",
-          createdAt: "x",
-          sourceCaptureId: "cap1",
-          title: "Reply to Dakota",
-          status: "open",
-          actionType: "none",
-          actionState: "none",
-          sortIndex: 0,
-          priority: "none",
-          labelIds: [],
-        },
-      ],
-    });
+  it("on image drop: opens the review card instead of capturing instantly", async () => {
     render(
       <TadaProvider>
         <Probe />
@@ -57,55 +62,18 @@ describe("CaptureZone (store-wired)", () => {
         </CaptureZone>
       </TadaProvider>,
     );
+    const file = pngFile();
     fireEvent.drop(screen.getByTestId("dropzone"), {
-      dataTransfer: { files: [pngFile()], items: [] },
+      dataTransfer: { files: [file], items: [] },
     });
-    await waitFor(() =>
-      expect(screen.getByTestId("todos")).toHaveTextContent("Reply to Dakota"),
-    );
-    expect(screen.getByTestId("captures")).toHaveTextContent("cap1");
-    expect(captureImageFile).toHaveBeenCalledTimes(1);
-  });
-
-  it("surfaces a visible error (and logs) when capture fails — no silent swallow", async () => {
-    const consoleErr = vi.spyOn(console, "error").mockImplementation(() => {});
-    captureImageFile.mockRejectedValue(new Error("401 Unauthorized"));
-    render(
-      <TadaProvider>
-        <Probe />
-        <CaptureZone>
-          <div>content</div>
-        </CaptureZone>
-      </TadaProvider>,
-    );
-    fireEvent.drop(screen.getByTestId("dropzone"), {
-      dataTransfer: { files: [pngFile()], items: [] },
-    });
-    await waitFor(() =>
-      expect(screen.getByRole("alert")).toHaveTextContent(/couldn't capture|try again/i),
-    );
-    expect(consoleErr).toHaveBeenCalled();
+    await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
+    expect(start).toHaveBeenCalledWith({ kind: "image", file });
+    expect(captureImageFile).not.toHaveBeenCalled();
     expect(screen.getByTestId("todos")).toHaveTextContent("");
+    expect(screen.getByTestId("captures")).toHaveTextContent("");
   });
 
-  it("captures images pasted anywhere (global paste)", async () => {
-    captureImageFile.mockResolvedValue({
-      capture: { id: "cap2", createdAt: "x", kind: "image", blobPath: "b" },
-      todos: [
-        {
-          id: "t2",
-          createdAt: "x",
-          sourceCaptureId: "cap2",
-          title: "From paste",
-          status: "open",
-          actionType: "none",
-          actionState: "none",
-          sortIndex: 0,
-          priority: "none",
-          labelIds: [],
-        },
-      ],
-    });
+  it("captures images pasted anywhere (global paste) by opening the review card", async () => {
     render(
       <TadaProvider>
         <Probe />
@@ -114,15 +82,15 @@ describe("CaptureZone (store-wired)", () => {
         </CaptureZone>
       </TadaProvider>,
     );
+    const file = pngFile();
     const paste = new Event("paste", { bubbles: true }) as Event & {
       clipboardData: unknown;
     };
     paste.clipboardData = {
-      items: [{ kind: "file", type: "image/png", getAsFile: () => pngFile() }],
+      items: [{ kind: "file", type: "image/png", getAsFile: () => file }],
     };
     window.dispatchEvent(paste);
-    await waitFor(() =>
-      expect(screen.getByTestId("todos")).toHaveTextContent("From paste"),
-    );
+    await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
+    expect(start).toHaveBeenCalledWith({ kind: "image", file });
   });
 });

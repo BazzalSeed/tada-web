@@ -9,6 +9,27 @@ vi.mock("@/app/lib/capture", () => ({
   captureText: vi.fn(),
 }));
 
+// Image ingest now opens the shared review card instead of capturing
+// instantly (Task 6) — mock the review context and assert start() is called.
+const start = vi.fn();
+vi.mock("@/app/lib/useCaptureReview", () => ({
+  useCaptureReviewContext: () => ({
+    open: false,
+    source: null,
+    note: "",
+    status: "describing",
+    captureId: null,
+    proposals: [],
+    start,
+    setNote: vi.fn(),
+    extract: vi.fn(),
+    editProposal: vi.fn(),
+    removeProposal: vi.fn(),
+    commit: vi.fn(),
+    cancel: vi.fn(),
+  }),
+}));
+
 import { AddCardView } from "../AddCardView";
 
 function Probe() {
@@ -33,6 +54,7 @@ function pngFile() {
 
 afterEach(() => {
   captureImageFile.mockReset();
+  start.mockReset();
   vi.restoreAllMocks();
 });
 
@@ -45,58 +67,17 @@ describe("AddCardView — screenshot upload button", () => {
     ).toBeInTheDocument();
   });
 
-  it("calls captureImageFile and dispatches the returned todo when a file is chosen", async () => {
+  it("opens the review card (does not capture instantly) when a file is chosen", async () => {
     globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
-    captureImageFile.mockResolvedValue({
-      capture: { id: "cap1", createdAt: "x", kind: "image", blobPath: "b" },
-      todos: [
-        {
-          id: "t1",
-          createdAt: "x",
-          sourceCaptureId: "cap1",
-          title: "Screenshot todo",
-          status: "open",
-          actionType: "none",
-          actionState: "none",
-          sortIndex: 0,
-          priority: "none",
-          labelIds: [],
-        },
-      ],
-    });
     renderAddCard();
     // The hidden file input is in the DOM; trigger a change event on it.
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     expect(fileInput).not.toBeNull();
-    fireEvent.change(fileInput, { target: { files: [pngFile()] } });
-    await waitFor(() =>
-      expect(screen.getByTestId("titles")).toHaveTextContent("Screenshot todo"),
-    );
-    expect(captureImageFile).toHaveBeenCalledTimes(1);
-  });
-
-  it("shows an inline error alert if ingest fails — never silent", async () => {
-    globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
-    const consoleErr = vi.spyOn(console, "error").mockImplementation(() => {});
-    captureImageFile.mockRejectedValue(new Error("401"));
-    renderAddCard();
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(fileInput, { target: { files: [pngFile()] } });
-    await waitFor(() =>
-      expect(screen.getByRole("alert")).toHaveTextContent(/couldn't capture|try again/i),
-    );
-    expect(consoleErr).toHaveBeenCalled();
-  });
-
-  it("dismissing the error alert clears it", async () => {
-    globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    captureImageFile.mockRejectedValue(new Error("401"));
-    renderAddCard();
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(fileInput, { target: { files: [pngFile()] } });
-    await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
-    fireEvent.click(screen.getByRole("button", { name: /dismiss/i }));
-    expect(screen.queryByRole("alert")).toBeNull();
+    const file = pngFile();
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
+    expect(start).toHaveBeenCalledWith({ kind: "image", file });
+    expect(captureImageFile).not.toHaveBeenCalled();
+    expect(screen.getByTestId("titles")).toHaveTextContent("");
   });
 });
