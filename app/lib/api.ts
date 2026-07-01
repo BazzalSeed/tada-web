@@ -2,9 +2,11 @@ import type {
   Attendee,
   Capture,
   ExtractedTodo,
+  ProposeResult,
   Todo,
   TodoLabel,
 } from "@/lib/contracts";
+import type { CaptureRequest } from "@/lib/capture";
 
 // Typed client for the frozen front↔back todo routes. Every endpoint returns a
 // `{ todo }` envelope; these unwrap to the bare Todo. Wire keys are snake_case
@@ -157,6 +159,34 @@ export async function clearChat(conversationId: string): Promise<void> {
     `/api/chat?conversationId=${encodeURIComponent(conversationId)}`,
     { method: "DELETE" },
   );
+}
+
+// Review-and-approve capture (Task 1-2 backend): extract without persisting so
+// the UI can show the AI's proposal before any todo is written.
+export async function proposeCapture(
+  body: CaptureRequest,
+): Promise<ProposeResult> {
+  return send<ProposeResult>("/api/capture/propose", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+// Persist the user-approved (and possibly edited) todos from a prior propose.
+export async function commitCapture(
+  captureId: string,
+  todos: ExtractedTodo[],
+): Promise<Todo[]> {
+  const { todos: created } = await send<{ todos: Todo[] }>(
+    "/api/capture/commit",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ captureId, todos }),
+    },
+  );
+  return created;
 }
 
 export async function reorderTodo(

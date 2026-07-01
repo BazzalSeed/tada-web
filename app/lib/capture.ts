@@ -1,5 +1,6 @@
 import { upload } from "@vercel/blob/client";
 import type { Capture, Todo } from "@/lib/contracts";
+import type { CaptureRequest } from "@/lib/capture";
 
 // Client capture seam. Both paths hit POST /api/capture (capture-first on the
 // server: a plain Todo is persisted before extraction, so todos[0] is always a
@@ -51,4 +52,24 @@ export async function captureImageFile(file: File): Promise<CaptureResult> {
 
 export async function captureText(text: string): Promise<CaptureResult> {
   return postCapture({ kind: "text", text });
+}
+
+// Review-and-approve path (propose/commit): builds the same wire body as
+// captureImageFile but returns it as a CaptureRequest for /api/capture/propose
+// instead of POSTing to /api/capture directly.
+export async function fileToCaptureRequest(
+  file: File,
+): Promise<CaptureRequest> {
+  if (file.size <= INLINE_MAX) {
+    return {
+      kind: "image",
+      image: { base64: await fileToBase64(file), mimeType: file.type },
+    };
+  }
+  const blob = await upload(file.name, file, {
+    access: "public",
+    handleUploadUrl: "/api/blob/upload",
+    contentType: file.type,
+  });
+  return { kind: "image", blobPath: blob.url };
 }
