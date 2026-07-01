@@ -20,6 +20,7 @@ export interface TadaStore {
   subtasks(userId: string, parentId: string): Promise<Todo[]>; // children where parentId == id
   createCapture(userId: string, c: Partial<Capture>): Promise<Capture>;
   listCaptures(userId: string): Promise<Capture[]>; // captures for a user, newest first
+  getCapture(userId: string, id: string): Promise<Capture | null>; // ownership-scoped lookup
   labels(userId: string): Promise<TodoLabel[]>;
   upsertLabelByName(userId: string, name: string): Promise<TodoLabel>;
   deleteLabel(userId: string, labelId: string): Promise<void>;

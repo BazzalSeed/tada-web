@@ -10,6 +10,7 @@ import { put } from "@vercel/blob";
 import { store as defaultStore } from "./store";
 import { extractor as defaultExtractor } from "./extractor";
 import { withQuota } from "./quota";
+import { HttpError } from "./http";
 import type {
   Capture,
   CaptureKind,
@@ -216,6 +217,39 @@ export async function proposeCapture(
   }
 
   return { capture, proposals, failed: proposals.length === 0 };
+}
+
+// Request shape accepted by the commit route: the user-approved subset of a
+// prior proposeCapture's proposals, to be persisted as real Todo rows.
+export interface CommitRequest {
+  captureId: string;
+  todos: ExtractedTodo[];
+}
+
+// commitCapture: create the user-approved todos against a prior capture. The
+// capture must belong to `user` (ownership-scoped lookup) — otherwise 404.
+export async function commitCapture(
+  user: UserCtx,
+  req: CommitRequest,
+  deps: CaptureDeps = {},
+): Promise<{ todos: Todo[] }> {
+  const store = deps.store ?? defaultStore;
+
+  const capture = await store.getCapture(user.userId, req.captureId);
+  if (!capture) {
+    throw new HttpError(404, "capture not found");
+  }
+
+  const todos: Todo[] = [];
+  for (const e of req.todos) {
+    todos.push(
+      await store.createTodo(
+        user.userId,
+        await toTodoPatch(store, user.userId, e, req.captureId),
+      ),
+    );
+  }
+  return { todos };
 }
 
 export async function runCapture(

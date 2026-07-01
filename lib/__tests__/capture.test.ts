@@ -4,7 +4,8 @@
 // capture-first invariant, graceful failed-extraction, in-place enrichment of
 // the plain todo, and dedupe.
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { proposeCapture, runCapture } from "@/lib/capture";
+import { commitCapture, proposeCapture, runCapture } from "@/lib/capture";
+import { HttpError } from "@/lib/http";
 import type {
   Capture,
   ExtractorClient,
@@ -25,6 +26,11 @@ function makeStore(): TadaStore & { _seq: string[] } {
       seq.push("createCapture");
       return { id: "cap1", createdAt: "now", kind: c.kind ?? "text", blobPath: c.blobPath ?? null, note: c.note ?? null } as Capture;
     }),
+    getCapture: vi.fn(async (_u, id: string) =>
+      id === "cap1"
+        ? ({ id: "cap1", createdAt: "now", kind: "image", blobPath: null, note: null } as Capture)
+        : null,
+    ),
     createTodo: vi.fn(async (_u, t: Partial<Todo>) => {
       seq.push("createTodo");
       return { id: `t${++n}`, ...t } as Todo;
@@ -108,6 +114,30 @@ describe("proposeCapture", () => {
     expect(res.proposals.map((p) => p.title)).toEqual(["fresh item"]);
     expect(res.failed).toBe(false);
     expect(store.createTodo).not.toHaveBeenCalled();
+  });
+});
+
+describe("commitCapture", () => {
+  it("creates one Todo per approved proposal, each linked to the capture", async () => {
+    const { todos } = await commitCapture(user, {
+      captureId: "cap1",
+      todos: [
+        { title: "Email Dakota", actionType: "none", suggestedLabels: ["work"] },
+        { title: "Book room", actionType: "none" },
+      ],
+    }, { store });
+    expect(todos.map((t) => t.title)).toEqual(["Email Dakota", "Book room"]);
+    expect(todos.every((t) => t.sourceCaptureId === "cap1")).toBe(true);
+    expect(store.createTodo).toHaveBeenCalledTimes(2);
+  });
+
+  it("throws HttpError(404) when the capture isn't found for this user", async () => {
+    await expect(
+      commitCapture(user, { captureId: "missing", todos: [{ title: "x", actionType: "none" }] }, { store }),
+    ).rejects.toMatchObject({ status: 404 });
+    await expect(
+      commitCapture(user, { captureId: "missing", todos: [{ title: "x", actionType: "none" }] }, { store }),
+    ).rejects.toBeInstanceOf(HttpError);
   });
 });
 

@@ -218,6 +218,11 @@ export class PrismaTadaStore implements TadaStore {
     return rows.map(toCapture);
   }
 
+  async getCapture(userId: string, id: string): Promise<Capture | null> {
+    const row = await this.db.capture.findFirst({ where: { id, userId } });
+    return row ? toCapture(row) : null;
+  }
+
   async labels(userId: string): Promise<TodoLabel[]> {
     const rows = await this.db.todoLabel.findMany({ where: { userId } });
     return rows.map(toLabel);
