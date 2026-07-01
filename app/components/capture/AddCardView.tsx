@@ -7,9 +7,18 @@ import { createTodo, enrichText } from "@/app/lib/api";
 import { enrichmentChips, type EnrichmentChip } from "@/app/lib/enrich";
 import { useEnsureLabel, useTada } from "@/app/lib/store";
 import { useImageCapture } from "@/app/lib/useImageCapture";
+import { useCaptureReviewContext } from "@/app/lib/useCaptureReview";
 import { HighlightedInput } from "./HighlightedInput";
 import { MicButton } from "./MicButton";
 import styles from "./AddCardView.module.css";
+
+// A single short line stays INSTANT (unchanged path below); anything longer
+// or multi-line is a capture worth reviewing — route it to the propose/
+// approve modal instead of guessing at one todo.
+const MULTI_CAPTURE_MIN = 140;
+function isMultiCapture(t: string) {
+  return /\n/.test(t) || t.trim().length > MULTI_CAPTURE_MIN;
+}
 
 // Quick-add card (rendered only in All). Deterministic parseQuickAdd drives the
 // live highlight; submit creates a plain todo INSTANTLY (model never in the hot
@@ -19,7 +28,8 @@ export function AddCardView() {
   const ensureLabel = useEnsureLabel();
   const [text, setText] = useState("");
   const parsed = useMemo(() => parseQuickAdd(text), [text]);
-  const { ingest: ingestImage, error: uploadError, clearError: clearUploadError } = useImageCapture();
+  const { ingest: ingestImage } = useImageCapture();
+  const review = useCaptureReviewContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Keep only chips that ADD something the deterministic parse didn't already
@@ -55,6 +65,13 @@ export function AddCardView() {
   }
 
   async function submit() {
+    const rawText = text;
+    if (isMultiCapture(rawText)) {
+      review.start({ kind: "text", text: rawText });
+      setText("");
+      return;
+    }
+
     const title = parsed.title.trim();
     if (!title) return;
 
@@ -82,7 +99,6 @@ export function AddCardView() {
     dispatch({ type: "SELECT_NAV", selection: { kind: "all" } });
     // Clear any prior suggestions; new capture, fresh offers.
     dispatch({ type: "CLEAR_ENRICHMENT" });
-    const rawText = text;
     setText("");
 
     // The row the enrichment pass targets — the server todo once it lands (so
@@ -124,60 +140,54 @@ export function AddCardView() {
 
   return (
     <div className={styles.card}>
-      <span className={styles.plus} aria-hidden="true">
-        +
-      </span>
-      <HighlightedInput
-        value={text}
-        tokens={parsed.tokens}
-        onChange={setText}
-        onSubmit={submit}
-        placeholder="Add task — try “Plan offsite tomorrow p1 #work”"
-      />
-      <MicButton
-        onTranscript={(spoken) =>
-          setText((prev) => (prev.trim() ? `${prev} ${spoken}` : spoken))
-        }
-      />
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className={styles.screenshotInput}
-        aria-hidden="true"
-        onChange={(e) => {
-          const files = Array.from(e.target.files ?? []).filter((f) =>
-            f.type.startsWith("image/"),
-          );
-          if (files.length) void ingestImage(files);
-          e.target.value = "";
-        }}
-      />
-      <button
-        type="button"
-        className={styles.screenshotBtn}
-        aria-label="Upload screenshot"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M12 16V4M7 9l5-5 5 5" />
-          <path d="M5 20h14" />
-        </svg>
-      </button>
-      {uploadError ? (
-        <span className={styles.uploadError} role="alert">
-          {uploadError}{" "}
-          <button
-            type="button"
-            className={styles.uploadErrorDismiss}
-            aria-label="Dismiss"
-            onClick={clearUploadError}
-          >
-            ×
-          </button>
+      <div className={styles.row}>
+        <span className={styles.plus} aria-hidden="true">
+          +
         </span>
-      ) : null}
+        <HighlightedInput
+          value={text}
+          tokens={parsed.tokens}
+          onChange={setText}
+          onSubmit={submit}
+          placeholder="Add task — try “Plan offsite tomorrow p1 #work”"
+        />
+        <MicButton
+          onTranscript={(spoken) =>
+            setText((prev) => (prev.trim() ? `${prev} ${spoken}` : spoken))
+          }
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className={styles.screenshotInput}
+          aria-hidden="true"
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? []).filter((f) =>
+              f.type.startsWith("image/"),
+            );
+            if (files.length) void ingestImage(files);
+            e.target.value = "";
+          }}
+        />
+        <button
+          type="button"
+          className={styles.screenshotBtn}
+          title="Add a screenshot — Tada turns it into todos"
+          aria-label="Add a screenshot — Tada turns it into todos"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 16V4M7 9l5-5 5 5" />
+            <path d="M5 20h14" />
+          </svg>
+          <span className={styles.screenshotLabel}>Screenshot → todos</span>
+        </button>
+      </div>
+      <p className={styles.hint}>
+        Paste or upload a screenshot, or type a paragraph — Tada makes todos.
+      </p>
     </div>
   );
 }

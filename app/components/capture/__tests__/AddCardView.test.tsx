@@ -3,6 +3,25 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { TadaProvider, useTada } from "@/app/lib/store";
 import { AddCardView } from "../AddCardView";
 
+const reviewStart = vi.fn();
+vi.mock("@/app/lib/useCaptureReview", () => ({
+  useCaptureReviewContext: () => ({
+    open: false,
+    source: null,
+    note: "",
+    status: "describing",
+    captureId: null,
+    proposals: [],
+    start: reviewStart,
+    setNote: vi.fn(),
+    extract: vi.fn(),
+    editProposal: vi.fn(),
+    removeProposal: vi.fn(),
+    commit: vi.fn(),
+    cancel: vi.fn(),
+  }),
+}));
+
 function Probe() {
   const { state } = useTada();
   return (
@@ -23,7 +42,10 @@ function Probe() {
   );
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  reviewStart.mockClear();
+});
 
 function renderAdd(preload = {}) {
   return render(
@@ -200,5 +222,51 @@ describe("AddCardView (store-wired)", () => {
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "   " } });
     fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
     expect(screen.getByTestId("count")).toHaveTextContent("0");
+  });
+
+  it("a single short line still creates a plain todo instantly and does NOT open review", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ todo: null }) }));
+    globalThis.fetch = fetchMock as never;
+    renderAdd();
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "buy milk" } });
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+    await waitFor(() =>
+      expect(screen.getByTestId("titles")).toHaveTextContent("buy milk"),
+    );
+    expect(reviewStart).not.toHaveBeenCalled();
+  });
+
+  it("multi-line text opens the review instead of creating a todo directly", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ todo: null }) }));
+    globalThis.fetch = fetchMock as never;
+    renderAdd();
+    const multiline = "call bank\nemail dakota\nbook room";
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: multiline } });
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+    await waitFor(() => expect(reviewStart).toHaveBeenCalledWith({ kind: "text", text: multiline }));
+    // nothing created directly — no optimistic todo, no POST to /api/todos
+    expect(screen.getByTestId("count")).toHaveTextContent("0");
+    expect(fetchMock).not.toHaveBeenCalled();
+    // input cleared
+    expect(screen.getByRole("textbox")).toHaveValue("");
+  });
+
+  it("a long single line (>140 chars) also opens review instead of instant add", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ todo: null }) }));
+    globalThis.fetch = fetchMock as never;
+    renderAdd();
+    const longLine = "a".repeat(141);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: longLine } });
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+    await waitFor(() => expect(reviewStart).toHaveBeenCalledWith({ kind: "text", text: longLine }));
+    expect(screen.getByTestId("count")).toHaveTextContent("0");
+  });
+
+  it("the screenshot affordance has a clear accessible label", () => {
+    globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
+    renderAdd();
+    expect(
+      screen.getByRole("button", { name: "Add a screenshot — Tada turns it into todos" }),
+    ).toBeInTheDocument();
   });
 });

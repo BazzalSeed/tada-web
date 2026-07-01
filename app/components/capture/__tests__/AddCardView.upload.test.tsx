@@ -59,11 +59,11 @@ afterEach(() => {
 });
 
 describe("AddCardView — screenshot upload button", () => {
-  it("renders an 'Upload screenshot' button in the add bar", () => {
+  it("renders a labeled screenshot affordance in the add bar", () => {
     globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
     renderAddCard();
     expect(
-      screen.getByRole("button", { name: /upload screenshot/i }),
+      screen.getByRole("button", { name: /add a screenshot/i }),
     ).toBeInTheDocument();
   });
 
