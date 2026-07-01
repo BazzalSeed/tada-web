@@ -83,6 +83,9 @@ export function DataBootstrap() {
             views: [],
             labels: labels ?? [],
             captures: captures ?? undefined,
+            // Leave the loading state only once todos themselves have loaded — a
+            // round where only labels/captures succeeded keeps the loader up.
+            hydrated: todos !== null,
           });
         }
 

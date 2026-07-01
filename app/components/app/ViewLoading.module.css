@@ -1,0 +1,66 @@
+.wrap {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 45vh;
+  padding: var(--space-7) var(--space-6);
+}
+
+.orb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  color: var(--accent);
+}
+
+/* Soft breathing halo — an accent wash, never a hard fill (per the design system). */
+.orb::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 26%, transparent),
+    transparent 68%
+  );
+  animation: vlHalo var(--dur-breath, 1800ms) ease-in-out infinite;
+}
+
+.spark {
+  position: relative;
+  animation: vlTwinkle var(--dur-breath, 1800ms) ease-in-out infinite;
+}
+
+@keyframes vlHalo {
+  0%,
+  100% {
+    transform: scale(0.82);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.75;
+  }
+}
+
+@keyframes vlTwinkle {
+  0%,
+  100% {
+    transform: scale(0.9) rotate(0deg);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.12) rotate(45deg);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb::before,
+  .spark {
+    animation: none;
+  }
+}

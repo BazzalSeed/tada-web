@@ -6,6 +6,7 @@ import { criteriaFor } from "@/lib/core";
 import { paletteItemsFor, useTada } from "@/app/lib/store";
 import { deleteLabel as apiDeleteLabel } from "@/app/lib/api";
 import { TodoListView } from "@/app/components/todo/TodoListView";
+import { ViewLoading } from "@/app/components/app/ViewLoading";
 import { ChatView } from "@/app/components/chat/ChatView";
 import { VoiceStage } from "@/app/components/voice/VoiceStage";
 import { ViewEditor } from "@/app/components/views/ViewEditor";
@@ -120,6 +121,9 @@ export function AppShellContainer({ children }: { children?: ReactNode }) {
       {children ??
         (isChat ? (
           <ChatView onVoice={() => setVoiceOpen(true)} />
+        ) : !state.hydrated && state.todos.length === 0 ? (
+          // Initial load: show the branded loader, not a false "empty" list.
+          <ViewLoading />
         ) : (
           <TodoListView />
         ))}

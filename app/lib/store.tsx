@@ -20,6 +20,9 @@ const LABEL_ACCENT = "#c8632e";
 // selection. Data CRUD flows through the API seam (app/lib/api.ts) into
 // SET_DATA / UPSERT_TODO actions.
 export interface TadaState {
+  // False until the first successful pool load lands — lets views show a loading
+  // state instead of a "Nothing here yet." empty screen while data is in flight.
+  hydrated: boolean;
   todos: Todo[];
   views: SavedView[];
   labels: TodoLabel[];
@@ -31,6 +34,7 @@ export interface TadaState {
 }
 
 export const initialState: TadaState = {
+  hydrated: false,
   todos: [],
   views: [],
   labels: [],
@@ -48,6 +52,9 @@ export type TadaAction =
       views: SavedView[];
       labels: TodoLabel[];
       captures?: Capture[];
+      // Set true once todos have genuinely loaded (vs a partial-failure round),
+      // so the views can leave the loading state. Sticky once true.
+      hydrated?: boolean;
     }
   | { type: "UPSERT_TODO"; todo: Todo }
   // Full reconcile of the pool from the server (background poll). Preserves
@@ -71,6 +78,7 @@ export function reducer(state: TadaState, action: TadaAction): TadaState {
     case "SET_DATA":
       return {
         ...state,
+        hydrated: state.hydrated || !!action.hydrated,
         todos: action.todos,
         views: action.views,
         labels: action.labels,
