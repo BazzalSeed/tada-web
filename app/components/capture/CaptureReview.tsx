@@ -183,8 +183,9 @@ function FailedBody({ review }: { review: CaptureReviewState }) {
     <>
       <div className={styles.body}>
         <p className={styles.statusLine}>
-          Couldn't find any tasks in this — add a note describing what to do, then
-          retry.
+          {review.failReason === "error"
+            ? "Couldn't reach the extractor — check your connection (or sign in), then try again."
+            : "Couldn't find any tasks in this — add a note describing what to do, then retry."}
         </p>
         {source?.kind === "image" ? (
           thumbUrl ? (

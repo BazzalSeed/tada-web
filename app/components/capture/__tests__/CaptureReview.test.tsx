@@ -10,6 +10,7 @@ function makeReview(overrides: Partial<CaptureReviewState> = {}): CaptureReviewS
     source: { kind: "text", text: "Buy milk and call the plumber" },
     note: "",
     status: "describing",
+    failReason: null,
     captureId: null,
     proposals: [],
     start: vi.fn(),
@@ -76,8 +77,8 @@ describe("CaptureReview", () => {
     expect(screen.getByRole("button", { name: "Add 0 todos" })).toBeDisabled();
   });
 
-  it("failed: shows a friendly message + note field to add context; Try again calls extract()", () => {
-    const review = makeReview({ status: "failed" });
+  it("failed (empty): shows a friendly message + note field to add context; Try again calls extract()", () => {
+    const review = makeReview({ status: "failed", failReason: "empty" });
     render(<CaptureReview review={review} />);
     expect(screen.getByText(/couldn't find/i)).toBeInTheDocument();
     expect(screen.getByText(/add a note describing what to do/i)).toBeInTheDocument();
@@ -89,5 +90,18 @@ describe("CaptureReview", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(review.extract).toHaveBeenCalled();
+  });
+
+  it("failed (error): shows a transport/auth-specific message, not the empty-extraction copy", () => {
+    const review = makeReview({ status: "failed", failReason: "error" });
+    render(<CaptureReview review={review} />);
+    expect(screen.getByText(/couldn't reach the extractor/i)).toBeInTheDocument();
+    expect(screen.queryByText(/couldn't find any tasks/i)).not.toBeInTheDocument();
+  });
+
+  it("failed (no failReason): falls back to the empty-extraction copy", () => {
+    const review = makeReview({ status: "failed", failReason: null });
+    render(<CaptureReview review={review} />);
+    expect(screen.getByText(/couldn't find any tasks/i)).toBeInTheDocument();
   });
 });

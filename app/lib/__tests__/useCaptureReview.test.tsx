@@ -133,6 +133,7 @@ describe("useCaptureReview", () => {
     });
 
     expect(screen.getByTestId("status").textContent).toBe("failed");
+    expect(review.failReason).toBe("empty");
   });
 
   it("extract() sets status failed when proposeCapture rejects", async () => {
@@ -154,6 +155,7 @@ describe("useCaptureReview", () => {
     });
 
     expect(screen.getByTestId("status").textContent).toBe("failed");
+    expect(review.failReason).toBe("error");
   });
 
   it("commit() calls commitCapture, dispatches UPSERT_CAPTURE + UPSERT_TODO, and closes", async () => {

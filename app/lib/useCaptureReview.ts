@@ -21,11 +21,18 @@ export type ReviewSource =
 
 export type ReviewStatus = "describing" | "extracting" | "proposals" | "failed";
 
+// "empty" = proposeCapture resolved with no proposals to show (a genuine
+// empty extraction, including all-duplicates); "error" = proposeCapture
+// THREW (network/auth/transport) — a different failure the failed-state
+// copy should not conflate with "empty".
+export type FailReason = "empty" | "error" | null;
+
 export interface CaptureReview {
   open: boolean;
   source: ReviewSource | null;
   note: string;
   status: ReviewStatus;
+  failReason: FailReason;
   captureId: string | null;
   proposals: ExtractedTodo[];
   start(source: ReviewSource): void;
@@ -42,6 +49,7 @@ interface ReviewInternalState {
   source: ReviewSource | null;
   note: string;
   status: ReviewStatus;
+  failReason: FailReason;
   captureId: string | null;
   proposals: ExtractedTodo[];
 }
@@ -51,6 +59,7 @@ const initial: ReviewInternalState = {
   source: null,
   note: "",
   status: "describing",
+  failReason: null,
   captureId: null,
   proposals: [],
 };
@@ -93,9 +102,12 @@ export function useCaptureReview(): CaptureReview {
         captureId: res.capture.id,
         proposals: res.proposals,
         status: res.failed ? "failed" : "proposals",
+        failReason: res.failed ? "empty" : null,
       }));
     } catch {
-      setState((s) => ({ ...s, status: "failed" }));
+      // proposeCapture threw — a transport/auth error, distinct from a
+      // genuine empty extraction (see FailReason).
+      setState((s) => ({ ...s, status: "failed", failReason: "error" }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.source, state.note]);
@@ -153,6 +165,7 @@ const defaultReview: CaptureReview = {
   source: null,
   note: "",
   status: "describing",
+  failReason: null,
   captureId: null,
   proposals: [],
   start: noop,

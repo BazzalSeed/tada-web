@@ -216,6 +216,9 @@ export async function proposeCapture(
     proposals = [];
   }
 
+  // failed reflects POST-DEDUPE emptiness — i.e. no NEW proposals left to show
+  // the user — not raw extractor-empty. An all-duplicates extraction (every
+  // proposal matched an existing open title) counts as failed too.
   return { capture, proposals, failed: proposals.length === 0 };
 }
 
