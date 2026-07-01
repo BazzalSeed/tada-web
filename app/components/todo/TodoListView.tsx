@@ -13,6 +13,7 @@ import {
 import { useEnsureLabel, useTada } from "@/app/lib/store";
 import type { EnrichmentChip } from "@/app/lib/enrich";
 import { AddCardView } from "@/app/components/capture/AddCardView";
+import { ViewLoading } from "@/app/components/app/ViewLoading";
 import { TodoList } from "./TodoList";
 import styles from "./TodoListView.module.css";
 
@@ -133,27 +134,35 @@ export function TodoListView() {
   // The add card renders ONLY in All — the single add surface (native invariant).
   const isAll = state.selection.kind === "all";
 
+  // The add card is a static element in All (the single add surface) — keep it
+  // visible during the initial load; only the LIST region shows the loader.
+  const listLoading = !state.hydrated && state.todos.length === 0;
+
   return (
     <div className={styles.content}>
       {isAll ? <AddCardView /> : null}
-      <TodoList
-        open={open}
-        done={done}
-        now={now}
-        labelsById={labelsById}
-        subtaskCounts={subtaskCounts}
-        childrenByParent={childrenByParent}
-        capturesById={state.captures}
-        selectedId={state.selectedTodoId}
-        enrichingId={state.enrichingTodoId}
-        enrichment={state.enrichment}
-        onSelect={(id) => dispatch({ type: "SELECT_TODO", id })}
-        onToggleComplete={toggleComplete}
-        onReorder={reorder}
-        onAcceptChip={acceptChip}
-        onDismissChips={dismissChips}
-        onDelete={deleteTodo}
-      />
+      {listLoading ? (
+        <ViewLoading />
+      ) : (
+        <TodoList
+          open={open}
+          done={done}
+          now={now}
+          labelsById={labelsById}
+          subtaskCounts={subtaskCounts}
+          childrenByParent={childrenByParent}
+          capturesById={state.captures}
+          selectedId={state.selectedTodoId}
+          enrichingId={state.enrichingTodoId}
+          enrichment={state.enrichment}
+          onSelect={(id) => dispatch({ type: "SELECT_TODO", id })}
+          onToggleComplete={toggleComplete}
+          onReorder={reorder}
+          onAcceptChip={acceptChip}
+          onDismissChips={dismissChips}
+          onDelete={deleteTodo}
+        />
+      )}
     </div>
   );
 }

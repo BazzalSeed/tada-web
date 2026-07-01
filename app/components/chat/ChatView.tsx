@@ -15,6 +15,7 @@ import { MessageBlock } from "./MessageBlock";
 import { TypingIndicator } from "./TypingIndicator";
 import { SuggestionCards } from "./SuggestionCards";
 import { ChatComposer } from "./ChatComposer";
+import { ViewLoading } from "@/app/components/app/ViewLoading";
 import styles from "./ChatView.module.css";
 
 // T3.4 text chat. useChat ↔ /api/chat (Gemini tool-loop). Read tools auto-run and
@@ -79,7 +80,7 @@ export function ChatView({ onVoice }: ChatViewProps) {
   if (!session) {
     return (
       <div className={styles.chat}>
-        <div className={styles.loading}>Loading your chat…</div>
+        <ViewLoading />
       </div>
     );
   }
