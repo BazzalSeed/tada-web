@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import type { Priority, RecurFreq, Todo, TodoLabel } from "@/lib/contracts";
+import type { Priority, Todo, TodoLabel } from "@/lib/contracts";
 import { Markdown } from "@/app/lib/markdown";
 import styles from "./DetailPane.module.css";
 
 // Right-hand notebook pane (editable). Inline title + markdown notes (write /
-// preview) + property controls (priority · due · repeat · labels). Each edit
+// preview) + property controls (priority · due · labels). Each edit
 // persists through the single `onPatch` channel (the view wires it to PATCH).
 // The subtask section plugs in via `children`. Remount on todo change (key) so
 // local field state re-initialises.
@@ -17,13 +17,6 @@ const PRIORITY_LABEL: Record<Priority, string> = {
   p1: "P1",
   p2: "P2",
 };
-const FREQS: (RecurFreq | "none")[] = [
-  "none",
-  "daily",
-  "weekly",
-  "monthly",
-  "yearly",
-];
 
 export interface DetailPaneProps {
   todo: Todo | null;
@@ -122,21 +115,26 @@ export function DetailPane({
 
       {/* Properties */}
       <div className={styles.props}>
-        <div className={styles.propRow} role="group" aria-label="Priority">
-          {PRIORITIES.map((p) => (
-            <button
-              key={p}
-              type="button"
-              className={styles.prio}
-              data-priority={p}
-              data-active={todo.priority === p}
-              aria-pressed={todo.priority === p}
-              aria-label={`Set priority ${p}`}
-              onClick={() => onPatch({ priority: p })}
-            >
-              {PRIORITY_LABEL[p]}
-            </button>
-          ))}
+        {/* Priority is a labeled field like Due date so the columns align on
+            the same baseline. */}
+        <div className={styles.field} role="group" aria-label="Priority">
+          <span className={styles.fieldLabel}>Priority</span>
+          <div className={styles.propRow}>
+            {PRIORITIES.map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={styles.prio}
+                data-priority={p}
+                data-active={todo.priority === p}
+                aria-pressed={todo.priority === p}
+                aria-label={`Set priority ${p}`}
+                onClick={() => onPatch({ priority: p })}
+              >
+                {PRIORITY_LABEL[p]}
+              </button>
+            ))}
+          </div>
         </div>
 
         <label className={styles.field}>
@@ -151,28 +149,6 @@ export function DetailPane({
               })
             }
           />
-        </label>
-
-        <label className={styles.field}>
-          <span className={styles.fieldLabel}>Repeat</span>
-          <select
-            aria-label="Repeat"
-            value={todo.recurrence?.frequency ?? "none"}
-            onChange={(e) =>
-              onPatch({
-                recurrence:
-                  e.target.value === "none"
-                    ? null
-                    : { frequency: e.target.value as RecurFreq },
-              })
-            }
-          >
-            {FREQS.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
         </label>
       </div>
 
@@ -228,6 +204,7 @@ export function DetailPane({
           <textarea
             className={styles.notesInput}
             aria-label="Notes"
+            placeholder="Write notes…  # heading   **bold**   - list   [ ] task"
             value={detail}
             onChange={(e) => setDetail(e.target.value)}
             onBlur={() => {
@@ -239,7 +216,16 @@ export function DetailPane({
             {(todo.detail ?? "").trim() ? (
               <Markdown source={todo.detail ?? ""} onTodoLink={onTodoLink} />
             ) : (
-              <p className={styles.empty}>No notes yet.</p>
+              // Consistent, clickable empty state (matches "Add subtask…") that
+              // enters write mode and hints markdown is supported.
+              <button
+                type="button"
+                className={styles.notesEmpty}
+                onClick={() => setNotesMode("write")}
+              >
+                Add a note…
+                <span className={styles.notesEmptyMd}>Markdown supported</span>
+              </button>
             )}
           </div>
         )}

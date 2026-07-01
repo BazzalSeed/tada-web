@@ -96,17 +96,6 @@ describe("DetailPane (editable)", () => {
     expect(onPatch).toHaveBeenCalledWith({ labelIds: ["l1", "lnew"] });
   });
 
-  it("sets recurrence", () => {
-    const onPatch = vi.fn();
-    render(<DetailPane {...paneProps({ onPatch })} />);
-    fireEvent.change(screen.getByLabelText(/repeat/i), {
-      target: { value: "weekly" },
-    });
-    expect(onPatch).toHaveBeenCalledWith({
-      recurrence: { frequency: "weekly" },
-    });
-  });
-
   it("renders markdown bold in the notes preview", () => {
     render(<DetailPane {...paneProps()} />);
     // default mode is preview; **Q3** → <strong>Q3</strong>

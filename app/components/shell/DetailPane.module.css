@@ -252,6 +252,34 @@
   font-style: italic;
 }
 
+/* Notes empty state — a calm, clickable prompt that matches the "Add subtask…"
+   / "New label…" affordances (not italic body text) and enters write mode. */
+.notesEmpty {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: text;
+  font-size: var(--fs-body);
+  color: var(--color-ink-muted);
+  transition: color var(--dur-fast) var(--ease-out-quart);
+}
+.notesEmpty:hover {
+  color: var(--color-ink-soft);
+}
+.notesEmptyMd {
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint, var(--color-ink-muted));
+  opacity: 0.75;
+}
+
 /* (B) Back-to-parent breadcrumb — subtle text button, rust on hover */
 .parentCrumb {
   display: inline-flex;
