@@ -59,6 +59,13 @@
   gap: 2px;
 }
 
+/* Footer — pinned to the bottom of the sidebar; holds the Sign out button. */
+.footer {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: var(--hairline);
+}
+
 .sectionHead {
   display: flex;
   align-items: center;

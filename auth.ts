@@ -66,6 +66,11 @@ function resolveCookieDomain(): string | undefined {
   return parts.slice(-2).join(".");
 }
 const cookieDomain = resolveCookieDomain();
+
+// The resolved parent domain the session cookies are scoped to in prod
+// (`gettada.app`), or undefined locally. Exported so the sign-out action can
+// force-expire the cookie on the SAME domain (see app/lib/auth-actions.ts).
+export const authCookieDomain = cookieDomain;
 const crossSubdomainCookies = cookieDomain
   ? (() => {
       const base = {
@@ -146,6 +151,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // the Google OAuth test-user list.
         token.plan = "unlimited";
       }
+      // Keep the JWT — and therefore the session cookie — small. Auth.js copies
+      // the OAuth profile's `name` + `picture` (a long googleusercontent URL)
+      // into the token by default, which can push the cookie past 4KB so it
+      // chunks into `…session-token.0/.1`; the v5-beta sign-out then fails to
+      // clear those chunks and the user stays logged in. We never read name/
+      // avatar from the session (the UI uses currentUser() → the DB User row), so
+      // drop them. Keep email — currentUser() reads session.user.email.
+      delete (token as { name?: unknown }).name;
+      delete (token as { picture?: unknown }).picture;
       // NOTE: the Google refresh_token is deliberately NOT carried on the JWT or
       // session — it would be readable by the client (/api/auth/session). It
       // lives only in the Account row; currentUser reads it server-side on demand.

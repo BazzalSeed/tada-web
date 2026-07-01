@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { SavedView, TodoLabel, ViewSelection } from "@/lib/contracts";
+import { signOutAction } from "@/app/lib/auth-actions";
 import styles from "./Sidebar.module.css";
 
 // ── Sidebar toggle icons ───────────────────────────────────────────────────
@@ -141,6 +142,27 @@ function IconView() {
       aria-hidden="true"
     >
       <path d="M4 4h16l-6 8v6l-4-2v-4L4 4z" />
+    </svg>
+  );
+}
+
+/** Log-out glyph — door with an arrow leaving. Used by the Sign out button. */
+function IconSignOut() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="M16 17l5-5-5-5" />
+      <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
   );
 }
@@ -331,6 +353,17 @@ export function Sidebar({
           ))}
         </div>
       ) : null}
+
+      {/* Footer — sign out. Server action clears the session cookie reliably
+          (including the Domain-scoped variant); see app/lib/auth-actions.ts. */}
+      <form action={signOutAction} className={styles.footer}>
+        <button type="submit" className={styles.item} aria-label="Sign out">
+          <span className={styles.itemIcon}>
+            <IconSignOut />
+          </span>
+          <span className={styles.itemLabel}>Sign out</span>
+        </button>
+      </form>
     </nav>
   );
 }
