@@ -10,6 +10,8 @@ import { ChatView } from "@/app/components/chat/ChatView";
 import { VoiceStage } from "@/app/components/voice/VoiceStage";
 import { ViewEditor } from "@/app/components/views/ViewEditor";
 import { ConfirmDialog } from "@/app/components/ui/ConfirmDialog";
+import { CaptureReview } from "@/app/components/capture/CaptureReview";
+import { useCaptureReviewContext } from "@/app/lib/useCaptureReview";
 import { AppShell } from "./AppShell";
 import { DetailPaneView } from "./DetailPaneView";
 import styles from "./ContentPlaceholder.module.css";
@@ -23,6 +25,7 @@ type EditorState =
 // Maps store state → AppShell props and routes palette selections.
 export function AppShellContainer({ children }: { children?: ReactNode }) {
   const { state, dispatch } = useTada();
+  const review = useCaptureReviewContext();
   const selectedTodo =
     state.todos.find((t) => t.id === state.selectedTodoId) ?? null;
   const isChat = state.selection.kind === "chat";
@@ -125,6 +128,7 @@ export function AppShellContainer({ children }: { children?: ReactNode }) {
         ))}
     </AppShell>
     {voiceOpen ? <VoiceStage onClose={() => setVoiceOpen(false)} /> : null}
+    {review.open ? <CaptureReview review={review} /> : null}
     {labelToDelete ? (
       <ConfirmDialog
         title="Delete label?"

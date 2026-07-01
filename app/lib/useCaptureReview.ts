@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import type { Capture, ExtractedTodo, Todo } from "@/lib/contracts";
 import type { CaptureRequest } from "@/lib/capture";
 import { commitCapture, proposeCapture } from "@/app/lib/api";
@@ -134,4 +142,38 @@ export function useCaptureReview(): CaptureReview {
     commit,
     cancel,
   };
+}
+
+// A safe no-op default so components that read the context render nothing and
+// don't crash when used without a CaptureReviewProvider (e.g. in existing
+// tests that mount AppShellContainer directly).
+const noop = () => {};
+const defaultReview: CaptureReview = {
+  open: false,
+  source: null,
+  note: "",
+  status: "describing",
+  captureId: null,
+  proposals: [],
+  start: noop,
+  setNote: noop,
+  extract: async () => {},
+  editProposal: noop,
+  removeProposal: noop,
+  commit: async () => [],
+  cancel: noop,
+};
+
+const CaptureReviewContext = createContext<CaptureReview>(defaultReview);
+
+// Shares a single useCaptureReview() instance across the tree — the trigger
+// sites (CaptureZone/AddCardView, image drop) and the modal (AppShellContainer)
+// need the SAME state machine instance, not independent local hooks.
+export function CaptureReviewProvider({ children }: { children: ReactNode }) {
+  const review = useCaptureReview();
+  return createElement(CaptureReviewContext.Provider, { value: review }, children);
+}
+
+export function useCaptureReviewContext(): CaptureReview {
+  return useContext(CaptureReviewContext);
 }

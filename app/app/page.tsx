@@ -2,18 +2,24 @@ import { AppShellContainer } from "@/app/components/shell/AppShellContainer";
 import { CaptureZone } from "@/app/components/capture/CaptureZone";
 import { DataBootstrap } from "@/app/components/app/DataBootstrap";
 import { TadaProvider } from "@/app/lib/store";
+import { CaptureReviewProvider } from "@/app/lib/useCaptureReview";
 
 // Product app shell. Lives at /app (auth-gated by middleware); the apex stays for
 // the marketing landing. CaptureZone wraps the whole app for global drop/paste/
 // upload capture. DataBootstrap hydrates the store from the live API on mount —
 // no seed data, so the unauthenticated state is real (empty), not masked.
+// CaptureReviewProvider wraps both CaptureZone (which starts a review on
+// image/paragraph capture) and AppShellContainer (which renders the modal) so
+// they share one useCaptureReview() state machine instance.
 export default function AppPage() {
   return (
     <TadaProvider>
       <DataBootstrap />
-      <CaptureZone>
-        <AppShellContainer />
-      </CaptureZone>
+      <CaptureReviewProvider>
+        <CaptureZone>
+          <AppShellContainer />
+        </CaptureZone>
+      </CaptureReviewProvider>
     </TadaProvider>
   );
 }
