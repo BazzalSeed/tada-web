@@ -117,7 +117,7 @@ function DescribingBody({
         <button type="button" className={styles.cancel} onClick={review.cancel}>
           Cancel
         </button>
-        <button type="button" className={styles.primary} onClick={review.extract}>
+        <button type="button" className={styles.secondary} onClick={review.extract}>
           Extract
         </button>
       </div>
@@ -175,7 +175,7 @@ function FailedBody({ review }: { review: CaptureReviewState }) {
         <button type="button" className={styles.cancel} onClick={review.cancel}>
           Cancel
         </button>
-        <button type="button" className={styles.primary} onClick={review.extract}>
+        <button type="button" className={styles.secondary} onClick={review.extract}>
           Try again
         </button>
       </div>

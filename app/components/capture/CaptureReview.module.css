@@ -209,3 +209,22 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* Secondary — for low-stakes actions (Extract, Try again) that describe or
+   retry rather than commit a side effect. Matches ConfirmDialog.module.css
+   .confirm (the non-destructive default): transparent bg, accent text. */
+.secondary {
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-accent);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out-quart);
+}
+
+.secondary:hover {
+  opacity: 0.8;
+}
