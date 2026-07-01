@@ -76,10 +76,16 @@ describe("CaptureReview", () => {
     expect(screen.getByRole("button", { name: "Add 0 todos" })).toBeDisabled();
   });
 
-  it("failed: shows a friendly message; Try again calls extract()", () => {
+  it("failed: shows a friendly message + note field to add context; Try again calls extract()", () => {
     const review = makeReview({ status: "failed" });
     render(<CaptureReview review={review} />);
     expect(screen.getByText(/couldn't find/i)).toBeInTheDocument();
+    expect(screen.getByText(/add a note describing what to do/i)).toBeInTheDocument();
+
+    const textarea = screen.getByPlaceholderText(/describe what to do/i);
+    expect(textarea).toBeInTheDocument();
+    fireEvent.change(textarea, { target: { value: "it's about the plumber" } });
+    expect(review.setNote).toHaveBeenCalledWith("it's about the plumber");
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(review.extract).toHaveBeenCalled();

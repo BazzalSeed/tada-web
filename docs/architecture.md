@@ -4,7 +4,7 @@ How Tada Web is built today — architecture, repository layout, and the HTTP su
 
 ## Architecture in one paragraph
 
-A **deterministic to-do spine** (the model is never in the list's hot path) with a thin AI layer bolted on through interfaces (seams). Capture is **capture-first**: every source (screenshot / typed-or-spoken quick-add / forwarded email) persists a `Capture` + a plain `Todo` *before* the extractor runs, so a failed extraction still leaves a usable todo. "Do it for me" dispatches on a todo's `actionType` — **meetings and reminders are deterministic executors; research is the only agent loop**. There is **one executor function per capability**, called directly from the tap path *and* wrapped as a gated AI-SDK tool for chat/voice. **Nothing executes a side effect automatically** — every write shows its concrete effect and fires only on an explicit tap or an approved tool-call.
+A **deterministic to-do spine** (the model is never in the list's hot path) with a thin AI layer bolted on through interfaces (seams). Capture has two paths: a single short typed line stays **instant** — a plain `Todo` is created directly, no model in the loop. Everything else worth extracting (a screenshot, or a typed/spoken paragraph) goes through **propose → review → commit**: `POST /api/capture/propose` runs the Gemini extractor over the source *without persisting anything*, the user reviews/edits the proposed todos in a modal (`CaptureReview`, add-or-drop-a-note-and-retry on a failed parse), and only an explicit "Add N todos" tap calls `POST /api/capture/commit` to persist the `Capture` + `Todo` rows. Nothing is created until the user approves. "Do it for me" dispatches on a todo's `actionType` — **meetings and reminders are deterministic executors; research is the only agent loop**. There is **one executor function per capability**, called directly from the tap path *and* wrapped as a gated AI-SDK tool for chat/voice. **Nothing executes a side effect automatically** — every write shows its concrete effect and fires only on an explicit tap or an approved tool-call.
 
 ## Repository layout
 
@@ -58,7 +58,9 @@ Two `lib` directories on purpose: **`lib/`** is server-only core (DB, AI, execut
 
 | Route | Purpose |
 |---|---|
-| `POST /api/capture` | image/text capture → capture-first → Gemini extract |
+| `POST /api/capture` | legacy image/text capture-first entry point |
+| `POST /api/capture/propose` | Gemini extract over a source WITHOUT persisting — feeds the review modal |
+| `POST /api/capture/commit` | persist the `Capture` + reviewed/edited `Todo` rows once the user approves |
 | `GET /api/captures` | hydrate source captures (row thumbnails) |
 | `POST /api/blob/upload` | signed direct-to-Blob upload for large capture images |
 | `POST /api/enrich` | async quick-add enrichment (labels/dates/offer) |

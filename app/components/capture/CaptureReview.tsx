@@ -166,10 +166,43 @@ function ProposalsBody({ review }: { review: CaptureReviewState }) {
 }
 
 function FailedBody({ review }: { review: CaptureReviewState }) {
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+  const source = review.source;
+
+  useEffect(() => {
+    if (source?.kind !== "image") {
+      setThumbUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(source.file);
+    setThumbUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [source]);
+
   return (
     <>
       <div className={styles.body}>
-        <p className={styles.statusLine}>Couldn't find any tasks in this.</p>
+        <p className={styles.statusLine}>
+          Couldn't find any tasks in this — add a note describing what to do, then
+          retry.
+        </p>
+        {source?.kind === "image" ? (
+          thumbUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className={styles.thumb} src={thumbUrl} alt="Captured screenshot" />
+          ) : null
+        ) : source?.kind === "text" ? (
+          <p className={styles.sourceText}>{source.text}</p>
+        ) : null}
+        <label className={styles.noteField}>
+          <span className={styles.eyebrow}>Add context</span>
+          <textarea
+            className={styles.noteInput}
+            value={review.note}
+            placeholder="Describe what to do with this… (optional)"
+            onChange={(e) => review.setNote(e.target.value)}
+          />
+        </label>
       </div>
       <div className={styles.actions}>
         <button type="button" className={styles.cancel} onClick={review.cancel}>

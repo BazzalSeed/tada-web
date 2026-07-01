@@ -269,4 +269,33 @@ describe("AddCardView (store-wired)", () => {
       screen.getByRole("button", { name: "Add a screenshot — Tada turns it into todos" }),
     ).toBeInTheDocument();
   });
+
+  it("shows the hint only while the input is empty", () => {
+    globalThis.fetch = vi.fn(async () => ({ ok: true, json: async () => ({}) })) as never;
+    renderAdd();
+    expect(
+      screen.getByText(/paste or upload a screenshot, or type a paragraph/i),
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "buy milk" } });
+    expect(
+      screen.queryByText(/paste or upload a screenshot, or type a paragraph/i),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "" } });
+    expect(
+      screen.getByText(/paste or upload a screenshot, or type a paragraph/i),
+    ).toBeInTheDocument();
+  });
+
+  it("whitespace-only submit does nothing — no todo, no review, no dispatch", () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({}) }));
+    globalThis.fetch = fetchMock as never;
+    renderAdd();
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "  \n  " } });
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+    expect(screen.getByTestId("count")).toHaveTextContent("0");
+    expect(reviewStart).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

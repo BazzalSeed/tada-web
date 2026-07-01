@@ -66,6 +66,7 @@ export function AddCardView() {
 
   async function submit() {
     const rawText = text;
+    if (!rawText.trim()) return;
     if (isMultiCapture(rawText)) {
       review.start({ kind: "text", text: rawText });
       setText("");
@@ -185,9 +186,11 @@ export function AddCardView() {
           <span className={styles.screenshotLabel}>Screenshot → todos</span>
         </button>
       </div>
-      <p className={styles.hint}>
-        Paste or upload a screenshot, or type a paragraph — Tada makes todos.
-      </p>
+      {!text.trim() ? (
+        <p className={styles.hint}>
+          Paste or upload a screenshot, or type a paragraph — Tada makes todos.
+        </p>
+      ) : null}
     </div>
   );
 }

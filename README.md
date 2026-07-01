@@ -1,6 +1,6 @@
 # Tada Web
 
-Web version of the native macOS **Tada** app: Todoist's to-do *flow* + capture-first AI + a real "do it for me" layer. Two differentiators vs Todoist: **(1) capture is the hero** — email / screenshot / quick add (typed or spoken) → AI extracts structured todos; **(2) it does the task for you** — books the meeting, sets the reminder, runs deep research — gated by one explicit tap.
+Web version of the native macOS **Tada** app: Todoist's to-do *flow* + capture-first AI + a real "do it for me" layer. Two differentiators vs Todoist: **(1) capture is the hero** — email / screenshot / quick add (typed or spoken) → AI extracts structured todos, reviewed and approved before anything is created (a single short typed line still adds instantly); **(2) it does the task for you** — books the meeting, sets the reminder, runs deep research — gated by one explicit tap.
 
 Tagline: **Not to-do. Ta-da.** Lives at [gettada.app](https://gettada.app) (apex = marketing landing; `app.gettada.app` = the product).
 
