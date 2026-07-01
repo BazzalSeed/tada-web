@@ -1,11 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { Todo, TodoLabel } from "@/lib/contracts";
-
-// Sidebar's sign-out button imports a server action (→ @/auth). Stub it so the
-// shell render tests don't pull the auth stack into jsdom.
-vi.mock("@/app/lib/auth-actions", () => ({ signOutAction: vi.fn() }));
-
 import { TadaProvider } from "@/app/lib/store";
 import { AppShellContainer } from "../AppShellContainer";
 

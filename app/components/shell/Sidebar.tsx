@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import type { SavedView, TodoLabel, ViewSelection } from "@/lib/contracts";
-import { signOutAction } from "@/app/lib/auth-actions";
 import styles from "./Sidebar.module.css";
 
 // ── Sidebar toggle icons ───────────────────────────────────────────────────
@@ -354,9 +353,10 @@ export function Sidebar({
         </div>
       ) : null}
 
-      {/* Footer — sign out. Server action clears the session cookie reliably
-          (including the Domain-scoped variant); see app/lib/auth-actions.ts. */}
-      <form action={signOutAction} className={styles.footer}>
+      {/* Footer — sign out. Native POST to /api/app-signout, which reliably clears
+          the session cookie in every variant it could have been set (host-only +
+          Domain-scoped + chunk suffixes); see that route. */}
+      <form action="/api/app-signout" method="post" className={styles.footer}>
         <button type="submit" className={styles.item} aria-label="Sign out">
           <span className={styles.itemIcon}>
             <IconSignOut />

@@ -1,10 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-
-// Sidebar's sign-out button imports a server action (→ @/auth). Stub it so the
-// shell render tests don't pull the auth stack into jsdom.
-vi.mock("@/app/lib/auth-actions", () => ({ signOutAction: vi.fn() }));
-
 import { AppShell } from "../AppShell";
 
 function setup(overrides: Partial<React.ComponentProps<typeof AppShell>> = {}) {

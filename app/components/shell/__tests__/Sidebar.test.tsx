@@ -1,11 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { SavedView, TodoLabel } from "@/lib/contracts";
-
-// The sign-out button wires a server action that imports the full auth stack
-// (@/auth). Stub it so this stays a pure client-component render test.
-vi.mock("@/app/lib/auth-actions", () => ({ signOutAction: vi.fn() }));
-
 import { Sidebar } from "../Sidebar";
 
 const view: SavedView = {
