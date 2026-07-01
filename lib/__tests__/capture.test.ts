@@ -4,7 +4,7 @@
 // capture-first invariant, graceful failed-extraction, in-place enrichment of
 // the plain todo, and dedupe.
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { runCapture } from "@/lib/capture";
+import { proposeCapture, runCapture } from "@/lib/capture";
 import type {
   Capture,
   ExtractorClient,
@@ -46,6 +46,69 @@ function makeStore(): TadaStore & { _seq: string[] } {
 let store: TadaStore & { _seq: string[] };
 beforeEach(() => {
   store = makeStore();
+});
+
+// Helper: build a fake ExtractorClient that resolves with a fixed todo list.
+function fakeExtractor(todos: { title: string; suggestedLabels?: string[] }[]): ExtractorClient {
+  return {
+    extract: vi.fn(async (): Promise<ExtractorOutput> => ({
+      todos: todos.map((t) => ({ title: t.title, actionType: "none", suggestedLabels: t.suggestedLabels })),
+    })),
+  };
+}
+
+describe("proposeCapture", () => {
+  it("persists a Capture and returns proposals WITHOUT creating todos", async () => {
+    const extractor = fakeExtractor([
+      { title: "Email Dakota", suggestedLabels: ["work"] },
+      { title: "Book room" },
+    ]);
+    const res = await proposeCapture(user, { text: "email dakota then book a room" }, { store, extractor });
+    expect(res.capture.id).toBeTruthy();
+    expect(res.proposals.map((p) => p.title)).toEqual(["Email Dakota", "Book room"]);
+    expect(res.failed).toBe(false);
+    // capture row persisted
+    expect(store.createCapture).toHaveBeenCalledTimes(1);
+    // no todo rows created at all
+    expect(store.createTodo).not.toHaveBeenCalled();
+    expect(store.updateTodo).not.toHaveBeenCalled();
+  });
+
+  it("marks failed=true (not throw) when extraction returns nothing", async () => {
+    const res = await proposeCapture(user, { text: "??" }, { store, extractor: fakeExtractor([]) });
+    expect(res.failed).toBe(true);
+    expect(res.proposals).toEqual([]);
+    // capture still persisted even on empty extraction
+    expect(store.createCapture).toHaveBeenCalledTimes(1);
+    expect(store.createTodo).not.toHaveBeenCalled();
+  });
+
+  it("marks failed=true (not throw) when extractor throws", async () => {
+    const extractor: ExtractorClient = {
+      extract: vi.fn(async (): Promise<ExtractorOutput> => { throw new Error("gemini down"); }),
+    };
+    const res = await proposeCapture(user, { text: "call mom" }, { store, extractor });
+    expect(res.failed).toBe(true);
+    expect(res.proposals).toEqual([]);
+    expect(res.capture.id).toBeTruthy();
+    expect(store.createTodo).not.toHaveBeenCalled();
+  });
+
+  it("dedupes proposals against existing open todos", async () => {
+    store.listTodos = vi.fn(async () => [{ id: "x", title: "buy milk", status: "open" } as Todo]);
+    const extractor: ExtractorClient = {
+      extract: vi.fn(async (): Promise<ExtractorOutput> => ({
+        todos: [
+          { title: "buy milk", actionType: "none", duplicateOf: "buy milk" },
+          { title: "fresh item", actionType: "none" },
+        ],
+      })),
+    };
+    const res = await proposeCapture(user, { text: "groceries" }, { store, extractor });
+    expect(res.proposals.map((p) => p.title)).toEqual(["fresh item"]);
+    expect(res.failed).toBe(false);
+    expect(store.createTodo).not.toHaveBeenCalled();
+  });
 });
 
 describe("runCapture — capture-first invariant", () => {

@@ -5,6 +5,7 @@
 // schema mirroring ExtractorOutput; image passed as {type:'file', mediaType:'image'}.
 // ============================================================================
 
+import type { Capture } from "./types";
 import type { ActionPayload, ActionType, Priority } from "./types";
 
 export interface ExtractorInput {
@@ -60,6 +61,12 @@ export interface InboundEmail {
   text?: string;
   html?: string;
   attachments?: { base64: string; mimeType: string; filename?: string }[];
+}
+
+export interface ProposeResult {
+  capture: Capture;          // persisted (kind/blobPath/note) — backs the thumbnail
+  proposals: ExtractedTodo[]; // 0..n; NOT persisted as todos
+  failed: boolean;           // true when extraction threw or returned []
 }
 
 // POST /api/inbound/email — verify signature -> parse -> alias->user ->

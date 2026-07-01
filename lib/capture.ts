@@ -16,6 +16,7 @@ import type {
   ExtractedTodo,
   ExtractorClient,
   ExtractorInput,
+  ProposeResult,
   TadaStore,
   Todo,
   UserCtx,
@@ -154,6 +155,67 @@ async function toTodoPatch(
     labelIds: await resolveLabelIds(store, userId, e),
     // recurrenceText → RecurrenceRule needs parseQuickAdd (T1.1); applied later.
   };
+}
+
+// proposeCapture: persist a Capture + extract todos under quota, but DO NOT
+// create any Todo rows. Returns proposals for the user to review before commit.
+// On extraction throw or empty result → failed=true, proposals=[] (never rethrows).
+export async function proposeCapture(
+  user: UserCtx,
+  req: CaptureRequest,
+  deps: CaptureDeps = {},
+): Promise<ProposeResult> {
+  const store = deps.store ?? defaultStore;
+  const extractor = deps.extractor ?? defaultExtractor;
+  const uploadImage = deps.uploadImage ?? defaultUploadImage;
+  const kind = inferKind(req);
+
+  // 1. CAPTURE-FIRST — persist the Capture row so the thumbnail is durable even
+  //    if extraction fails. Same blob-resolve path as runCapture.
+  const blobPath = await resolveBlobPath(req, uploadImage);
+  const capture = await store.createCapture(user.userId, {
+    kind,
+    blobPath,
+    note: req.note ?? null,
+  });
+
+  // 2. Taxonomy for dedupe (no todos created here, but we still dedupe proposals
+  //    against the existing open pool so the user isn't shown stale duplicates).
+  const [allTodos, labelRows] = await Promise.all([
+    store.listTodos(user.userId),
+    store.labels(user.userId),
+  ]);
+  const openTitles = allTodos
+    .filter((t) => t.status === "open")
+    .map((t) => t.title);
+
+  // 3. Extract under quota — never throws to the caller.
+  let proposals: ExtractedTodo[] = [];
+  try {
+    const image = await hydrateImage(req);
+    const input: ExtractorInput = {
+      image,
+      text: req.text ?? null,
+      note: req.note ?? null,
+      email: req.email ?? null,
+      timeZone: user.timezone,
+      existingOpenTitles: openTitles,
+      existingLists: [],
+      existingLabels: labelRows.map((l) => l.name),
+    };
+    const out = await withQuota(user, "extractTodos", () =>
+      extractor.extract(input),
+    );
+    proposals = dedupe(out.todos, openTitles);
+  } catch (err) {
+    console.error(
+      `[capture] proposeCapture extraction failed for capture ${capture.id} (kind=${kind}):`,
+      err,
+    );
+    proposals = [];
+  }
+
+  return { capture, proposals, failed: proposals.length === 0 };
 }
 
 export async function runCapture(
