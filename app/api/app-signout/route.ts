@@ -7,8 +7,11 @@
 // Set-Cookie for EVERY (name × {host-only, Domain}) combination — a route handler
 // lets us append duplicate Set-Cookie headers for the same name, which the
 // cookies() store can't. This guarantees deletion regardless of how it was set.
+// The session strategy is JWT, so the cookie IS the session — deleting it is the
+// sign-out (no server state to invalidate). We do it deterministically here
+// rather than via Auth.js signOut(), whose partial cookie clear was the bug.
 import { NextResponse, type NextRequest } from "next/server";
-import { signOut, authCookieDomain } from "@/auth";
+import { authCookieDomain } from "@/auth";
 
 const SESSION_COOKIE_NAMES = [
   "__Secure-authjs.session-token",
@@ -20,15 +23,7 @@ const SESSION_COOKIE_NAMES = [
   "authjs.session-token.1",
 ];
 
-async function clearAndRedirect(req: NextRequest): Promise<NextResponse> {
-  // Fire Auth.js sign-out (events, its own cookie clear). Never let it block the
-  // hard cookie wipe below.
-  try {
-    await signOut({ redirect: false });
-  } catch {
-    // ignore — the explicit cookie clear is what actually signs the user out
-  }
-
+function clearAndRedirect(req: NextRequest): NextResponse {
   const res = NextResponse.redirect(new URL("/", req.nextUrl.origin), { status: 303 });
   for (const name of SESSION_COOKIE_NAMES) {
     const secure = name.startsWith("__Secure-") ? "; Secure" : "";
@@ -38,14 +33,16 @@ async function clearAndRedirect(req: NextRequest): Promise<NextResponse> {
       res.headers.append("Set-Cookie", `${base}; Domain=${authCookieDomain}`); // Domain-scoped variant
     }
   }
+  // Never let the redirect (or its Set-Cookie clears) be cached.
+  res.headers.set("Cache-Control", "no-store");
   return res;
 }
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+export function POST(req: NextRequest): NextResponse {
   return clearAndRedirect(req);
 }
 
 // GET support so a plain link (or a stuck user hitting the URL directly) works.
-export async function GET(req: NextRequest): Promise<NextResponse> {
+export function GET(req: NextRequest): NextResponse {
   return clearAndRedirect(req);
 }

@@ -31,6 +31,9 @@ export type TodoDraft = Partial<
 
 async function send<T>(url: string, init: RequestInit): Promise<T> {
   const res = await fetch(url, {
+    // Never serve a per-user API response from the browser cache — otherwise a
+    // GET (/api/todos) can replay the previous account's data after a switch.
+    cache: "no-store",
     headers: { "content-type": "application/json" },
     ...init,
   });

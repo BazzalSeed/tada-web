@@ -9,7 +9,14 @@ import { QuotaError } from "./contracts";
 export const json = (data: unknown, status = 200): Response =>
   new Response(JSON.stringify(data), {
     status,
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      // Every API response is per-user, dynamic data. Without this the browser
+      // heuristically caches a GET (e.g. /api/todos) keyed only on URL — so after
+      // switching accounts it replays the previous user's list until a hard
+      // refresh. no-store forbids any shared/stale reuse.
+      "cache-control": "no-store",
+    },
   });
 
 export class HttpError extends Error {
